@@ -16,7 +16,7 @@
 
 package sqlchain
 
-import "github.com/siegfried415/gdf-rebuild/proto"
+import "github.com/siegfried415/go-crawling-bazaar/proto"
 
 // BlockID is the hash of block content.
 type BlockID string

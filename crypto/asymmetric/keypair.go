@@ -18,24 +18,18 @@ package asymmetric
 
 import (
 	"crypto/ecdsa"
-
-	//wyong, 20201002 
 	"crypto/x509"
 
 	"encoding/hex"
 	"fmt"
 	"math/big"
 	"sync"
-	"time"
 
-	hsp "github.com/CovenantSQL/HashStablePack/marshalhash"
 	ec "github.com/btcsuite/btcd/btcec"
-
-	mine "github.com/siegfried415/gdf-rebuild/pow/cpuminer"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
-
-	//wyong, 20201002 
+	hsp "github.com/CovenantSQL/HashStablePack/marshalhash"
 	pb "github.com/libp2p/go-libp2p-core/crypto/pb"
+
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 
 )
 
@@ -134,16 +128,33 @@ func (k *PublicKey) Serialize() []byte {
 func ParsePubKey(pubKeyStr []byte) (*PublicKey, error) {
 	key, err := ec.ParsePubKey(pubKeyStr, ec.S256())
 	return (*PublicKey)(key), err
+	
+	//todo
+        //pubIfc, err := x509.ParsePKIXPublicKey(pubKeyStr)
+        //if err != nil {
+        //        return nil, err
+        //}
+        //pub, ok := pubIfc.(*ecdsa.PublicKey)
+        //if !ok {
+        //        return nil, errors.New("not an ecdsa public key") 
+        //}
+	//return (*PublicKey)(pub), nil  
+
 }
 
 // PrivKeyFromBytes returns a private and public key for `curve' based on the private key passed
 // as an argument as a byte slice.
 func PrivKeyFromBytes(pk []byte) (*PrivateKey, *PublicKey) {
+	//todo
 	x, y := ec.S256().ScalarBaseMult(pk)
+	//x, y := elliptic.P256().ScalarBaseMult(pk)
 
 	priv := &ecdsa.PrivateKey{
 		PublicKey: ecdsa.PublicKey{
-			Curve: ec.S256(),
+			//todo
+			Curve:  ec.S256(),
+			//Curve:  elliptic.P256(), 	
+
 			X:     x,
 			Y:     y,
 		},
@@ -153,15 +164,12 @@ func PrivKeyFromBytes(pk []byte) (*PrivateKey, *PublicKey) {
 	return (*PrivateKey)(priv), (*PublicKey)(&priv.PublicKey)
 }
 
-//wyong, 20200916 
 func (private *PrivateKey) Bytes() ([]byte, error) {
 	return private.Serialize(), nil 
 }
 
-//wyong, 20200916 
 // Equals compares two private keys
 func (private *PrivateKey) Equals(target PrivateKey) bool {
-	//wyong, 20201013 
         //targetPriv, ok := ecdsa.PrivateKey(target)
         //if !ok {
         //        return false
@@ -180,21 +188,18 @@ func (private *PrivateKey) Serialize() []byte {
 	return paddedAppend(PrivateKeyBytesLen, b, private.D.Bytes())
 }
 
-//wyong, 20201002 
 // Raw returns x509 bytes from a private key
 func (private *PrivateKey) Raw() ([]byte, error) {
-	//wyong, 20201013 
         //return x509.MarshalECPrivateKey(private)
         return x509.MarshalECPrivateKey((*ecdsa.PrivateKey)(private))
 }
 
-//wyong, 20201002 
 // Type returns the key type
 func (private *PrivateKey) Type() pb.KeyType {
         return pb.KeyType_ECDSA
 }
 
-//Alias of PubKey(), wyong, 20201002 
+//Alias of PubKey()
 func (private *PrivateKey) GetPublic() *PublicKey {
 	return private.PubKey() 
 }
@@ -220,7 +225,7 @@ func GenSecp256k1KeyPair() (
 	publicKey *PublicKey,
 	err error) {
 
-	privateKeyEc, err := ec.NewPrivateKey(ec.S256())
+	privateKeyEc, err := ec.NewPrivateKey( /* todo */  ec.S256() /* elliptic.P256() */  )
 	if err != nil {
 		log.WithError(err).Error("private key generation failed")
 		return nil, nil, err
@@ -230,6 +235,8 @@ func GenSecp256k1KeyPair() (
 	return
 }
 
+
+/* 
 // GetPubKeyNonce will make his best effort to find a difficult enough
 // nonce.
 func GetPubKeyNonce(
@@ -257,3 +264,4 @@ func GetPubKeyNonce(
 
 	return <-block.NonceChan
 }
+*/

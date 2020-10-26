@@ -30,7 +30,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/crypto/ed25519"
 
-	"github.com/siegfried415/gdf-rebuild/crypto/secp256k1"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/secp256k1"
 )
 
 var (

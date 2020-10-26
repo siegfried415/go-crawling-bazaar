@@ -24,7 +24,7 @@ import (
 
 	ec "github.com/btcsuite/btcd/btcec"
 
-	"github.com/siegfried415/gdf-rebuild/crypto/asymmetric"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
 )
 
 var errInvalidPadding = errors.New("invalid PKCS#7 padding")

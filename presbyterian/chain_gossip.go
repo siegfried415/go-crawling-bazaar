@@ -19,59 +19,41 @@ package presbyterian
 import (
 	"context"
 	"sync"
-	//"sync/atomic"
+	"sync/atomic"
 
-	//wyong, 20201015 
-	//"io/ioutil" 
-
-	pi "github.com/siegfried415/gdf-rebuild/presbyterian/interfaces"
-	"github.com/siegfried415/gdf-rebuild/proto"
-	//"github.com/siegfried415/gdf-rebuild/route"
-	"github.com/siegfried415/gdf-rebuild/types"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
-
-	//wyong, 20201015
-	//"github.com/libp2p/go-libp2p-core/host"
-	net "github.com/siegfried415/gdf-rebuild/net" 
-
-	//wyong, 20201018
-	"github.com/libp2p/go-libp2p-core/peer" 
-	//network "github.com/libp2p/go-libp2p-core/network" 
+	pi "github.com/siegfried415/go-crawling-bazaar/presbyterian/interfaces"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
 	"github.com/libp2p/go-libp2p-core/protocol" 
+	"github.com/siegfried415/go-crawling-bazaar/types"
 
 )
 
-func (c *Chain) nonblockingBroadcastBlock(block *types.BPBlock) {
-	for _, info := range c.getRemoteBPInfos() {
-		func(remote *blockProducerInfo) {
+func (c *Chain) nonblockingBroadcastBlock(block *types.PBBlock) {
+	for _, info := range c.getRemotePBInfos() {
+		func(remote *PresbyterianInfo) {
 			c.goFuncWithTimeout(func(ctx context.Context) {
 				var (
-					req = &types.AdviseNewBlockReq{
+					req = types.AdviseNewBlockReq{
 						Envelope: proto.Envelope{
 							// TODO(lambda): Add fields.
 						},
 						Block: block,
 					}
-
-					//wyong, 20201015	
-					//err = c.caller.CallNodeWithContext(
-					//	ctx, remote.nodeID, route.MCCAdviseNewBlock.String(), req, nil)
-
 				)
 
-				//wyong, 20201018
-				s, err := c.host.NewStream(ctx, peer.ID(remote.nodeID), protocol.ID("ProtocolMCCAdviseNewBlock"))
+				s, err := c.host.NewStreamExt(ctx, remote.nodeID, protocol.ID("MCC.AdviseNewBlock"))
 				if err != nil {
 					log.WithError(err).Error("error opening block advise stream")
 					return
 				}
 
-				if _, err := net.SendMsg(ctx, s, &req ) ; err != nil {
+				if _, err := s.SendMsg(ctx, &req ) ; err != nil {
 					log.WithError(err).Error("failed to advise new block")
 				}
 				
 				log.WithFields(log.Fields{
-					"local":       c.getLocalBPInfo(),
+					"local":       c.getLocalPBInfo(),
 					"remote":      remote,
 					"block_time":  block.Timestamp(),
 					"block_hash":  block.BlockHash().Short(4),
@@ -83,36 +65,30 @@ func (c *Chain) nonblockingBroadcastBlock(block *types.BPBlock) {
 }
 
 func (c *Chain) nonblockingBroadcastTx(ttl uint32, tx pi.Transaction) {
-	for _, info := range c.getRemoteBPInfos() {
-		func(remote *blockProducerInfo) {
+	for _, info := range c.getRemotePBInfos() {
+		func(remote *PresbyterianInfo) {
 			c.goFuncWithTimeout(func(ctx context.Context) {
 				var (
-					req = &types.AddTxReq{
+					req = types.AddTxReq{
 						Envelope: proto.Envelope{
 							// TODO(lambda): Add fields.
 						},
 						TTL: ttl,
 						Tx:  tx,
 					}
-					//wyong, 20201015 
-					//err = c.caller.CallNodeWithContext(
-					//	ctx, remote.nodeID, route.MCCAddTx.String(), req, nil)
-
 				)
-				//wyong, 20201015 
-				s, err := c.host.NewStream(ctx, peer.ID(remote.nodeID), protocol.ID("ProtocolMCCAddTx"))
+				s, err := c.host.NewStreamExt(ctx, remote.nodeID, protocol.ID("MCC.AddTx"))
 				if err != nil {
 					log.WithError(err).Error("error opening addtx stream")
 					return
 				}
 
-				//wyong, 20201014
-				if _, err := net.SendMsg(ctx, s, &req ) ; err != nil {
+				if _, err := s.SendMsg(ctx, &req ) ; err != nil {
 					log.WithError(err).Error("failed to advise new block")
 				}
 
 				log.WithFields(log.Fields{
-					"local":   c.getLocalBPInfo(),
+					"local":   c.getLocalPBInfo(),
 					"remote":  remote,
 					"hash":    tx.Hash().Short(4),
 					"address": tx.GetAccountAddress(),
@@ -132,54 +108,45 @@ func (c *Chain) blockingFetchBlock(ctx context.Context, h uint32) (unreachable u
 		wg.Wait()
 		ccl()
 	}()
-	for _, info := range c.getRemoteBPInfos() {
+	for _, info := range c.getRemotePBInfos() {
 		wg.Add(1)
-		go func(remote *blockProducerInfo) {
+		go func(remote *PresbyterianInfo) {
 			defer wg.Done()
 			var (
 				err error
-				req = &types.FetchBlockReq{
+				req = types.FetchBlockReq{
 					Envelope: proto.Envelope{
 						// TODO(lambda): Add fields.
 					},
 					Height: h,
 				}
-				resp = &types.FetchBlockResp{}
+				resp = types.FetchBlockResp{}
 			)
 			var le = log.WithFields(log.Fields{
-				"local":  c.getLocalBPInfo(),
+				"local":  c.getLocalPBInfo(),
 				"remote": remote,
 				"height": h,
 			})
 
-			//wyong, 20201015 
-			//if err = c.caller.CallNodeWithContext(
-			//	cld, remote.nodeID, route.MCCFetchBlock.String(), req, resp,
-			//); err != nil {
-			//	le.WithError(err).Warn("failed to fetch block")
-			//	atomic.AddUint32(&unreachable, 1)
-			//	return
-			//}
-
-			//wyong, 20201015 
-			s, err := c.host.NewStream(ctx, peer.ID(remote.nodeID), protocol.ID("ProtocolMCCFetchBlock"))
+			s, err := c.host.NewStreamExt(cld, remote.nodeID, protocol.ID("MCC.FetchBlock"))
 			if err != nil {
 				le.WithError(err).Error("error opening block-fetching stream")
+				atomic.AddUint32(&unreachable, 1)
 				return
 			}
 
-			if _, err := net.SendMsg(ctx, s, &req ) ; err != nil {
+			if _, err := s.SendMsg(cld, &req ) ; err != nil {
 				le.WithError(err).Error("failed to fetch block")
+				atomic.AddUint32(&unreachable, 1)
+				return
 			}
 
-			//wyong, 20201018
-			//resp, err = ioutil.ReadAll(s)
-			err = net.RecvMsg(ctx, s, resp) 
+			err = s.RecvMsg(cld, &resp) 
                         if err != nil {
                                 le.WithError(err).Error("failed to get response")
+				atomic.AddUint32(&unreachable, 1)
                                 return
                         }
-			//end 
 
 			if resp.Block == nil {
 				le.Debug("fetch block request reply: no such block")

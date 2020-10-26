@@ -23,28 +23,20 @@ import (
 	"sync/atomic"
 	"time"
 
-	//wyong, 20201008
-	host "github.com/libp2p/go-libp2p-core/host"
 
-	"github.com/siegfried415/gdf-rebuild/presbyterian/interfaces"
-	"github.com/siegfried415/gdf-rebuild/chainbus"
-	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/route"
-
-	//wyong, 20201008 
-	//rpc "github.com/siegfried415/gdf-rebuild/rpc/mux"
-	net "github.com/siegfried415/gdf-rebuild/net"
-
-	"github.com/siegfried415/gdf-rebuild/types"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/presbyterian/interfaces"
+	"github.com/siegfried415/go-crawling-bazaar/frontera/chainbus"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
+	net "github.com/siegfried415/go-crawling-bazaar/net"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/types"
 )
 
 // BusService defines the man chain bus service type.
 type BusService struct {
 	chainbus.Bus
 
-	host host.Host 	
-	//caller *rpc.Caller
+	host net.RoutedHost 	
 
 	wg     sync.WaitGroup
 	ctx    context.Context
@@ -61,17 +53,13 @@ type BusService struct {
 
 // NewBusService creates a new chain bus instance.
 func NewBusService(
-	ctx context.Context, host host.Host, addr proto.AccountAddress, checkInterval time.Duration) (_ *BusService,
+	ctx context.Context, host net.RoutedHost, addr proto.AccountAddress, checkInterval time.Duration) (_ *BusService,
 ) {
 	ctd, ccl := context.WithCancel(ctx)
 	bs := &BusService{
 		Bus:           chainbus.New(),
 		wg:            sync.WaitGroup{},
-
-		//wyong, 20201008 
-		//caller:        rpc.NewCaller(),
 		host:		host, 
-
 		ctx:           ctd,
 		cancel:        ccl,
 		checkInterval: checkInterval,
@@ -126,7 +114,7 @@ func (bs *BusService) subscribeBlock(ctx context.Context) {
 			log.Info("exit subscription service")
 			return
 		case <-time.After(bs.checkInterval):
-			// fetch block from remote block producer
+			// fetch block from remote presbyterian  
 			c := atomic.LoadUint32(&bs.blockCount)
 			log.Debugf("fetch block in count: %d", c)
 			b, profiles, newCount := bs.requestLastBlock()
@@ -150,7 +138,7 @@ func (bs *BusService) subscribeBlock(ctx context.Context) {
 			// Fetch any intermediate irreversible blocks and extract txs
 			for i := c + 1; i < newCount; i++ {
 				var (
-					block *types.BPBlock
+					block *types.PBBlock
 					err   error
 				)
 				if block, err = bs.fetchBlockByCount(i); err != nil {
@@ -168,14 +156,14 @@ func (bs *BusService) subscribeBlock(ctx context.Context) {
 	}
 }
 
-func (bs *BusService) fetchBlockByCount(count uint32) (block *types.BPBlock, err error) {
+func (bs *BusService) fetchBlockByCount(count uint32) (block *types.PBBlock, err error) {
 	var (
-		req = &types.FetchBlockByCountReq{
+		req = types.FetchBlockByCountReq{
 			Count: count,
 		}
-		resp = &types.FetchBlockResp{}
+		resp = types.FetchBlockResp{}
 	)
-	if err = net.RequestPB(bs.host, route.MCCFetchBlockByCount.String(), req, resp); err != nil {
+	if err = bs.host.RequestPB("MCC.FetchBlockByCount", &req, &resp); err != nil {
 		return
 	}
 	block = resp.Block
@@ -183,14 +171,13 @@ func (bs *BusService) fetchBlockByCount(count uint32) (block *types.BPBlock, err
 }
 
 func (bs *BusService) requestLastBlock() (
-	block *types.BPBlock, profiles []*types.SQLChainProfile, count uint32,
+	block *types.PBBlock, profiles []*types.SQLChainProfile, count uint32,
 ) {
-	req := &types.FetchLastIrreversibleBlockReq{
+	req := types.FetchLastIrreversibleBlockReq{
 		Address: bs.localAddress,
 	}
-	resp := &types.FetchLastIrreversibleBlockResp{}
-
-	if err := net.RequestPB(bs.host, route.MCCFetchLastIrreversibleBlock.String(), req, resp); err != nil {
+	resp := types.FetchLastIrreversibleBlockResp{}
+	if err := bs.host.RequestPB("MCC.FetchLastIrreversibleBlock", &req, &resp); err != nil {
 		log.WithError(err).Warning("fetch last block failed")
 		return
 	}
@@ -198,6 +185,13 @@ func (bs *BusService) requestLastBlock() (
 	block = resp.Block
 	profiles = resp.SQLChains
 	count = resp.Count
+	
+	for _ , prof := range profiles {  
+		log.WithFields(log.Fields{
+			"profile_domain_id":  prof.ID,
+		}).Debugf("BusService/requestLastBlock")
+	}
+
 	return
 }
 
@@ -222,18 +216,8 @@ func (bs *BusService) RequestPermStat(
 	return
 }
 
-//wyong, 20201008
-//func (bs *BusService) requestBP(method string, request interface{}, response interface{}) (err error) {
-//	var bpNodeID proto.NodeID
-//	if bpNodeID, err = rpc.GetCurrentBP(); err != nil {
-//		return
-//	}
-//
-//	//todo, wyong, 20200929 
-//	return bs.caller.CallNode(bpNodeID, method, request, response)
-//}
 
-func (bs *BusService) extractTxs(blocks *types.BPBlock, count uint32) {
+func (bs *BusService) extractTxs(blocks *types.PBBlock, count uint32) {
 	for _, tx := range blocks.Transactions {
 		t := bs.unwrapTx(tx)
 		eventName := fmt.Sprintf("/%s/", t.GetTransactionType().String())

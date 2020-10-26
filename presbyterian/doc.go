@@ -14,5 +14,5 @@
  * limitations under the License.
  */
 
-// Package blockproducer implements blockproducer node block genreation and database management logics.
+// Package presbyterian implements presbyterian node block genreation and database management logics.
 package presbyterian

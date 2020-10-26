@@ -20,19 +20,10 @@ import (
 	"sync"
 	"context" 
 
-	//wyong, 20201020
 	"github.com/libp2p/go-libp2p-core/protocol" 
-	"github.com/libp2p/go-libp2p-core/network" 
-	"github.com/libp2p/go-libp2p-core/host" 
 
-	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/net"
-
-	//wyong, 20201008
-	//rpc "github.com/siegfried415/gdf-rebuild/rpc/mux"
-
-        //wyong, 20200928
-        //"github.com/ugorji/go/codec"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/net"
 
 )
 
@@ -43,15 +34,13 @@ type MuxService struct {
 }
 
 // NewMuxService creates a new multiplexing service and registers it to rpc server.
-func NewMuxService(serviceName string, /* server *rpc.Server */ h host.Host ) (service *MuxService, err error) {
+func NewMuxService(serviceName string, h net.RoutedHost ) (service *MuxService, err error) {
 	service = &MuxService{
 		ServiceName: serviceName,
 	}
 
-	//wyong, 20200925 
-	//err = server.RegisterService(serviceName, service)
-        h.SetStreamHandler(protocol.ID("ProtocolUrlChainAdviseNewBlock"), service.AdviseNewBlockHandler)
-        h.SetStreamHandler(protocol.ID("ProtocolUrlChainFetchBlock"), service.FetchBlockHandler)
+        h.SetStreamHandlerExt(protocol.ID("URLC.AdviseNewBlock"), service.AdviseNewBlockHandler)
+        h.SetStreamHandlerExt(protocol.ID("URLC.FetchBlock"), service.FetchBlockHandler)
 
 	return
 }
@@ -92,19 +81,12 @@ type MuxFetchBlockResp struct {
 	FetchBlockResp
 }
 
-//wyong, 20201020
 // AdviseNewBlock is the RPC method to advise a new produced block to the target server.
-//func (ms *MuxService) AdviseNewBlockHandler(req *MuxAdviseNewBlockReq, resp *MuxAdviseNewBlockResp) error {
-func (ms *MuxService) AdviseNewBlockHandler(s network.Stream ) {
-        //decode req with Messagepack, wyong, 20200928
-        //var decReq MuxAdviseNewBlockReq 
-        //dec := codec.NewDecoderBytes(req, new(codec.MsgpackHandle))
-        //if err := dec.Decode(&decReq); err != nil {
-        //        return err
-        //}
+func (ms *MuxService) AdviseNewBlockHandler(s net.Stream ) {
         ctx := context.Background()
         var req MuxAdviseNewBlockReq 
-        err := net.RecvMsg(ctx, s, &req)
+
+        err := s.RecvMsg(ctx, &req)
         if err != nil {
                 return
         }
@@ -121,39 +103,31 @@ func (ms *MuxService) AdviseNewBlockHandler(s network.Stream ) {
         }
 
 	v.(*ChainRPCService).AdviseNewBlock(&req.AdviseNewBlockReq, &resp.AdviseNewBlockResp)
-        //_, err = net.SendMsg(ctx, s, &resp)
+        _, err = s.SendMsg(ctx, &resp)
 
 }
 
-//wyong, 20201020
 // FetchBlock is the RPC method to fetch a known block from the target server.
-//func (s *MuxService) FetchBlockHandler(req *MuxFetchBlockReq, resp *MuxFetchBlockResp) (err error) {
-func (ms *MuxService) FetchBlockHandler(s network.Stream) {
-        //decode req with Messagepack, wyong, 20200928
-        //var decReq MuxFetchBlockReq 
-        //dec := codec.NewDecoderBytes(req, new(codec.MsgpackHandle))
-        //if err := dec.Decode(&decReq); err != nil {
-        //        return err
-        //}
-
+func (ms *MuxService) FetchBlockHandler(s net.Stream) {
         ctx := context.Background()
         var req MuxFetchBlockReq 
-        err := net.RecvMsg(ctx, s, &req)
+
+        err := s.RecvMsg(ctx, &req)
         if err != nil {
                 return
         }
-
-	v, ok := ms.serviceMap.Load(req.DomainID)
-	if ! ok {
-		//return ErrUnknownMuxRequest
-		return 
-	}
 
 	var resp = MuxFetchBlockResp { 
 		Envelope : req.Envelope,
 		DomainID : req.DomainID,
 	}
 
-	v.(*ChainRPCService).FetchBlock(&req.FetchBlockReq, &resp.FetchBlockResp)
+	v, ok := ms.serviceMap.Load(req.DomainID)
+	if ! ok {
+        	_, err = s.SendMsg(ctx, &resp)
+		return 
+	}
 
+	v.(*ChainRPCService).FetchBlock(&req.FetchBlockReq, &resp.FetchBlockResp)
+        _, err = s.SendMsg(ctx, &resp)
 }

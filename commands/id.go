@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2018 Filecoin Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
+ * you may not use this file except in compliance with the License. 
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software 
+ * distributed under the License is distributed on an "AS IS" BASIS, 
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
+
 package commands
 
 import (
@@ -12,7 +28,8 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	ma "github.com/multiformats/go-multiaddr"
 
-	env "github.com/siegfried415/gdf-rebuild/env" 
+	env "github.com/siegfried415/go-crawling-bazaar/env" 
+	//net "github.com/siegfried415/go-crawling-bazaar/net"  
 )
 
 // IDDetails is a collection of information about a node.
@@ -36,8 +53,9 @@ var idCmd = &cmds.Command{
 		//addrs := GetPorcelainAPI(env).NetworkGetPeerAddresses()
 		//hostID := GetPorcelainAPI(env).NetworkGetPeerID()
                 e := cmdenv.(*env.Env)
-                addrs := e.Network().GetPeerAddresses()
-                hostID := e.Network().GetPeerID()
+		host := e.Host()
+                addrs := host.Addrs()
+                hostID := host.ID()
 
 
 		details := IDDetails{

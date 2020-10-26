@@ -21,8 +21,8 @@ import (
 	"flag"
 	"fmt"
 
-	_ "github.com/siegfried415/gdf-rebuild/client"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	_ "github.com/siegfried415/go-crawling-bazaar/client"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 func main() {
@@ -76,6 +76,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("SELECT nonIndexedColumn FROM testSimple LIMIT 1; result %d\n", result)
+	log.Debugf("SELECT nonIndexedColumn FROM testSimple LIMIT 1; result %d\n", result)
 
 }

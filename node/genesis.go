@@ -1,34 +1,37 @@
+/*
+ * Copyright 2018 The CovenantSQL Authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 
 package node 
 
 import (
-        //"fmt"
-        //"syscall"
-        //"time"
-
-        //"github.com/pkg/errors"
-        //"golang.org/x/crypto/ssh/terminal"
-
-        //"github.com/siegfried415/gdf/api"
-        //pb "github.com/siegfried415/gdf/presbyterian"
-        "github.com/siegfried415/gdf-rebuild/conf"
-        //"github.com/siegfried415/gdf/crypto/kms"
-        "github.com/siegfried415/gdf-rebuild/proto"
-        //"github.com/siegfried415/gdf/route"
-        //rpc "github.com/siegfried415/gdf/rpc/mux"
-        "github.com/siegfried415/gdf-rebuild/types"
-        //"github.com/siegfried415/gdf/utils"
-        //"github.com/siegfried415/gdf/utils/log"
+        "github.com/siegfried415/go-crawling-bazaar/conf"
+        log "github.com/siegfried415/go-crawling-bazaar/utils/log"
+        "github.com/siegfried415/go-crawling-bazaar/proto"
+        "github.com/siegfried415/go-crawling-bazaar/types"
 )
 
 
-func loadGenesis() (genesis *types.BPBlock, err error) {
-        genesisInfo := conf.GConf.BP.BPGenesis
-        //log.WithField("config", genesisInfo).Info("load genesis config")
+func loadGenesis() (genesis *types.PBBlock, err error) {
+        genesisInfo := conf.GConf.PB.PBGenesis
+        log.WithField("config", genesisInfo).Info("load genesis config")
 
-        genesis = &types.BPBlock{
-                SignedHeader: types.BPSignedHeader{
-                        BPHeader: types.BPHeader{
+        genesis = &types.PBBlock{
+                SignedHeader: types.PBSignedHeader{
+                        PBHeader: types.PBHeader{
                                 Version:   genesisInfo.Version,
                                 Timestamp: genesisInfo.Timestamp,
                         },
@@ -36,11 +39,12 @@ func loadGenesis() (genesis *types.BPBlock, err error) {
         }
 
         for _, ba := range genesisInfo.BaseAccounts {
-                //log.WithFields(log.Fields{
-                //        "address":             ba.Address.String(),
-                //        "stableCoinBalance":   ba.StableCoinBalance,
-                //        "covenantCoinBalance": ba.CovenantCoinBalance,
-                //}).Debug("setting one balance fixture in genesis block")
+                log.WithFields(log.Fields{
+                        "address":             ba.Address.String(),
+                        "stableCoinBalance":   ba.StableCoinBalance,
+                        "covenantCoinBalance": ba.CovenantCoinBalance,
+                }).Debug("setting one balance fixture in genesis block")
+
                 genesis.Transactions = append(genesis.Transactions, types.NewBaseAccount(
                         &types.Account{
                                 Address:      proto.AccountAddress(ba.Address),

@@ -23,11 +23,11 @@ import (
 	"os"
 
 	"github.com/btcsuite/btcutil/base58"
-	"github.com/siegfried415/gdf-rebuild/conf"
-	"github.com/siegfried415/gdf-rebuild/crypto/asymmetric"
-	"github.com/siegfried415/gdf-rebuild/crypto/hash"
-        "github.com/siegfried415/gdf-rebuild/crypto/symmetric"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/conf"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
+        "github.com/siegfried415/go-crawling-bazaar/crypto/symmetric"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 var (

@@ -24,8 +24,8 @@ import (
 	"io"
 	"sync"
 
-	"github.com/siegfried415/gdf-rebuild/twopc"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/twopc"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 
 	// Register CovenantSQL/go-sqlite3-encrypt engine.
 	_ "github.com/CovenantSQL/go-sqlite3-encrypt"

@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 The CovenantSQL Authors.
+ * Copyright 2022 https://github.com/siegfried415
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +22,15 @@ import (
 	"io"
 	"path/filepath"
 	"runtime"
+        "strconv"
 	"strings"
+
 	"time"
 	//"os" 
 
 	"github.com/sirupsen/logrus"
+        //"github.com/siegfried415/go-crawling-bazaar/utils/callinfo"
+
 )
 
 const (
@@ -53,7 +58,9 @@ var (
 	PkgDebugLogFilter = map[string]logrus.Level{
 		"metric": InfoLevel,
 		"rpc":    InfoLevel,
+		"main":   WarnLevel, 
 	}
+
 	// SimpleLog is the flag of simple log format
 	// "Y" for true, "N" for false. defined in `go build`
 	SimpleLog = "N"
@@ -65,29 +72,25 @@ type Logger logrus.Logger
 // Fields defines the field map to pass to `WithFields`.
 type Fields logrus.Fields
 
-// CallerHook defines caller awareness hook for logrus.
-type CallerHook struct {
+// CallInfoHook defines caller awareness hook for logrus.
+type CallInfoHook struct {
 	StackLevels []logrus.Level
 }
 
 func init() {
-	AddHook(StandardCallerHook())
-
+	AddHook(StandardCallInfoHook())
+	SetFormatter(&ColoredTextFormatter{})
+	//SetLevel(DebugLevel)
 }
 
-//var (
-//	// std is the name of the standard logger in stdlib `log`
-//	std = logrus.New()
-//)
+var (
+	// std is the name of the standard logger in stdlib `log`
+	// std = logrus.New()
+)
 
 // StandardLogger returns the standard logger.
 func StandardLogger() *Logger {
-	//wyong, 20200715 
 	return (*Logger)(logrus.StandardLogger())
-	//l := logrus.StandardLogger()
-	//l.SetLevel(logrus.InfoLevel)
-	//l.SetOutput(os.Stdout) 
-	//return (*Logger)(l)
 }
 
 // Printf logs a message at level Info on the standard logger.
@@ -95,55 +98,73 @@ func (l *Logger) Printf(format string, args ...interface{}) {
 	Printf(format, args...)
 }
 
-// NewCallerHook creates new CallerHook.
-func NewCallerHook(stackLevels []logrus.Level) *CallerHook {
-	return &CallerHook{
+// NewCallInfoHook creates new CallInfoHook.
+func NewCallInfoHook(stackLevels []logrus.Level) *CallInfoHook {
+	return &CallInfoHook{
 		StackLevels: stackLevels,
 	}
 }
 
-// StandardCallerHook is a convenience initializer for LogrusStackHook{} with
+// StandardCallInfoHook is a convenience initializer for LogrusStackHook{} with
 // default args.
-func StandardCallerHook() *CallerHook {
+func StandardCallInfoHook() *CallInfoHook {
 	// defined in `go build`
 	if SimpleLog == "Y" {
-		return NewCallerHook([]logrus.Level{})
+		return NewCallInfoHook([]logrus.Level{})
 	}
 
-	return NewCallerHook(
+	return NewCallInfoHook(
 		[]logrus.Level{
 			logrus.PanicLevel, 
 			logrus.FatalLevel, 
 			logrus.ErrorLevel,
 
 			//for debug purpose turn hook on warn,info and debug too, 
-			//wyong, 20200612 
 			logrus.WarnLevel,
 			logrus.InfoLevel,
 			logrus.DebugLevel,
 		},
 	)
+	//return NewCallInfoHook( logrus.AllLevels ) 
+}
+
+func (hook *CallInfoHook) ShouldNotOutputEntryByPkg(entry *logrus.Entry, pkg string) bool {
+        level, ok := PkgDebugLogFilter[pkg ]
+        if ok && entry.Level > level {
+                return true
+        }
+        return false
 }
 
 // Fire defines hook event handler.
-func (hook *CallerHook) Fire(entry *logrus.Entry) error {
-	funcDesc, caller := hook.caller(entry)
+func (hook *CallInfoHook) Fire(entry *logrus.Entry) error {
+	
+	funcDesc, _ := hook.caller(entry)
 	fields := strings.SplitN(funcDesc, ".", 2)
 	if len(fields) > 0 {
-		level, ok := PkgDebugLogFilter[fields[0]]
-		if ok && entry.Level > level {
+		//level, ok := PkgDebugLogFilter[fields[0]]
+		//if ok && entry.Level > level {
+                if hook.ShouldNotOutputEntryByPkg(entry, fields[0]) {
 			nilLogger := logrus.New()
 			nilLogger.Formatter = &NilFormatter{}
 			entry.Logger = nilLogger
 			return nil
 		}
 	}
-	entry.Data["caller"] = caller
+
+	//entry.Data["caller"] = caller
+	//hook.caller(entry)
+
+	//var cMsg string 
+	////cMsg = fmt.Sprintf(" \x1b[%dm%s\x1b[0m=", 36, entry.Message)
+	//fmt.Sprintf(cMsg, "\033[1;34m %s \033[0m", entry.Message) 
+	//entry.Message = cMsg 
+
 	return nil
 }
 
 // Levels define hook applicable level.
-func (hook *CallerHook) Levels() []logrus.Level {
+func (hook *CallInfoHook) Levels() []logrus.Level {
 	// defined in `go build`
 	if SimpleLog == "Y" {
 		return []logrus.Level{}
@@ -154,15 +175,42 @@ func (hook *CallerHook) Levels() []logrus.Level {
 		logrus.ErrorLevel,
 
 		//for debug purpose turn hook on warn,info and debug too, 
-		//wyong, 20200612 
 		logrus.WarnLevel,
 		logrus.InfoLevel,
 		logrus.DebugLevel,
 	}
+	//return logrus.AllLevels
 }
 
-func (hook *CallerHook) caller(entry *logrus.Entry) (relFuncName, caller string) {
+func Goid() int {
+        defer func()  {
+                if err := recover(); err != nil {
+                        fmt.Println("panic recover:panic info:%v", err)     }
+        }()
+
+        var buf [64]byte
+        n := runtime.Stack(buf[:], false)
+        idField := strings.Fields(strings.TrimPrefix(string(buf[:n]), "goroutine "))[0]
+        id, err := strconv.Atoi(idField)
+        if err != nil {
+                panic(fmt.Sprintf("cannot get goroutine id: %v", err))
+        }
+
+        return id
+}
+
+func (hook *CallInfoHook) ShouldOutputStack(level logrus.Level) bool {
+        for _, l := range hook.StackLevels {
+                if l == level {
+                        return true
+                }
+        }
+        return false
+}
+
+func (hook *CallInfoHook) caller(entry *logrus.Entry) (relFuncName, caller string) {
 	var skipFrames int
+
 	if len(entry.Data) == 0 {
 		// When WithField(s) is not used, we have 8 logrus frames to skip.
 		skipFrames = 8
@@ -175,41 +223,48 @@ func (hook *CallerHook) caller(entry *logrus.Entry) (relFuncName, caller string)
 	stacks := make([]runtime.Frame, 0, 12)
 	if runtime.Callers(skipFrames, pcs) > 0 {
 		var foundCaller bool
+        	var prefix string
+
 		_frames := runtime.CallersFrames(pcs)
 		for {
 			f, more := _frames.Next()
-			//fmt.Printf("%s:%d %s\n", f.File, f.Line, f.Function)
+			//log.Debugf("%s:%d %s\n", f.File, f.Line, f.Function)
 			if !foundCaller && strings.HasSuffix(f.File, "logwrapper.go") && more {
 				f, _ = _frames.Next()
-				relFuncName = strings.TrimPrefix(f.Function, "github.com/siegfried415/gdf-rebuild/")
+				relFuncName = strings.TrimPrefix(f.Function, "github.com/siegfried415/go-crawling-bazaar/")
 				caller = fmt.Sprintf("%s:%d %s", filepath.Base(f.File), f.Line, relFuncName)
 				foundCaller = true
 			}
 			if foundCaller {
 				stacks = append(stacks, f)
+				prefix += " "
 			}
 			if !more {
+				entry.Data["_prefix"] = prefix  
 				break
 			}
 		}
 	}
 
-	if len(stacks) > 0 {
-		for _, level := range hook.StackLevels {
-			if entry.Level == level {
-				stacksStr := make([]string, 0, len(stacks))
-				for i, s := range stacks {
-					if s.Line > 0 {
-						fName := strings.TrimPrefix(s.Function, "github.com/siegfried415/gdf-rebuild/")
-						stackStr := fmt.Sprintf("#%d %s@%s:%d     ", i, fName, filepath.Base(s.File), s.Line)
-						stacksStr = append(stacksStr, stackStr)
-					}
-				}
-				entry.Data["stack"] = stacksStr
-				break
-			}
-		}
-	}
+        if len(stacks) > 0 {
+                if _, ok := entry.Data["stack"]; ok {
+                        if hook.ShouldOutputStack(entry.Level) {
+                                stacksStr := make([]string, 0, len(stacks))
+                                for i, s := range stacks {
+                                        if s.Line > 0 {
+                                                fName := strings.TrimPrefix(s.Function, "github.com/siegfried415/go-crawling-bazaar/")
+                                                stackStr := fmt.Sprintf("#%d %s@%s:%d     ", i, fName, filepath.Base(s.File), s.Line)
+                                                stacksStr = append(stacksStr, stackStr)
+                                        }
+                                }
+
+                                entry.Data["stack"] = stacksStr
+                        }
+                }
+        }
+
+	//set goid 
+	entry.Data["_gid"] = Goid() 
 
 	return relFuncName, caller
 }
@@ -253,6 +308,7 @@ func AddHook(hook logrus.Hook) {
 	logrus.AddHook(hook)
 }
 
+
 // WithError creates an entry from the standard logger and adds an error to it, using the value defined in ErrorKey as key.
 func WithError(err error) *Entry {
 	return WithField(logrus.ErrorKey, err)
@@ -275,6 +331,13 @@ func WithField(key string, value interface{}) *Entry {
 // or Panic on the Entry it returns.
 func WithFields(fields Fields) *Entry {
 	return (*Entry)(logrus.WithFields(logrus.Fields(fields)))
+}
+
+//WithStack add stack frames info to log entry. 
+func WithStack() *Entry {
+        return (*Entry)(logrus.WithFields(logrus.Fields{
+                "stack": "",
+        }))
 }
 
 // WithTime add time fields to log entry.

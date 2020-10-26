@@ -17,16 +17,16 @@
 package types
 
 import (
-	"github.com/siegfried415/gdf-rebuild/presbyterian/interfaces"
-	pi "github.com/siegfried415/gdf-rebuild/presbyterian/interfaces"
-	"github.com/siegfried415/gdf-rebuild/crypto/hash"
-	"github.com/siegfried415/gdf-rebuild/proto"
+	"github.com/siegfried415/go-crawling-bazaar/presbyterian/interfaces"
+	pi "github.com/siegfried415/go-crawling-bazaar/presbyterian/interfaces"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
 )
 
 // AdviseNewBlockReq defines a request of the AdviseNewBlock RPC method.
 type AdviseNewBlockReq struct {
 	proto.Envelope
-	Block *BPBlock
+	Block *PBBlock
 }
 
 // AdviseNewBlockResp defines a response of the AdviseNewBlock RPC method.
@@ -45,7 +45,7 @@ type FetchBlockResp struct {
 	proto.Envelope
 	Height uint32
 	Count  uint32
-	Block  *BPBlock
+	Block  *PBBlock
 }
 
 // FetchLastIrreversibleBlockReq defines a request of the FetchLastIrreversibleBlock RPC method.
@@ -59,7 +59,7 @@ type FetchLastIrreversibleBlockResp struct {
 	proto.Envelope
 	Count     uint32
 	Height    uint32
-	Block     *BPBlock
+	Block     *PBBlock
 	SQLChains []*SQLChainProfile
 }
 
@@ -96,7 +96,7 @@ type NextAccountNonceResp struct {
 type AddTxReq struct {
 	proto.Envelope
 
-	TTL uint32 // defines the broadcast TTL on BP network.
+	TTL uint32 // defines the broadcast TTL on Presbyterian network.
 	Tx  interfaces.Transaction
 }
 
@@ -149,6 +149,26 @@ type QueryAccountTokenBalanceResp struct {
 	OK      bool
 	Balance uint64
 }
+
+
+// QueryAccountTokenBalanceReq defines a request of the QueryAccountTokenBalance RPC method.
+type QueryDomainAccountTokenBalanceAndTotalReq struct {
+	proto.Envelope
+	DomainID proto.DomainID
+	Addr      proto.AccountAddress
+	TokenType TokenType
+}
+
+// QueryAccountTokenBalanceResp defines a request of the QueryAccountTokenBalance RPC method.
+type QueryDomainAccountTokenBalanceAndTotalResp struct {
+	proto.Envelope
+	DomainID proto.DomainID
+	Addr    proto.AccountAddress
+	OK      bool
+	Balance uint64
+	TotalBalance uint64 
+}
+
 
 // QuerySQLChainProfileReq defines a request of the QuerySQLChainProfile RPC method.
 type QuerySQLChainProfileReq struct {

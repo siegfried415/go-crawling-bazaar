@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 https://github.com/siegfried415
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package env
 
 import (
@@ -5,44 +21,32 @@ import (
 
 	"github.com/ipfs/go-ipfs-cmds"
 
-	host "github.com/libp2p/go-libp2p-core/host"
-
-	//wyong, 20200731 
-	"github.com/siegfried415/gdf-rebuild/frontera" 
-	
-	//wyong, 20200914
-	dag "github.com/siegfried415/gdf-rebuild/dag" 
-	net "github.com/siegfried415/gdf-rebuild/net" 
+	dag "github.com/siegfried415/go-crawling-bazaar/dag" 
+	"github.com/siegfried415/go-crawling-bazaar/frontera" 
+	net "github.com/siegfried415/go-crawling-bazaar/net" 
+	"github.com/siegfried415/go-crawling-bazaar/proto" 
 )
 
 // Env is the environment for command API handlers.
 type Env struct {
 	ctx            context.Context
-
-	//wyong, 20201022 
-	host	host.Host
-
-	//wyong, 20200723 
+        role proto.ServerRole
+	host	net.RoutedHost
 	frontera *frontera.Frontera 
-
-	//wyong, 20200908 
 	dag *dag.DAG 
-
-	//wyong, 20200912 
-	network *net.Network 
 }
 
 var _ cmds.Environment = (*Env)(nil)
 
 // NewClientEnv returns a new environment for command API clients.
 // This environment lacks direct access to any internal APIs.
-func NewClientEnv(ctx context.Context, host host.Host,  frontera *frontera.Frontera, dag *dag.DAG, network *net.Network ) *Env {
+func NewClientEnv(ctx context.Context, role proto.ServerRole, host net.RoutedHost,  frontera *frontera.Frontera, dag *dag.DAG ) *Env {
 	return &Env{
 		ctx	: ctx,
-		host 	: host, //wyong, 20201022 
+		role	: role, 
+		host 	: host, 
 		frontera : frontera ,
 		dag 	: dag , 
-		network : network , 
 	}
 }
 
@@ -51,25 +55,18 @@ func (ce *Env) Context() context.Context {
 	return ce.ctx
 }
 
-//wyong, 20201022 
-func (ce *Env) Host() host.Host {
+func (ce *Env) Role() proto.ServerRole {
+	return ce.role 
+}
+
+func (ce *Env) Host() net.RoutedHost {
 	return ce.host 
 }
 
-//wyong, 20200723 
 func (ce *Env) Frontera() *frontera.Frontera {
-	//ce := env.(*Env)
 	return ce.frontera 
 }
 
-//wyong, 20200908 
 func (ce *Env) DAG() *dag.DAG {
-	//ce := env.(*Env)
 	return ce.dag 
-}
-
-//wyong, 20200912
-func (ce *Env) Network() *net.Network {
-	//ce := env.(*Env)
-	return ce.network
 }

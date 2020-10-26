@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 https://github.com/siegfried415
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package commands
 
 import (
@@ -8,27 +24,31 @@ import (
 	"os"
 	"syscall"
 
+	"github.com/pkg/errors"
+
 	"github.com/ipfs/go-ipfs-cmdkit"
 	"github.com/ipfs/go-ipfs-cmds"
 	"github.com/ipfs/go-ipfs-cmds/cli"
 	cmdhttp "github.com/ipfs/go-ipfs-cmds/http"
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/multiformats/go-multiaddr-net"
-	"github.com/pkg/errors"
 
-	"github.com/siegfried415/gdf-rebuild/paths"
-	"github.com/siegfried415/gdf-rebuild/repo"
-	//"github.com/siegfried415/gdf-rebuild/types"
-
-	env "github.com/siegfried415/gdf-rebuild/env" 
+	"github.com/siegfried415/go-crawling-bazaar/conf"
+	env "github.com/siegfried415/go-crawling-bazaar/env" 
+	//log "github.com/siegfried415/go-crawling-bazaar/utils/log" 
+	"github.com/siegfried415/go-crawling-bazaar/paths"
+	"github.com/siegfried415/go-crawling-bazaar/proto" 
+	gcbnet "github.com/siegfried415/go-crawling-bazaar/net" 
 )
 
 const (
 	// OptionAPI is the name of the option for specifying the api port.
-	OptionAPI = "cmdapiaddr"
+	OptionAPI = "apiaddr"
 
 	// OptionRepoDir is the name of the option for specifying the directory of the repo.
 	OptionRepoDir = "repodir"
+
+	OptionRole = "role"
 
 	// OptionSectorDir is the name of the option for specifying the directory into which staged and sealed sectors will be written.
 	OptionSectorDir = "sectordir"
@@ -88,53 +108,28 @@ const (
 // command object for the local cli
 var rootCmd = &cmds.Command{
 	Helptext: cmdkit.HelpText{
-		Tagline: "A decentralized storage network",
+		Tagline: "A decentralized crawling bazaar",
 		Subcommands: `
-START RUNNING FILECOIN
-  go-filecoin init                   - Initialize a filecoin repo
-  go-filecoin config <key> [<value>] - Get and set filecoin config values
-  go-filecoin daemon                 - Start a long-running daemon process
-  go-filecoin wallet                 - Manage your filecoin wallets
-  go-filecoin address                - Interact with addresses
+NODE COMMANDS  
+  gcb init                   - Initialize a filecoin repo
+  gcb daemon                 - Start a long-running daemon process
 
-STORE AND RETRIEVE DATA
-  go-filecoin client                 - Make deals, store data, retrieve data
-  go-filecoin retrieval-client       - Manage retrieval client operations
+CRAWLING BAZAAR 
+  gcb domain 		     - Create or drop crawling domain 
+  gcb urlrequest	     - Make url request to crawling bazaar by client 
+  gcb bidding		     - put or get bidding from crawling bazaar 
+  gcb bid 		     - put or get bid from crawling bazaar 
 
-MINE
-  go-filecoin miner                  - Manage a single miner actor
-  go-filecoin mining                 - Manage all mining operations for a node
-
-VIEW DATA STRUCTURES
-  go-filecoin chain                  - Inspect the filecoin blockchain
-  go-filecoin dag                    - Interact with IPLD DAG objects
-  go-filecoin deals                  - Manage deals made by or with this node
-  go-filecoin show                   - Get human-readable representations of filecoin objects
+DATA STRUCTURE 
+  gcb urlgraph 		     - hold cid information of url
+  gcb dag                    - Interact with IPLD DAG objects
 
 NETWORK COMMANDS
-  go-filecoin bitswap                - Explore libp2p bitswap
-  go-filecoin bootstrap              - Interact with bootstrap addresses
-  go-filecoin dht                    - Interact with the dht
-  go-filecoin id                     - Show info about the network peers
-  go-filecoin ping <peer ID>...      - Send echo request packets to p2p network members
-  go-filecoin swarm                  - Interact with the swarm
-  go-filecoin stats                  - Monitor statistics on your network usage
-
-ACTOR COMMANDS
-  go-filecoin actor                  - Interact with actors. Actors are built-in smart contracts
-  go-filecoin paych                  - Payment channel operations
-
-MESSAGE COMMANDS
-  go-filecoin message                - Manage messages
-  go-filecoin mpool                  - Manage the message pool
-  go-filecoin outbox                 - Manage the outbound message queue
+  gcb id                     - Show info about the network peers
+  gcb swarm                  - Interact with the swarm
 
 TOOL COMMANDS
-  go-filecoin inspect                - Show info about the go-filecoin node
-  go-filecoin leb128                 - Leb128 cli encode/decode
-  go-filecoin log                    - Interact with the daemon event log output
-  go-filecoin protocol               - Show protocol parameter details
-  go-filecoin version                - Show go-filecoin version information
+  gcb version                - Show gcb version information
 `,
 	},
 	Options: []cmdkit.Option{
@@ -144,13 +139,11 @@ TOOL COMMANDS
 		cmdkit.BoolOption("help", "Show the full command help text."),
 		cmdkit.BoolOption("h", "Show a short version of the command help text."),
 
-		//wyong, 20201002 
         	cmdkit.BoolOption("with-password", "Enter the passphrase for private.key") , 
         	cmdkit.StringOption("password", "Passphrase for encrypting private.key (NOT SAFE, for debug or script only)"),
 		cmdkit.StringOption("log-level", "Console log level: trace debug info warning error fatal panic"), 
 
-		//wyong, 20201007
-		cmdkit.StringOption("role", "The role of this node."), 
+		cmdkit.StringOption(OptionRole, "The role of this node."), 
 
 	},
 	Subcommands: make(map[string]*cmds.Command),
@@ -173,66 +166,12 @@ var rootSubcmdsLocal = map[string]*cmds.Command{
 var rootSubcmdsDaemon = map[string]*cmds.Command{
 	"domain":            domainCmd,
 	"urlrequest":            urlRequestCmd,
-
-	//wyong, 20200819 
 	"urlgraph":            urlGraphCmd,
-
-	//wyong, 20200910
 	"dag" :		     dagCmd, 
-
-	//"actor":            actorCmd,
-	//"address":          addrsCmd,
-	//"bitswap":          bitswapCmd,
-	//"bootstrap":        bootstrapCmd,
-	//"chain":            chainCmd,
-	//"config":           configCmd,
-
-	//wyong, 20200410 
-	//"client":           clientCmd,
-
-
-	//wyong, 20201007
 	"bidding":	biddingCmd,
 	"bid":		bidCmd, 
-
-	
-	//wyong, 20200410 
-	//"deals":            dealsCmd,
-
-	//"dht":              dhtCmd,
 	"id":               idCmd,
-	//"inspect":          inspectCmd,
-	//"leb128":           leb128Cmd,
-	//"log":              logCmd,
-	//"message":          msgCmd,
-	//"miner":            minerCmd,
-
-	//wyong, 20200416 
-	//wyong, 20190813
-	//"frontera":	    fronteraCmd, 
-	//"crawlingmarket":	    crawlingmarketCmd, 
-	//"urlgraph":	    urlgraphCmd, 
-
-	//wyong, 20191008
-	//"urlstore":	urlstoreCmd, 
-
-	//"mining":           miningCmd,
-	//"mpool":            mpoolCmd,
-	//"outbox":           outboxCmd,
-
-	//wyong, 20200412 
-	//"paych":            paymentChannelCmd,
-
-	//"ping":             pingCmd,
-	//"protocol":         protocolCmd,
-
-	//wyong, 20200410 
-	//"retrieval-client": retrievalClientCmd,
-
-	//"show":             showCmd,
-	//"stats":            statsCmd,
 	"swarm":            swarmCmd,
-	//"wallet":           walletCmd,
 	"version":          versionCmd,
 }
 
@@ -249,24 +188,18 @@ func init() {
 
 // Run processes the arguments and stdin
 func Run(ctx context.Context, args []string, stdin, stdout, stderr *os.File) (int, error) {
-	fmt.Printf("Run(10)\n") 
 	err := cli.Run(ctx, rootCmd, args, stdin, stdout, stderr, buildEnv, makeExecutor)
 	if err == nil {
-		fmt.Printf("Run(15)\n") 
 		return 0, nil
 	}
-	fmt.Printf("Run(20)\n") 
 	if exerr, ok := err.(cli.ExitError); ok {
-		fmt.Printf("Run(25)\n") 
 		return int(exerr), nil
 	}
-	fmt.Printf("Run(30)\n") 
 	return 1, err
 }
 
 func buildEnv(ctx context.Context, _ *cmds.Request) (cmds.Environment, error) {
-	fmt.Printf("buildEnv(10)\n") 
-	return env.NewClientEnv(ctx, nil, nil, nil, nil ), nil
+	return env.NewClientEnv(ctx, proto.Unknown, gcbnet.RoutedHost{}, nil, nil ), nil
 }
 
 type executor struct {
@@ -275,59 +208,48 @@ type executor struct {
 }
 
 func (e *executor) Execute(req *cmds.Request, re cmds.ResponseEmitter, env cmds.Environment) error {
-	fmt.Printf("executor/Execute(10)\n") 
 	if e.api == "" {
-		fmt.Printf("executor/Execute(15)\n") 
 		return e.exec.Execute(req, re, env)
 	}
 
-	fmt.Printf("executor/Execute(20)\n") 
 	client := cmdhttp.NewClient(e.api, cmdhttp.ClientWithAPIPrefix(APIPrefix))
 
-	fmt.Printf("executor/Execute(30)\n") 
 	res, err := client.Send(req)
 	if err != nil {
-		fmt.Printf("executor/Execute(35)\n") 
 		if isConnectionRefused(err) {
-			fmt.Printf("executor/Execute(37)\n") 
 			return cmdkit.Errorf(cmdkit.ErrFatal, "Connection Refused. Is the daemon running?")
 		}
-		fmt.Printf("executor/Execute(39)\n") 
 		return cmdkit.Errorf(cmdkit.ErrFatal, err.Error())
 	}
 
-	fmt.Printf("executor/Execute(40)\n") 
 	// copy received result into cli emitter
 	err = cmds.Copy(re, res)
 	if err != nil {
-		fmt.Printf("executor/Execute(45)\n") 
 		return cmdkit.Errorf(cmdkit.ErrFatal|cmdkit.ErrNormal, err.Error())
 	}
-	fmt.Printf("executor/Execute(50)\n") 
 	return nil
 }
 
 func makeExecutor(req *cmds.Request, env interface{}) (cmds.Executor, error) {
-	fmt.Printf("makeExecutor(10)\n") 
 	var api string
 	isDaemonRequired := requiresDaemon(req)
 	if isDaemonRequired {
-		fmt.Printf("makeExecutor(20)\n") 
 		var err error
-		api, err = getAPIAddress(req)
+		maddr, err := getAPIAddress(req)
 		if err != nil {
-			fmt.Printf("makeExecutor(25)\n") 
 			return nil, err
 		}
 
-		fmt.Printf("makeExecutor(30)\n") 
+		_, api, err = manet.DialArgs(maddr)
+		if err != nil {
+			return nil, errors.Wrap(err, fmt.Sprintf("unable to dial API endpoint address %s", maddr))
+		}
+
 		if api == "" {
-			fmt.Printf("makeExecutor(35)\n") 
 			return nil, ErrMissingDaemon
 		}
 	}
 
-	fmt.Printf("makeExecutor(40)\n") 
 	return &executor{
 		api:  api,
 		exec: cmds.NewExecutor(rootCmd),
@@ -335,57 +257,39 @@ func makeExecutor(req *cmds.Request, env interface{}) (cmds.Executor, error) {
 
 }
 
-func getAPIAddress(req *cmds.Request) (string, error) {
-	fmt.Printf("getAPIAddress(10)\n") 
+func getAPIAddress(req *cmds.Request) (ma.Multiaddr, error) {
 	var rawAddr string
 	var err error
 	// second highest precedence is env vars.
 	if envapi := os.Getenv("FIL_API"); envapi != "" {
-		fmt.Printf("getAPIAddress(15)\n") 
 		rawAddr = envapi
 	}
 
-	fmt.Printf("getAPIAddress(20)\n") 
 	// first highest precedence is cmd flag.
 	if apiAddress, ok := req.Options[OptionAPI].(string); ok && apiAddress != "" {
-		fmt.Printf("getAPIAddress(25)\n") 
 		rawAddr = apiAddress
 	}
 
-	fmt.Printf("getAPIAddress(30)\n") 
 	// we will read the api file if no other option is given.
 	if len(rawAddr) == 0 {
-		fmt.Printf("getAPIAddress(40)\n") 
 		repoDir, _ := req.Options[OptionRepoDir].(string)
 		repoDir, err = paths.GetRepoPath(repoDir)
 		if err != nil {
-			fmt.Printf("getAPIAddress(45)\n") 
-			return "", err
+			return nil, err
 		}
-		fmt.Printf("getAPIAddress(50)\n") 
-		rawAddr, err = repo.APIAddrFromRepoPath(repoDir)
+
+		rawAddr, err = conf.APIAddrFromRepoPath(repoDir)
 		if err != nil {
-			fmt.Printf("getAPIAddress(55)\n") 
-			return "", errors.Wrap(err, "can't find API endpoint address in environment, command-line, or local repo (is the daemon running?)")
+			return nil, errors.Wrap(err, "can't find API endpoint address in environment, command-line, or local repo (is the daemon running?)")
 		}
 	}
 
-	fmt.Printf("getAPIAddress(60)\n") 
 	maddr, err := ma.NewMultiaddr(rawAddr)
 	if err != nil {
-		fmt.Printf("getAPIAddress(65)\n") 
-		return "", errors.Wrap(err, fmt.Sprintf("unable to convert API endpoint address %s to a multiaddr", rawAddr))
+		return nil, errors.Wrap(err, fmt.Sprintf("unable to convert API endpoint address %s to a multiaddr", rawAddr))
 	}
 
-	fmt.Printf("getAPIAddress(70)\n") 
-	_, host, err := manet.DialArgs(maddr)
-	if err != nil {
-		fmt.Printf("getAPIAddress(75)\n") 
-		return "", errors.Wrap(err, fmt.Sprintf("unable to dial API endpoint address %s", maddr))
-	}
-
-	fmt.Printf("getAPIAddress(80)\n") 
-	return host, nil
+	return maddr, nil
 }
 
 func requiresDaemon(req *cmds.Request) bool {
@@ -415,35 +319,3 @@ func isConnectionRefused(err error) bool {
 	return syscallErr.Err == syscall.ECONNREFUSED
 }
 
-var priceOption = cmdkit.StringOption("gas-price", "Price (FIL e.g. 0.00013) to pay for each GasUnit consumed mining this message")
-var limitOption = cmdkit.Uint64Option("gas-limit", "Maximum GasUnits this message is allowed to consume")
-var previewOption = cmdkit.BoolOption("preview", "Preview the Gas cost of this command without actually executing it")
-
-/*
-func parseGasOptions(req *cmds.Request) (types.AttoFIL, types.GasUnits, bool, error) {
-	priceOption := req.Options["gas-price"]
-	if priceOption == nil {
-		return types.ZeroAttoFIL, types.NewGasUnits(0), false, errors.New("gas-price option is required")
-	}
-
-	price, ok := types.NewAttoFILFromFILString(priceOption.(string))
-	if !ok {
-		return types.ZeroAttoFIL, types.NewGasUnits(0), false, errors.New("invalid gas price (specify FIL as a decimal number)")
-	}
-
-	limitOption := req.Options["gas-limit"]
-	if limitOption == nil {
-		return types.ZeroAttoFIL, types.NewGasUnits(0), false, errors.New("gas-limit option is required")
-	}
-
-	gasLimitInt, ok := limitOption.(uint64)
-	if !ok {
-		msg := fmt.Sprintf("invalid gas limit: %s", limitOption)
-		return types.ZeroAttoFIL, types.NewGasUnits(0), false, errors.New(msg)
-	}
-
-	preview, _ := req.Options["preview"].(bool)
-
-	return price, types.NewGasUnits(gasLimitInt), preview, nil
-}
-*/

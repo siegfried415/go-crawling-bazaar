@@ -17,9 +17,9 @@
 package types
 
 import (
-	"github.com/siegfried415/gdf-rebuild/crypto/asymmetric"
-	"github.com/siegfried415/gdf-rebuild/crypto/verifier"
-	"github.com/siegfried415/gdf-rebuild/proto"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/verifier"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
 )
 
 //go:generate hsp
@@ -34,7 +34,7 @@ type ResourceMeta struct {
 	TargetMiners           []proto.AccountAddress // designated miners
 	Node                   uint16                 // reserved node count
 
-	Domain			string 			//wyong, 20200816 
+	Domain			string 			
 
 	Space                  uint64                 // reserved storage space in bytes
 	Memory                 uint64                 // reserved memory in bytes
@@ -47,7 +47,7 @@ type ResourceMeta struct {
 
 // ServiceInstance defines single instance to be initialized.
 type ServiceInstance struct {
-	DomainID   proto.DomainID	//wyong, 20200806 
+	DomainID   proto.DomainID
 	Peers        *proto.Peers
 	ResourceMeta ResourceMeta
 	GenesisBlock *Block

@@ -19,8 +19,8 @@ package verifier
 import (
 	"github.com/pkg/errors"
 
-	ca "github.com/siegfried415/gdf-rebuild/crypto/asymmetric"
-	"github.com/siegfried415/gdf-rebuild/crypto/hash"
+	ca "github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
 )
 
 //go:generate hsp

@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 The CovenantSQL Authors.
+ * Copyright 2022 https://github.com/siegfried415 
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +21,8 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+
+        //"github.com/siegfried415/go-crawling-bazaar/utils/callinfo"
 )
 
 // Entry defines alias for logrus entry.
@@ -57,6 +60,13 @@ func (entry *Entry) WithFields(fields Fields) *Entry {
 // WithTime overrides the time of the Entry.
 func (entry *Entry) WithTime(t time.Time) *Entry {
 	return &Entry{Logger: entry.Logger, Data: entry.Data, Time: t}
+}
+
+
+func (entry *Entry) WithStack() *Entry {
+        return (*Entry)((*logrus.Entry)(entry).WithFields(logrus.Fields{
+                "stack": "", 
+        }))
 }
 
 // Debug record a new debug level log.

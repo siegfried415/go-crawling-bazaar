@@ -20,11 +20,8 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/siegfried415/gdf-rebuild/crypto/asymmetric"
-	"github.com/siegfried415/gdf-rebuild/crypto/hash"
-
-	mine "github.com/siegfried415/gdf-rebuild/pow/cpuminer"
-	"github.com/siegfried415/gdf-rebuild/proto"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
 )
 
 // LocalKeyStore is the type hold local private & public key.
@@ -33,7 +30,7 @@ type LocalKeyStore struct {
 	private   *asymmetric.PrivateKey
 	public    *asymmetric.PublicKey
 	nodeID    []byte
-	nodeNonce *mine.Uint256
+	//nodeNonce *mine.Uint256
 	sync.RWMutex
 }
 
@@ -60,7 +57,7 @@ func initLocalKeyStore() {
 			private:   nil,
 			public:    nil,
 			nodeID:    nil,
-			nodeNonce: nil,
+			//nodeNonce: nil,
 		}
 	})
 }
@@ -72,7 +69,7 @@ func ResetLocalKeyStore() {
 		private:   nil,
 		public:    nil,
 		nodeID:    nil,
-		nodeNonce: nil,
+		//nodeNonce: nil,
 	}
 }
 
@@ -89,15 +86,16 @@ func SetLocalKeyPair(private *asymmetric.PrivateKey, public *asymmetric.PublicKe
 }
 
 // SetLocalNodeIDNonce sets private and public key, this is a one time thing.
-func SetLocalNodeIDNonce(rawNodeID []byte, nonce *mine.Uint256) {
+func SetLocalNodeID /* Nonce */ (rawNodeID []byte /* , nonce *mine.Uint256 */){
 	localKey.Lock()
 	defer localKey.Unlock()
 	localKey.nodeID = make([]byte, len(rawNodeID))
 	copy(localKey.nodeID, rawNodeID)
-	if nonce != nil {
-		localKey.nodeNonce = new(mine.Uint256)
-		*localKey.nodeNonce = *nonce
-	}
+
+	//if nonce != nil {
+	//	localKey.nodeNonce = new(mine.Uint256)
+	//	*localKey.nodeNonce = *nonce
+	//}
 }
 
 // GetLocalNodeID gets current node ID in hash string format.
@@ -106,11 +104,14 @@ func GetLocalNodeID() (rawNodeID proto.NodeID, err error) {
 	if rawNodeIDBytes, err = GetLocalNodeIDBytes(); err != nil {
 		return
 	}
-	var h *hash.Hash
-	if h, err = hash.NewHash(rawNodeIDBytes); err != nil {
-		return
-	}
-	rawNodeID = proto.NodeID(h.String())
+
+	//todo
+	//var h *hash.Hash
+	//if h, err = hash.NewHash(rawNodeIDBytes); err != nil {
+	//	return
+	//}
+	//rawNodeID = proto.NodeID(h.String())
+	rawNodeID = proto.NodeID(string(rawNodeIDBytes)) 
 
 	return
 }
@@ -128,6 +129,8 @@ func GetLocalNodeIDBytes() (rawNodeID []byte, err error) {
 	return
 }
 
+
+/* 
 // GetLocalNonce gets current node nonce copy.
 func GetLocalNonce() (nonce *mine.Uint256, err error) {
 	localKey.RLock()
@@ -140,6 +143,7 @@ func GetLocalNonce() (nonce *mine.Uint256, err error) {
 	localKey.RUnlock()
 	return
 }
+*/
 
 // GetLocalPublicKey gets local public key, if not set yet returns nil.
 func GetLocalPublicKey() (public *asymmetric.PublicKey, err error) {

@@ -1,23 +1,37 @@
-// Package commands implements the command to print the blockchain.
+/*
+ * Copyright 2022 https://github.com/siegfried415
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package commands
 
 import (
-	cmdkit "github.com/ipfs/go-ipfs-cmdkit"
-	cmds "github.com/ipfs/go-ipfs-cmds"
-
+        "encoding/json"
+	"errors" 
 	"fmt" 
         "io"
-
-        "github.com/ipfs/go-cid"
-	"github.com/ipfs/go-ipfs-files"
-
-	//wyong, 20191115
 	"io/ioutil" 
 
-	//wyong, 20200218 
+	cmdkit "github.com/ipfs/go-ipfs-cmdkit"
+	cmds "github.com/ipfs/go-ipfs-cmds"
+        "github.com/ipfs/go-cid"
+	"github.com/ipfs/go-ipfs-files"
 	"github.com/mfonda/simhash"
 
-	env "github.com/siegfried415/gdf-rebuild/env" 
+	env "github.com/siegfried415/go-crawling-bazaar/env" 
+	//log "github.com/siegfried415/go-crawling-bazaar/utils/log" 
+	proto "github.com/siegfried415/go-crawling-bazaar/proto" 
 )
 
 var dagCmd = &cmds.Command{
@@ -25,23 +39,39 @@ var dagCmd = &cmds.Command{
 		Tagline: "Interact with IPLD DAG objects.",
 	},
 	Subcommands: map[string]*cmds.Command{
-		"get": dagGetCmd,
-		"cat":                  DagCatCmd,
-		"import":               DagImportDataCmd,
+		"get": 		DagGetCmd,
+		"cat":          DagCatCmd,
+		"import":       DagImportDataCmd,
 	},
 }
 
-var dagGetCmd = &cmds.Command{
+var DagGetCmd = &cmds.Command{
 	Helptext: cmdkit.HelpText{
 		Tagline: "Get a DAG node by its CID",
+		ShortDescription: `
+Get a DAG node by ite CID. 
+`,
+		LongDescription: `
+Get a DAG node by ite CID. 
+
+Examples:
+
+  > gcb dag get #####################################
+    (############################ is the cid of content of http://www.foo.com/index.html)
+
+`,
 	},
 	Arguments: []cmdkit.Argument{
 		cmdkit.StringArg("ref", true, false, "CID of object to get"),
 	},
 	Run: func(req *cmds.Request, re cmds.ResponseEmitter, cmdenv cmds.Environment) error {
-		//out, err := GetPorcelainAPI(env).DAGGetNode(req.Context, req.Arguments[0])
+		c, err := cid.Decode(req.Arguments[0])
+		if err != nil {
+			return fmt.Errorf("cid syntax error: %s", c )
+		}
+
 		e := cmdenv.(*env.Env)
-		out, err := e.DAG().GetNode(req.Context, req.Arguments[0]) 
+		out, err := e.DAG().GetNode(req.Context, c.String()) 
 		if err != nil {
 			return err
 		}
@@ -57,108 +87,107 @@ type Page struct {
 
 var DagCatCmd = &cmds.Command{
 	Helptext: cmdkit.HelpText{
-		Tagline: "Read out data stored on the network",
+		Tagline: "Read out data stored on the DAG",
 		ShortDescription: `
-Prints data from the storage market specified with a given CID to stdout. The
-only argument should be the CID to return. The data will be returned in whatever
-format was provided with the data initially.
+Prints data stored on DAG by ite CID. 
+`,
+		LongDescription: `
+Prints data from the DAG network specified with a given CID to stdout. The
+only argument should be the CID to return. 
+
+Examples:
+
+  > gcb dag cat parent_url url  #####################################
+    (############################ is the cid of content of http://www.foo.com/index.html)
+
 `,
 	},
 	Arguments: []cmdkit.Argument{
-                cmdkit.StringArg("parent", true, false, "the parent url to be get from url store"),
-                cmdkit.StringArg("url", true, false, "the url to be get from url store"),
+                cmdkit.StringArg("parent", true, false, "the parent url to be get from crawling bazaar"),
+                cmdkit.StringArg("url", true, false, "the url to be get from crawling bazaar"),
 
-		cmdkit.StringArg("cid", true, false, "CID of page content"),
+		cmdkit.StringArg("cid", true, false, "CID of url content"),
 	},
 	Run: func(req *cmds.Request, re cmds.ResponseEmitter, cmdenv cmds.Environment) error {
-		parenturl := req.Arguments[0]
-		fmt.Printf("commands/dag.go, DagCatCmd(10), parenturl=%s\n", parenturl)
 
-		url := req.Arguments[1]
-		fmt.Printf("commands/dag.go, DagCatCmd(20), url=%s\n", url ) 
-
-		//todo, wyong, 20200824 
-		domain, err := domainForUrl(url) 
-		if err != nil {
-			return err 
-		}
-
-		c, err := cid.Decode(req.Arguments[2])
-		if err != nil {
+		e := cmdenv.(*env.Env)
+		role := e.Role() 
+		
+                //parenturl := req.Arguments[0]
+		var parenturl string 
+		if err := json.Unmarshal([]byte(req.Arguments[0]), &parenturl); err != nil {
 			return err
 		}
 
+                //url := req.Arguments[1]
+		var url string 
+		if err := json.Unmarshal([]byte(req.Arguments[1]), &url); err != nil {
+			return err
+		}
 
-		//wyong, 20201007 
-		role := req.Options["role"] 
-		if role == "Client" { 	
-			//get host from env, wyong, 20201008
-			e := cmdenv.(*env.Env)
+		//get domain of this url request 
+		var domain string 
+		if parenturl != "" { 
+			domain, _ = domainForUrl(parenturl) 
+		}
+
+		if domain == "" {
+			if url != "" { 
+				var err error 
+				domain, err = domainForUrl(url) 
+				if err != nil {
+					return err 
+				}
+			}
+		}
+
+		if domain == "" {
+			return errors.New("can't get domain of this url request!")
+		}
+
+		switch role {
+		case proto.Client : 
 			host := e.Host()
 
-			conn, err := getConn(host, "ProtocolDAGCatRequest", domain)
+			conn, err := getConn(host, "DAG.Cat", domain )
 			if err != nil {
-				fmt.Printf("commands/urlrequest.go(55), err=%s\n", err.Error()) 
-				return nil 
+				return err 
 			}
 			defer conn.Close()
 
-			fmt.Printf("commands/urlrequest.go(60)\n") 
-
-			//todo, wyong, 20201022 
-			//var result sql.Result
-			//err = conn.DagCat(req.Context, c) 
-			//if err != nil {
-			//	fmt.Printf("commands/urlrequest.go(65), err=%s\n", err.Error()) 
-			//	return err  
-			//}
-
-		}else if role == "Miner" {	
-			fmt.Printf("commands/dag.go, DagCatCmd(30), cid=%s\n", c.String() ) 
-			//dr, err := GetPorcelainAPI(env).DAGCat(req.Context, c)
-			e := cmdenv.(*env.Env)
-			dr, err := e.DAG().Cat(req.Context, c) 
+			result, err := conn.DagCat(req.Context, req.Arguments[2]) 
 			if err != nil {
-				fmt.Printf("commands/dag.go, DagCatCmd(35) \n") 
+				return err  
+			}
+
+			return re.Emit(string(result)) 
+
+		case proto.Leader:
+			fallthrough 
+		case proto.Follower: 
+			return nil 
+
+		case proto.Miner: 
+			c, err := cid.Decode(req.Arguments[2])
+			if err != nil {
 				return err
 			}
+
+			dr, err := e.DAG().Cat(req.Context, c) 
+			if err != nil {
+				return err
+			}
+
 			return re.Emit(dr)
 
-		} else { 	
+		case proto.Unknown: 
 			return nil 
 		}
 
-		fmt.Printf("commands/dag.go, DagCatCmd(40) \n") 
-		//get url from dr , wyong, 20191115 
-		//var p Page 
-		//err := json.Unmarshal(dr, &p)
-		//if err != nil {
-		//	return err 
-		//}
-
-		// todo, wyong, 20200922 
-		//wyong, 20191025
-                //fromAddr, err := fromAddrOrDefault(req, cmdenv)
-                //if err != nil {
-		//	fmt.Printf("commands/dag.go, DagCatCmd(45) \n") 
-                //      return err
-                //}
-
-		//fmt.Printf("commands/dag.go, DagCatCmd(50) \n") 
-                //_, err = GetPorcelainAPI(env).UrlGraphPageRetrived(req.Context, fromAddr, parenturl, url )
-                //if err != nil {
-		//	fmt.Printf("commands/dag.go, DagCatCmd(55) \n") 
-                //      return err
-                //}
-
-		fmt.Printf("commands/dag.go, DagCatCmd(60) \n") 
-
-		//return re.Emit(dr)
 		return nil 
 	},
 }
 
-//wyong, 20200218 
 type DagImportDataResult struct {
         Cid cid.Cid  
         Hash uint64 
@@ -166,20 +195,30 @@ type DagImportDataResult struct {
 
 var DagImportDataCmd = &cmds.Command{
 	Helptext: cmdkit.HelpText{
-		Tagline: "Import data into the local node",
+		Tagline: "Import data into the DAG",
 		ShortDescription: `
-Imports data previously exported with the client cat command into the storage
-market. This command takes only one argument, the path of the file to import.
-See the go-filecoin client cat command for more details.
+Imports data previously exported with the client cat command into the DAG.
+`,
+		LongDescription: `
+Prints data from the DAG network specified with a given CID to stdout. The
+only argument should be the CID to return. 
+
+Examples:
+
+  > gcb dag import index.html 
+
 `,
 	},
 	Arguments: []cmdkit.Argument{
-                //cmdkit.StringArg("url", true, false, "the url to be get from url store"),
-		cmdkit.FileArg("file", true, false, "Path to file to import").EnableStdin(),
+		cmdkit.FileArg("file", true, false, "Path of file to import").EnableStdin(),
 	},
 	Run: func(req *cmds.Request, re cmds.ResponseEmitter, cmdenv cmds.Environment) error {
-		//wyong, 20191115 
-		//url := req.Arguments[0]
+
+		e := cmdenv.(*env.Env)
+		role := e.Role() 
+		if role != proto.Miner {
+			return errors.New("this command must issued at Miner mode!")
+		}
 
 		iter := req.Files.Entries()
 		if !iter.Next() {
@@ -191,47 +230,29 @@ See the go-filecoin client cat command for more details.
 			return fmt.Errorf("given file was not a files.File")
 		}
 
-		/*
-		//embed url with body into dag, wyong, 20191115 
-		b, err := ioutil.ReadAll(fi)
-		if err != nil  {
-			return fmt.Errorf("can't read body from File")
-		}
-
-		r, _ := json.Marshal( {'Url':url, 'Body':b})
-		*/
-
-		//out, err := GetPorcelainAPI(env).DAGImportData(req.Context, fi )
-		e := cmdenv.(*env.Env)
 		out, err := e.DAG().ImportData(req.Context, fi) 
 		if err != nil {
 			return err
 		}
 
-		//wyong, 20200218 
-		//return re.Emit(out.Cid())
-
 		b, err := ioutil.ReadAll(fi)
 		if err != nil {
 			return err 	
 		}
-		hash := simhash.Simhash(simhash.NewWordFeatureSet(b))
 
+		hash := simhash.Simhash(simhash.NewWordFeatureSet(b))
                 return re.Emit(&DagImportDataResult{
                         Cid:	out.Cid(),
                         Hash:	hash ,
                 })
 	},
 
-	//wyong, 20200218 
-	//Type: cid.Cid{},
-	Type:&DagImportDataResult{},
-
 	Encoders: cmds.EncoderMap{
-		cmds.Text: cmds.MakeTypedEncoder(func(req *cmds.Request, w io.Writer, res *DagImportDataResult  /* c cid.Cid , wyong, 20200218  */ ) error {
-			//return PrintString(w, c)
+		cmds.Text: cmds.MakeTypedEncoder(func(req *cmds.Request, w io.Writer, res *DagImportDataResult) error {
 			fmt.Fprintf(w, "{Cid:\"%s\", Hash:%d},", res.Cid, res.Hash)
                         return nil
 		}),
 	},
+
+	Type:&DagImportDataResult{},
 }

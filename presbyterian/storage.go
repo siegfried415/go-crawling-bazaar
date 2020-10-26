@@ -23,14 +23,14 @@ import (
 
 	"github.com/pkg/errors"
 
-	pi "github.com/siegfried415/gdf-rebuild/presbyterian/interfaces"
-	"github.com/siegfried415/gdf-rebuild/crypto/hash"
-	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/types"
-	"github.com/siegfried415/gdf-rebuild/utils"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
-	xi "github.com/siegfried415/gdf-rebuild/xenomint/interfaces"
-	xs "github.com/siegfried415/gdf-rebuild/xenomint/sqlite"
+	pi "github.com/siegfried415/go-crawling-bazaar/presbyterian/interfaces"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/types"
+	"github.com/siegfried415/go-crawling-bazaar/utils"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
+	si "github.com/siegfried415/go-crawling-bazaar/state/interfaces"
+	ss "github.com/siegfried415/go-crawling-bazaar/state/sqlite"
 )
 
 var (
@@ -124,7 +124,7 @@ var (
 type storageProcedure func(tx *sql.Tx) error
 type storageCallback func()
 
-func store(st xi.Storage, sps []storageProcedure, cb storageCallback) (err error) {
+func store(st si.Storage, sps []storageProcedure, cb storageCallback) (err error) {
 	var tx *sql.Tx
 	// BEGIN
 	if tx, err = st.Writer().Begin(); err != nil {
@@ -158,9 +158,9 @@ func errPass(err error) storageProcedure {
 	}
 }
 
-func openStorage(path string) (st xi.Storage, err error) {
+func openStorage(path string) (st si.Storage, err error) {
 	var ierr error
-	if st, ierr = xs.NewSqlite(path); ierr != nil {
+	if st, ierr = ss.NewSqlite(path); ierr != nil {
 		return
 	}
 	for _, v := range ddls {
@@ -172,7 +172,7 @@ func openStorage(path string) (st xi.Storage, err error) {
 	return
 }
 
-func addBlock(height uint32, b *types.BPBlock) storageProcedure {
+func addBlock(height uint32, b *types.PBBlock) storageProcedure {
 	var (
 		enc *bytes.Buffer
 		err error
@@ -209,7 +209,7 @@ func addTx(t pi.Transaction) storageProcedure {
 	}
 }
 
-func buildBlockIndex(height uint32, b *types.BPBlock) storageProcedure {
+func buildBlockIndex(height uint32, b *types.PBBlock) storageProcedure {
 	return func(tx *sql.Tx) (err error) {
 		var p = b.Producer()
 		if _, err = tx.Exec(`INSERT OR REPLACE INTO "indexed_blocks"
@@ -404,7 +404,7 @@ func deleteProvider(address proto.AccountAddress) storageProcedure {
 	}
 }
 
-func loadIrreHash(st xi.Storage) (irre hash.Hash, err error) {
+func loadIrreHash(st si.Storage) (irre hash.Hash, err error) {
 	var hex string
 	// Load last irreversible block hash
 	if err = st.Reader().QueryRow(
@@ -418,7 +418,7 @@ func loadIrreHash(st xi.Storage) (irre hash.Hash, err error) {
 	return
 }
 
-func loadTxPool(st xi.Storage) (txPool map[hash.Hash]pi.Transaction, err error) {
+func loadTxPool(st si.Storage) (txPool map[hash.Hash]pi.Transaction, err error) {
 	var (
 		th   hash.Hash
 		rows *sql.Rows
@@ -453,10 +453,10 @@ func loadTxPool(st xi.Storage) (txPool map[hash.Hash]pi.Transaction, err error) 
 	return
 }
 
-func loadBlock(st xi.Storage, hash hash.Hash) (block *types.BPBlock, err error) {
+func loadBlock(st si.Storage, hash hash.Hash) (block *types.PBBlock, err error) {
 	var (
 		enc []byte
-		dec = &types.BPBlock{}
+		dec = &types.PBBlock{}
 	)
 	if err = st.Reader().QueryRow(
 		`SELECT "encoded" FROM "blocks" WHERE "hash"=?`, hash.String(),
@@ -471,7 +471,7 @@ func loadBlock(st xi.Storage, hash hash.Hash) (block *types.BPBlock, err error) 
 }
 
 func loadBlocks(
-	st xi.Storage, irreHash hash.Hash) (lastIrre *blockNode, heads []*blockNode, err error,
+	st si.Storage, irreHash hash.Hash) (lastIrre *blockNode, heads []*blockNode, err error,
 ) {
 	var (
 		rows *sql.Rows
@@ -509,7 +509,7 @@ func loadBlocks(
 		if err = hash.Decode(&ph, pnHex); err != nil {
 			return
 		}
-		var dec = &types.BPBlock{}
+		var dec = &types.PBBlock{}
 		if err = utils.DecodeMsgPack(enc, dec); err != nil {
 			return
 		}
@@ -561,7 +561,7 @@ func loadBlocks(
 	return
 }
 
-func loadAndCacheAccounts(st xi.Storage, view *metaState) (err error) {
+func loadAndCacheAccounts(st si.Storage, view *metaState) (err error) {
 	var (
 		rows *sql.Rows
 		hex  string
@@ -591,7 +591,7 @@ func loadAndCacheAccounts(st xi.Storage, view *metaState) (err error) {
 	return
 }
 
-func loadAndCacheShardChainProfiles(st xi.Storage, view *metaState) (err error) {
+func loadAndCacheShardChainProfiles(st si.Storage, view *metaState) (err error) {
 	var (
 		rows *sql.Rows
 		id   string
@@ -617,7 +617,7 @@ func loadAndCacheShardChainProfiles(st xi.Storage, view *metaState) (err error) 
 	return
 }
 
-func loadAndCacheProviders(st xi.Storage, view *metaState) (err error) {
+func loadAndCacheProviders(st si.Storage, view *metaState) (err error) {
 	var (
 		rows *sql.Rows
 		hex  string
@@ -647,7 +647,7 @@ func loadAndCacheProviders(st xi.Storage, view *metaState) (err error) {
 	return
 }
 
-func loadImmutableState(st xi.Storage) (immutable *metaState, err error) {
+func loadImmutableState(st si.Storage) (immutable *metaState, err error) {
 	immutable = newMetaState()
 	if err = loadAndCacheAccounts(st, immutable); err != nil {
 		return
@@ -661,7 +661,7 @@ func loadImmutableState(st xi.Storage) (immutable *metaState, err error) {
 	return
 }
 
-func loadDatabase(st xi.Storage) (
+func loadDatabase(st si.Storage) (
 	irre *blockNode,
 	heads []*blockNode,
 	immutable *metaState,

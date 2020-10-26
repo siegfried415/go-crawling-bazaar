@@ -1,10 +1,10 @@
 package version_test
 
 import (
-	"github.com/siegfried415/gdf-rebuild/utils/version"
+	"github.com/siegfried415/go-crawling-bazaar/utils/version"
 	"testing"
 
-	tf "github.com/siegfried415/gdf-rebuild/testhelpers/testflags"
+	tf "github.com/siegfried415/go-crawling-bazaar/testhelpers/testflags"
 	"github.com/stretchr/testify/assert"
 )
 

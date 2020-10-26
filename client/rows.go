@@ -21,7 +21,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/siegfried415/gdf-rebuild/types"
+	"github.com/siegfried415/go-crawling-bazaar/types"
 )
 
 type rows struct {

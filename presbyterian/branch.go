@@ -24,17 +24,13 @@ import (
 
 	"github.com/pkg/errors"
 
-	pi "github.com/siegfried415/gdf-rebuild/presbyterian/interfaces"
-	"github.com/siegfried415/gdf-rebuild/conf"
-
-	ca "github.com/siegfried415/gdf-rebuild/crypto/asymmetric"
-	"github.com/siegfried415/gdf-rebuild/crypto/hash"
-
-	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/types"
-
-	//wyong, 20200612
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	ca "github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
+	"github.com/siegfried415/go-crawling-bazaar/conf"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
+	pi "github.com/siegfried415/go-crawling-bazaar/presbyterian/interfaces"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/types"
 
 )
 
@@ -126,10 +122,9 @@ func (b *branch) makeArena() *branch {
 }
 
 func (b *branch) addTx(tx pi.Transaction) {
-        //wyong, 20200612
         log.WithFields(log.Fields{
                 "transaction":       tx,
-                }).Debug("blockproducer/branch, addTx() called")
+                }).Debug("presbyterian/branch, addTx() called")
 
 	var k = tx.Hash()
 	if _, ok := b.packed[k]; !ok {
@@ -141,9 +136,6 @@ func (b *branch) addTx(tx pi.Transaction) {
 
 func (b *branch) applyBlock(n *blockNode) (br *branch, err error) {
 	var block = n.load()
-
-        //wyong, 20200612
-        log.Debug("blockproducer/branch, applyBlock() called")
 
 	if !b.head.hash.IsEqual(block.ParentHash()) {
 		err = ErrParentNotMatch
@@ -198,7 +190,7 @@ func (b *branch) sortUnpackedTxs() (txs []pi.Transaction) {
 func (b *branch) produceBlock(
 	h uint32, ts time.Time, addr proto.AccountAddress, signer *ca.PrivateKey,
 ) (
-	br *branch, bl *types.BPBlock, err error,
+	br *branch, bl *types.PBBlock, err error,
 ) {
 	var (
 		cpy       = b.makeArena()
@@ -206,9 +198,6 @@ func (b *branch) produceBlock(
 		ierr      error
 		packCount = conf.MaxTransactionsPerBlock
 	)
-
-        //wyong, 20200612
-        log.Debug("blockproducer/branch, produceBlock() called")
 
 	if len(txs) < packCount {
 		packCount = len(txs)
@@ -229,9 +218,9 @@ func (b *branch) produceBlock(
 	}
 
 	// Create new block and update head
-	var block = &types.BPBlock{
-		SignedHeader: types.BPSignedHeader{
-			BPHeader: types.BPHeader{
+	var block = &types.PBBlock{
+		SignedHeader: types.PBSignedHeader{
+			PBHeader: types.PBHeader{
 				Version:    0x01000000,
 				Producer:   addr,
 				ParentHash: cpy.head.hash,

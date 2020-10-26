@@ -17,7 +17,7 @@
 package sqlchain
 
 import (
-	"github.com/siegfried415/gdf-rebuild/types"
+	"github.com/siegfried415/go-crawling-bazaar/types"
 )
 
 // ChainRPCService defines a sql-chain RPC server.
@@ -58,7 +58,7 @@ func (s *ChainRPCService) FetchBlock(req *FetchBlockReq, resp *FetchBlockResp) (
 	resp.Height = req.Height
 	resp.Block, err = s.chain.FetchBlock(req.Height)
 	if err == nil && resp.Block == nil {
-		resp.Height = s.chain.getCurrentHeight()
+		resp.Height = s.chain.GetCurrentHeight()
 	}
 	return
 }

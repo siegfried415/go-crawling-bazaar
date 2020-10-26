@@ -21,8 +21,8 @@ import (
 	"strings"
 	"sync"
 
-	pi "github.com/siegfried415/gdf-rebuild/presbyterian/interfaces"
-	"github.com/siegfried415/gdf-rebuild/proto"
+	pi "github.com/siegfried415/go-crawling-bazaar/presbyterian/interfaces"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
 )
 
 //go:generate hsp
@@ -267,7 +267,7 @@ type MinerInfo struct {
 
 // SQLChainProfile defines a SQLChainProfile related to an account.
 type SQLChainProfile struct {
-	ID                proto.DomainID	//wyong, 20200806 
+	ID                proto.DomainID
 	Address           proto.AccountAddress
 	Period            uint64
 	GasPrice          uint64

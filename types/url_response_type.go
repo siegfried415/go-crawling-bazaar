@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 The CovenantSQL Authors.
+ * Copyright 2022 https://github.com/siegfried415
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,29 +22,12 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/siegfried415/gdf-rebuild/crypto/hash"
-	"github.com/siegfried415/gdf-rebuild/proto"
-
-	//wyong, 20200820 
-	//"github.com/ipfs/go-cid"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
 
 )
 
 //go:generate hsp
-
-// ResponseRow defines single row of query response.
-//type ResponseRow struct {
-//	Values []interface{}
-//}
-
-/* wyong, 20200824 
-// ResponsePayload defines column names and rows of query response.
-type UrlResponsePayload struct {
-	//Columns   []string      `json:"c"`
-	//DeclTypes []string      `json:"t"`
-	//Rows      []ResponseRow `json:"r"`
-}
-*/
 
 // ResponseHeader defines a query response header.
 type UrlResponseHeader struct {
@@ -103,7 +87,7 @@ func (r *UrlResponse) BuildHash() (err error) {
 	// set rows count
 	//r.Header.RowCount = uint64(len(r.Payload.Rows))
 
-	/*wyong, 20200824
+	/*
 	// build hash in header
 	if err = buildHash(&r.Payload, &r.Header.PayloadHash); err != nil {
 		err = errors.Wrap(err, "compute response payload hash failed")
@@ -117,7 +101,7 @@ func (r *UrlResponse) BuildHash() (err error) {
 
 // VerifyHash verify the hash of the response.
 func (r *UrlResponse) VerifyHash() (err error) {
-	/* wyong, 20200824 
+	/* 
 	if err = verifyHash(&r.Payload, &r.Header.PayloadHash); err != nil {
 		err = errors.Wrap(err, "verify response payload hash failed")
 		return

@@ -24,7 +24,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/siegfried415/gdf-rebuild/crypto/hash"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
 )
 
 //go:generate hsp
@@ -176,7 +176,6 @@ func (d *DatabaseID) AccountAddress() (a AccountAddress, err error) {
 	return
 }
 
-//wyong, 20200806 
 // FromAccountAndNonce generates databaseID from Account and its nonce.
 func FromAccountAndNonce(accountAddress AccountAddress, nonce uint32) DomainID {
 	addrAndNonce := fmt.Sprintf("%s%d", accountAddress.String(), nonce)
@@ -184,10 +183,8 @@ func FromAccountAndNonce(accountAddress AccountAddress, nonce uint32) DomainID {
 	return DomainID(rawID.String())
 }
 
-//wyong, 20200804 
 type DomainID string
 
-//wyong, 20200806 
 // AccountAddress converts DatabaseID to AccountAddress.
 func (domain *DomainID) AccountAddress() (a AccountAddress, err error) {
 	h, err := hash.NewHashFromStr(string(*domain))

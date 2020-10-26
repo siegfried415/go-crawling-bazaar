@@ -1,3 +1,20 @@
+/*
+ * Copyright (c) 2018 Filecoin Project
+ * Copyright (c) 2022 https://github.com/siegfried415
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
+ * you may not use this file except in compliance with the License. 
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software 
+ * distributed under the License is distributed on an "AS IS" BASIS, 
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
+
 package main
 
 import (
@@ -13,7 +30,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/siegfried415/gdf-rebuild/utils/version"
+	"github.com/siegfried415/go-crawling-bazaar/utils/version"
 )
 
 var lineBreak = "\n"
@@ -123,7 +140,6 @@ func deps() {
 		cmd("go mod download"),
 		// Download and build proofs.
 
-		//wyong, 20200104 
 		//cmd("./scripts/install-go-bls-sigs.sh"),
 		//cmd("./scripts/install-go-sectorbuilder.sh"),
 
@@ -135,6 +151,8 @@ func deps() {
 	}
 }
 
+
+/* 
 // lint runs linting using golangci-lint
 func lint(packages ...string) {
 	if len(packages) == 0 {
@@ -145,9 +163,10 @@ func lint(packages ...string) {
 
 	runCmd(cmd("go", "run", "github.com/golangci/golangci-lint/cmd/golangci-lint", "run"))
 }
+*/
 
 func build() {
-	buildFilecoin()
+	buildGcb()
 	buildGengen()
 	buildFaucet()
 	buildGenesisFileServer()
@@ -167,12 +186,12 @@ func forcebuild() {
 }
 
 func forceBuildFC() {
-	log.Println("Force building go-decentralized-frontera...")
+	log.Println("Force building go-crawling-bazaar...")
 
 	runCmd(cmd([]string{
 		"go", "build",
-		"-ldflags", fmt.Sprintf("-X github.com/siegfried415/go-decentralized-frontera/flags.Commit=%s", getCommitSha()),
-		"-a", "-v", "-o", "go-decentralized-frontera", ".",
+		"-ldflags", fmt.Sprintf("-X github.com/siegfried415/go-crawling-bazaar/flags.Commit=%s", getCommitSha()),
+		"-a", "-v", "-o", "gcd", ".",
 	}...))
 }
 
@@ -246,24 +265,13 @@ func generateGenesis() {
 	}...))
 }
 
-func buildFilecoin() {
-	log.Println("Building go-decentralized-frontera...")
+func buildGcb() {
+	log.Println("Building gcb...")
 
 	runCmd(cmd([]string{
 		"go", "build",
-		"-ldflags", fmt.Sprintf("-X github.com/siegfried415/go-decentralized-frontera/flags.Commit=%s", getCommitSha()),
-		"-v", "-o", "go-decentralized-frontera", ".",
-	}...))
-}
-
-//wyong, 20200918 
-func buildGdf() {
-	log.Println("Building gdf...")
-
-	runCmd(cmd([]string{
-		"go", "build",
-		//"-ldflags", fmt.Sprintf("-X github.com/siegfried415/gdf-rebuild/flags.Commit=%s", getCommitSha()),
-		"-v", "-o", "bin/gdf", ".",
+		"-ldflags", fmt.Sprintf("-X github.com/siegfried415/go-crawling-bazaar/flags.Version=%s", getVersion()),
+		"-v", "-o", "bin/gcb", ".",
 	}...))
 }
 
@@ -288,7 +296,7 @@ func buildGenesisFileServer() {
 func buildMigrations() {
 	log.Println("Building migrations...")
 	runCmd(cmd([]string{
-		"go", "build", "-o", "./tools/migration/go-decentralized-frontera-migrate", "./tools/migration/main.go"}...))
+		"go", "build", "-o", "./tools/migration/go-crawling-bazaar-migrate", "./tools/migration/main.go"}...))
 }
 
 func buildPrereleaseTool() {
@@ -300,7 +308,7 @@ func buildPrereleaseTool() {
 func install() {
 	log.Println("Installing...")
 
-	runCmd(cmd("go", "install", "-ldflags", fmt.Sprintf("-X github.com/siegfried415/go-decentralized-frontera/flags.Commit=%s", getCommitSha())))
+	runCmd(cmd("go", "install", "-ldflags", fmt.Sprintf("-X github.com/siegfried415/go-crawling-bazaar/flags.Commit=%s", getCommitSha())))
 }
 
 // test executes tests and passes along all additional arguments to `go test`.
@@ -336,14 +344,12 @@ func main() {
 	switch cmd {
 	case "deps", "smartdeps":
 		deps()
-	case "lint":
-		lint(args[1:]...)
-	case "build-filecoin":
-		buildFilecoin()
 
-	//wyong, 20200918 
-	case "build-gdf":
-		buildGdf()
+	//case "lint":
+	//	lint(args[1:]...)
+
+	case "build-gcb":
+		buildGcb()
 
 	case "build-gengen":
 		buildGengen()
@@ -364,7 +370,9 @@ func main() {
 		test(args[1:]...)
 	case "all":
 		deps()
-		lint()
+		
+		//lint()
+
 		build()
 		test(args[1:]...)
 	default:
@@ -374,4 +382,8 @@ func main() {
 
 func getCommitSha() string {
 	return runCapture("git log -n 1 --format=%H")
+}
+
+func getVersion() string {
+ 	return runCapture("git describe --abbrev --abbrev=0 --tags" ) 
 }

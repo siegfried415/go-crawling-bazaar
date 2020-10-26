@@ -1,3 +1,18 @@
+/*
+ * Copyright 2022 https://github.com/siegfried415
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package commands
 
@@ -9,18 +24,13 @@ import (
 	"strconv" 
 	"context" 
 
-	//wyong, 20190320
-	//cid "github.com/ipfs/go-cid"
 
 	cmds "github.com/ipfs/go-ipfs-cmds"
 	cmdkit "github.com/ipfs/go-ipfs-cmdkit"
-	//logging "github.com/ipfs/go-log"
 	
-	client "github.com/siegfried415/gdf-rebuild/client" 
-	//conf "github.com/siegfried415/gdf-rebuild/conf"  
-
-	//wyong, 20201022 
-	env "github.com/siegfried415/gdf-rebuild/env"  
+	client "github.com/siegfried415/go-crawling-bazaar/client" 
+	env "github.com/siegfried415/go-crawling-bazaar/env"  
+	log "github.com/siegfried415/go-crawling-bazaar/utils/log"  
 
 )
 
@@ -28,61 +38,36 @@ const(
 	waitTxConfirmationOptionName = "wait" 
 )
 
-/*
-var (
-	waitTxConfirmationMaxDuration = 20 * conf.GConf.BPPeriod
-)
-*/
-
-//var log = logging.Logger("core/commands/bidding")
 
 var domainCmd = &cmds.Command{
 	Helptext: cmdkit.HelpText{
-		Tagline: "Put and get Bidding.",
-		ShortDescription: `
-Whenever a node can't access a web page, a url bidding can be issued to his 
-connected peers on crawling market,  some of those peers will fetch the url 
-for biddee. 
-`,
-		LongDescription: `
-Whenever a node can't access a web page, a url bidding can be issued to his 
-connected peers on crawling market,  some of those peers will fetch the url 
-for biddee. 
-
-Examples:
-create a bidding for a http url:
-  > gcm bidding put http://www.foo.com/index.html
-
-get the bidding published by other peers:
-  > gcm bidding get 
-  http://www.foo.com/index.html
-
-`,
+		Tagline: "Create or drop domain group.",
 	},
 
 	Subcommands: map[string]*cmds.Command{
 		"create": DomainCreateCmd,
 		"drop": DomainDropCmd,	
-		//"get": BiddingGetCmd,
 	},
 }
 
 var DomainCreateCmd = &cmds.Command{
 	Helptext: cmdkit.HelpText{
-		Tagline: "Put url biddings.",
+		Tagline: "Create a domain group.",
 
 		ShortDescription: `
-Whenever you can't access a web page, you can issue url bidding to crawling-
-market to let other peers fetch the web page for you.
+Create a domain group.
 `,
 		LongDescription: `
-Whenever you can't access a web page, you can issue url bidding to crawling-
-market to let other peers fetch the web page for you.
-
+Create command creates a go-crawling-bazaar domain group by meta params. The meta info must include
+node count.
 Examples:
-Put bidding for a url:
 
-  > gcm bidding put http://www.foo.com/index.html
+    gcb domain create "http://www.foo.com" 2
+
+Since go-crawling-bazaar is built on top of blockchains, you may want to wait for the transaction
+confirmation before the creation takes effect.
+
+    gcb domain create -wait-tx-confirm "http://www.foo.com" 2
 
 `,
 	},
@@ -93,25 +78,12 @@ Put bidding for a url:
 	},
 
 	Options: []cmdkit.Option{
-		cmdkit.BoolOption(waitTxConfirmationOptionName, "Resolve given path before publishing.").WithDefault(true),
-
-		//cmds.StringOption(lifeTimeOptionName, "t",
-		//	`Time duration that the record will be valid for. <<default>>
-//    This accepts durations such as "300s", "1.5h" or "2h45m". Valid time units are
-//    "ns", "us" (or "µs"), "ms", "s", "m", "h".`).WithDefault("24h"),
-		//cmds.BoolOption(allowOfflineOptionName, "When offline, save the IPNS record to the the local datastore without broadcasting to the network instead of simply failing."),
-		//cmds.StringOption(ttlOptionName, "Time duration this record should be cached for (caution: experimental)."),
-		//cmds.StringOption(keyOptionName, "k", "Name of the key to be used or a valid PeerID, as listed by 'ipfs key list -l'. Default: <<default>>.").WithDefault("self"),
-		//cmds.BoolOption(quieterOptionName, "Q", "Write only final hash."),
+		cmdkit.BoolOption("wait-tx-confirm", "If wait for the creation completed.").WithDefault(true),
 
 	},
 
 	Run: func(req *cmds.Request, res cmds.ResponseEmitter, cmdenv cmds.Environment) error {
-		fmt.Printf("DomainCreateCmd, called...\n") 
-
-		//log.Debugf("BiddingPutCmd, Run(10)") 
 		domain_name := req.Arguments[0]
-		fmt.Printf("DomainCreateCmd, domain_name =%s\n", domain_name ) 
 
 		nodeCnt, err := strconv.ParseInt(req.Arguments[1], 10, 32) 
 		if err != nil {
@@ -119,197 +91,99 @@ Put bidding for a url:
 		}
 
 
-		fmt.Printf("DomainCreateCmd, nodeCnt=%d\n", nodeCnt ) 
-
-		//todo, send bidding request with client to random peers , wyong, 20200723 
-		//err := env.GetFrontera().PutBidding(req.Context, url )
-		//if err != nil {
-		//	//log.Debugf("BiddingPutCmd, Run(30)") 
-		//	
-		//	//if err == iface.ErrOffline {
-		//	//	err = errAllowOffline
-		//	//}
-		//	return err
-		//}
-
-
-		//wyong, 20200728
-		var meta = client.ResourceMeta{}
-		meta.Node = uint16(nodeCnt)
-
-		//wyong, 20200816 
-		meta.Domain = domain_name 
-
-		//var dsn string
-		//todo, get host from env, wyong, 20201008 
 		e := cmdenv.(*env.Env)
 		host := e.Host()
-		
+
+		var meta = client.ResourceMeta{}
+		meta.Node = uint16(nodeCnt)
+		meta.Domain = domain_name 
+
 		txHash, err := client.CreateDomain(host, meta)
 		if err != nil {
+			log.Error("create database failed, err= %s", err )
 			return err 
 		}
 
-		waitTxConfirmation, _ := req.Options[waitTxConfirmationOptionName].(bool)
+		waitTxConfirmation, _ := req.Options["wait-tx-confirm"].(bool)
 		if waitTxConfirmation {
+			log.Debugf("DomainCreateCmd, wait presbyterian ... \n") 
 			err = wait(host, txHash)
 			if err != nil {
-				//ConsoleLog.WithError(err).Error("create database failed durating bp creation")
-				//SetExitStatus(1)
+				log.WithError(err).Error("create database failed durating presbyterian creation")
 				return err 
 			}
-			fmt.Printf("\nThe domain is accecpted by presbyterian\n")
 
 			var ctx, cancel = context.WithTimeout(context.Background(), waitTxConfirmationMaxDuration)
 			defer cancel()
 			err = client.WaitDomainCreation(ctx, host, domain_name )
 			if err != nil {
-				//ConsoleLog.WithError(err).Error("create database failed durating miner creation")
-				//SetExitStatus(1)
+				log.WithError(err).Error("create database failed durating miner creation")
 				return err 
 			}
 		}
 
-		//todo, wyong, 20200813 
-		//var cfg *client.Config
-		// cfg 
-		//_, err = client.ParseDSN(dsn)
-		//if err != nil {
-		//	return err 
-		//}
-		//dbID = cfg.DatabaseID
-
-		//return cmds.EmitOnce(res, &IpnsEntry{
-		//	Name:  out.Name(),
-		//	Value: out.Value().String(),
-		//})
-
-		//log.Debugf("BiddingPutCmd, Run(40)") 
 		return cmds.EmitOnce(res, 0)
 	},
 
-	//Encoders: cmds.EncoderMap{
-	//	cmds.Text: cmds.MakeTypedEncoder(func(req *cmds.Request, w io.Writer, ie *IpnsEntry) error {
-	//		var err error
-	//		quieter, _ := req.Options[quieterOptionName].(bool)
-	//		if quieter {
-	//			_, err = fmt.Fprintln(w, ie.Name)
-	//		} else {
-	//			_, err = fmt.Fprintf(w, "Published to %s: %s\n", ie.Name, ie.Value)
-	//		}
-	//		return err
-	//	}),
-	//},
-
-	//Type: BiddingEntry{},
 }
 
 var DomainDropCmd = &cmds.Command{
 	Helptext: cmdkit.HelpText{
-		Tagline: "Put url biddings.",
+		Tagline: "Drop a domain group.",
 
 		ShortDescription: `
-Whenever you can't access a web page, you can issue url bidding to crawling-
-market to let other peers fetch the web page for you.
+Drop a domain group.
 `,
 		LongDescription: `
-Whenever you can't access a web page, you can issue url bidding to crawling-
-market to let other peers fetch the web page for you.
-
+Drop command drop a go-crawling-bazaar domain group. 
 Examples:
-Put bidding for a url:
 
-  > gcm bidding put http://www.foo.com/index.html
+    gcb domain drop -name "http://www.foo.com" 
 
 `,
 	},
 
 	Arguments: []cmdkit.Argument{
-		cmdkit.StringArg("name", true, false, "url of the bidding to be published.").EnableStdin(),
+		cmdkit.StringArg("name", true, false, "url of the domain group to be droped.").EnableStdin(),
 	},
 
-	//Options: []cmds.Option{
-	//	cmds.BoolOption(resolveOptionName, "Resolve given path before publishing.").WithDefault(true),
-	//	cmds.StringOption(lifeTimeOptionName, "t",
-	//		`Time duration that the record will be valid for. <<default>>
-//    This accepts durations such as "300s", "1.5h" or "2h45m". Valid time units are
-//    "ns", "us" (or "µs"), "ms", "s", "m", "h".`).WithDefault("24h"),
-	//	cmds.BoolOption(allowOfflineOptionName, "When offline, save the IPNS record to the the local datastore without broadcasting to the network instead of simply failing."),
-	//	cmds.StringOption(ttlOptionName, "Time duration this record should be cached for (caution: experimental)."),
-	//	cmds.StringOption(keyOptionName, "k", "Name of the key to be used or a valid PeerID, as listed by 'ipfs key list -l'. Default: <<default>>.").WithDefault("self"),
-	//	cmds.BoolOption(quieterOptionName, "Q", "Write only final hash."),
-	//},
-
-	Run: func(req *cmds.Request, res cmds.ResponseEmitter, env cmds.Environment) error {
-		//log.Debugf("BiddingDelCmd, Run() called...") 
-
-		//log.Debugf("BiddingDelCmd, Run(10)") 
+	Run: func(req *cmds.Request, res cmds.ResponseEmitter, cmdenv cmds.Environment) error {
 		dsn := req.Arguments[0]
-		//if !IsURL(url){
-		//	return fmt.Errorf("unsupported url syntax: %s", url)
-		//}
 
-		//log.Debugf("BiddingDelCmd, Run(20)") 
-		//err := GetBiddingsysAPI(env).DelBidding(req.Context, url )
-		//if err != nil {
-		//	//log.Debugf("BiddingDelCmd, Run(30)") 
-		//	//if err == iface.ErrOffline {
-		//	//	err = errAllowOffline
-		//	//}
-		//	return err
-		//}
-
-		//todo, wyong, 20200728 
-		//dsn := args[0]
+		e := cmdenv.(*env.Env)
+		host := e.Host()
 
 		// drop database
 		if _, err := client.ParseDSN(dsn); err != nil {
 			// not a dsn/dbid
-			//ConsoleLog.WithField("db", dsn).WithError(err).Error("not a valid dsn")
-			//SetExitStatus(1)
+			log.WithField("db", dsn).WithError(err).Error("not a valid dsn")
 			return err 
 		}
 
-		//txHash, err := client.Drop(dsn)
-		_, err := client.Drop(dsn)
+		txHash, err := client.Drop(host, dsn)
 		if err != nil {
 			// drop database failed
-			//ConsoleLog.WithField("db", dsn).WithError(err).Error("drop database failed")
-			//SetExitStatus(1)
+			log.WithField("db", dsn).WithError(err).Error("drop database failed")
 			return err 
 		}
 
-		//todo, wyong, 20200802 
-		//if waitTxConfirmation {
-		//	err = client.wait(txHash)
-		//	if err != nil {
-		//		ConsoleLog.WithField("db", dsn).WithError(err).Error("drop database failed")
-		//		SetExitStatus(1)
-		//		return
-		//	}
+		//err = client.wait(txHash)
+		//if err != nil {
+		//	log.WithField("db", dsn).WithError(err).Error("drop database failed")
+		//	return
 		//}
 
-		//return cmds.EmitOnce(res, &IpnsEntry{
-		//	Name:  out.Name(),
-		//	Value: out.Value().String(),
-		//})
+		waitTxConfirmation, _ := req.Options[waitTxConfirmationOptionName].(bool)
+		if waitTxConfirmation {
+			err = wait(host, txHash)
+			if err != nil {
+				log.WithError(err).Error("drop database failed ")
+				return err 
+			}
+			log.Debugf("\nThe domain is droped by presbyterian\n")
+		}
 
-		//log.Debugf("BiddingDelCmd, Run(40)") 
 		return cmds.EmitOnce(res, 0)
 	},
 
-	//Encoders: cmds.EncoderMap{
-	//	cmds.Text: cmds.MakeTypedEncoder(func(req *cmds.Request, w io.Writer, ie *IpnsEntry) error {
-	//		var err error
-	//		quieter, _ := req.Options[quieterOptionName].(bool)
-	//		if quieter {
-	//			_, err = fmt.Fprintln(w, ie.Name)
-	//		} else {
-	//			_, err = fmt.Fprintf(w, "Published to %s: %s\n", ie.Name, ie.Value)
-	//		}
-	//		return err
-	//	}),
-	//},
-
-	//Type: BiddingEntry{},
 }

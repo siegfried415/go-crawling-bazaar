@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 The CovenantSQL Authors.
+ * Copyright 2022 https://github.com/siegfried415
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +20,9 @@ package frontera
 import (
 	"time"
 
-	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/urlchain"
-
-	//wyong, 20201018
-	"github.com/libp2p/go-libp2p-core/host" 
+	net "github.com/siegfried415/go-crawling-bazaar/net"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/urlchain"
 )
 
 // DomainConfig defines the database config.
@@ -31,7 +30,7 @@ type DomainConfig struct {
 	DomainID             proto.DomainID
 	RootDir                string
 	DataDir                string
-	KayakMux               *DomainKayakMuxService
+
 	ChainMux               *sqlchain.MuxService
 	MaxWriteTimeGap        time.Duration
 	EncryptionKey          string
@@ -43,9 +42,5 @@ type DomainConfig struct {
 	IsolationLevel         int
 	SlowQueryTime          time.Duration
 
-	//wyong, 20200929 
-	//UrlChain		config.UrlChainConfig 
-
-	//wyong, 20201018
-	Host			host.Host 
+	Host			net.RoutedHost 
 }

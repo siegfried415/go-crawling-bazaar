@@ -27,7 +27,7 @@ var (
 	ErrAlreadyExists = errors.New("database instance already exists")
 	// ErrNotExists defines errors on manipulating a non-exists database instance.
 	ErrNotExists = errors.New("database instance not exists")
-	// ErrInvalidDBConfig defines errors on received invalid db config from block producer.
+	// ErrInvalidDBConfig defines errors on received invalid db config from presbyterian .
 	ErrInvalidDBConfig = errors.New("invalid database configuration")
 	// ErrSpaceLimitExceeded defines errors on disk space exceeding limit.
 	ErrSpaceLimitExceeded = errors.New("space limit exceeded")

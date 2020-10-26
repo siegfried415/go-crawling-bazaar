@@ -21,14 +21,14 @@ import (
 	"time"
 
 	hsp "github.com/CovenantSQL/HashStablePack/marshalhash"
-
-	"github.com/siegfried415/gdf-rebuild/crypto/asymmetric"
-	"github.com/siegfried415/gdf-rebuild/crypto/hash"
-	mine "github.com/siegfried415/gdf-rebuild/pow/cpuminer"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
-
-	//wyong, 20200730
+        libp2pcrypto "github.com/libp2p/go-libp2p-core/crypto"
+        peer "github.com/libp2p/go-libp2p-core/peer"
 	mh "github.com/multiformats/go-multihash"
+
+	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
+
 )
 
 //go:generate hsp
@@ -54,8 +54,8 @@ type RawNodeID struct {
 // NodeID is the Hex of RawNodeID.
 type NodeID string
 
-func (n NodeID) String() string {
-	return string(n)  
+func (id *NodeID) String() string {
+	return string(*id)  
 }
 
 // IDFromString casts a string to the ID type, and validates
@@ -108,7 +108,6 @@ func (z *AccountAddress) DatabaseID() (d DatabaseID) {
 	return
 }
 
-//wyong, 20200806 
 // DatabaseID converts AccountAddress to DatabaseID.
 func (z *AccountAddress) DomainID() (d DomainID) {
 	d = DomainID(z.String())
@@ -148,7 +147,7 @@ type Node struct {
 	Addr       string                `yaml:"Addr"`
 	DirectAddr string                `yaml:"DirectAddr,omitempty"`
 	PublicKey  *asymmetric.PublicKey `yaml:"PublicKey"`
-	Nonce      mine.Uint256          `yaml:"Nonce"`
+	//Nonce      mine.Uint256          `yaml:"Nonce"`
 }
 
 // NewNode just return a new node struct.
@@ -183,7 +182,7 @@ func (id *NodeID) ToRawNodeID() *RawNodeID {
 
 // IsEmpty test if a nodeID is empty.
 func (id *NodeID) IsEmpty() bool {
-	return id == nil || "" == string(*id) || id.ToRawNodeID().IsEqual(&hash.Hash{})
+	return id == nil || "" == string(*id) || id.ToRawNodeID().IsEqual(&hash.Hash{}) 
 }
 
 // IsEqual returns if two node id is equal.
@@ -191,6 +190,7 @@ func (id *NodeID) IsEqual(target *NodeID) bool {
 	return strings.Compare(string(*id), string(*target)) == 0
 }
 
+/*
 // MarshalBinary does the serialization.
 func (id *NodeID) MarshalBinary() (keyBytes []byte, err error) {
 	if id == nil {
@@ -215,6 +215,7 @@ func (id *NodeID) UnmarshalBinary(keyBytes []byte) (err error) {
 	*id = NodeID(h.String())
 	return
 }
+*/
 
 // InitNodeCryptoInfo generate Node asymmetric key pair and generate Node.NonceInfo.
 // Node.ID = Node.NonceInfo.Hash.
@@ -224,9 +225,19 @@ func (node *Node) InitNodeCryptoInfo(timeThreshold time.Duration) (err error) {
 		log.Error("failed to generate key pair")
 	}
 
-	nonce := asymmetric.GetPubKeyNonce(node.PublicKey, NewNodeIDDifficulty, timeThreshold, nil)
-	node.ID = NodeID(nonce.Hash.String())
-	node.Nonce = nonce.Nonce
+	//nonce := asymmetric.GetPubKeyNonce(node.PublicKey, NewNodeIDDifficulty, timeThreshold, nil)
+	//node.ID = NodeID(nonce.Hash.String())
+	//node.Nonce = nonce.Nonce
+
+	// Obtain Peer ID from public key
+	libp2pPubKey := (*libp2pcrypto.Secp256k1PublicKey) (node.PublicKey)
+	nid, err := peer.IDFromPublicKey(libp2pPubKey)
+	if err != nil {
+		return err
+	}
+
+	node.ID = NodeID(nid.Pretty())
+
 	log.Debugf("node: %#v", node)
 	return
 }
@@ -260,9 +271,6 @@ const (
 	Miner
 	// Client is a client that send sql query to database>
 	Client
-
-	//wyong, 20201021 
-	Presbyterian	
 )
 
 // String is a string variable of ServerRole.
@@ -291,7 +299,7 @@ func (s *ServerRole) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err := unmarshal(&str); err != nil {
 		return err
 	}
-	dur, err := parseServerRole(str)
+	dur, err := ParseServerRole(str)
 	if err != nil {
 		return err
 	}
@@ -300,7 +308,7 @@ func (s *ServerRole) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
-func parseServerRole(roleStr string) (role ServerRole, err error) {
+func ParseServerRole(roleStr string) (role ServerRole, err error) {
 	switch strings.ToLower(roleStr) {
 	case "leader":
 		role = Leader

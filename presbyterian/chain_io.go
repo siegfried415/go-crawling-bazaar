@@ -19,22 +19,22 @@ package presbyterian
 import (
 	"database/sql"
 
-	pi "github.com/siegfried415/gdf-rebuild/presbyterian/interfaces"
-	"github.com/siegfried415/gdf-rebuild/crypto/hash"
-	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/types"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	pi "github.com/siegfried415/go-crawling-bazaar/presbyterian/interfaces"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/types"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 // This file provides methods set for chain state read/write.
 
-// loadBlock loads a BPBlock from chain storage.
-func (c *Chain) loadBlock(h hash.Hash) (b *types.BPBlock, err error) {
+// loadBlock loads a PBBlock from chain storage.
+func (c *Chain) loadBlock(h hash.Hash) (b *types.PBBlock, err error) {
 	return loadBlock(c.storage, h)
 }
 
 func (c *Chain) fetchLastIrreversibleBlock() (
-	b *types.BPBlock, count uint32, height uint32, err error,
+	b *types.PBBlock, count uint32, height uint32, err error,
 ) {
 	var node = c.lastIrreversibleBlock()
 	if b = node.load(); b != nil {
@@ -51,7 +51,7 @@ func (c *Chain) fetchLastIrreversibleBlock() (
 	return
 }
 
-func (c *Chain) fetchBlockByHeight(h uint32) (b *types.BPBlock, count uint32, err error) {
+func (c *Chain) fetchBlockByHeight(h uint32) (b *types.PBBlock, count uint32, err error) {
 	var node = c.head().ancestor(h)
 	// Not found
 	if node == nil {
@@ -70,7 +70,7 @@ func (c *Chain) fetchBlockByHeight(h uint32) (b *types.BPBlock, count uint32, er
 	return
 }
 
-func (c *Chain) fetchBlockByCount(count uint32) (b *types.BPBlock, height uint32, err error) {
+func (c *Chain) fetchBlockByCount(count uint32) (b *types.PBBlock, height uint32, err error) {
 	var node = c.head().ancestorByCount(count)
 	// Not found
 	if node == nil {
@@ -101,6 +101,18 @@ func (c *Chain) loadAccountTokenBalance(addr proto.AccountAddress, tt types.Toke
 	c.RLock()
 	defer c.RUnlock()
 	return c.immutable.loadAccountTokenBalance(addr, tt)
+}
+
+func (c *Chain) loadDomainAccountTokenBalanceAndTotal(domainID proto.DomainID, addr proto.AccountAddress, tt types.TokenType) (balance uint64, totalBalance uint64,  ok bool) {
+	c.RLock()
+	defer c.RUnlock()
+	ok = true 
+	b, tb, err := c.immutable.loadDomainAccountTokenBalanceAndTotal(domainID, addr, tt )
+	if err!= nil {
+		ok = false 
+	}
+
+	return b, tb, ok 
 }
 
 func (c *Chain) loadSQLChainProfile(domainID proto.DomainID) (profile *types.SQLChainProfile, ok bool) {

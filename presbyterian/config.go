@@ -19,41 +19,31 @@ package presbyterian
 import (
 	"time"
 
-	"github.com/siegfried415/gdf-rebuild/proto"
-
-	//wyong, 20201015
-	host "github.com/libp2p/go-libp2p-core/host"
-
-	//wyong, 20201008 
-	//rpc "github.com/siegfried415/gdf-rebuild/rpc/mux"
-
-	"github.com/siegfried415/gdf-rebuild/types"
+	net "github.com/siegfried415/go-crawling-bazaar/net"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/types"
 )
 
-// RunMode defines modes that a bp can run as.
+// RunMode defines modes that a presbyterian can run as.
 type RunMode int
 
 const (
-	// BPMode is the default and normal mode.
-	BPMode RunMode = iota
+	// PBMode is the default and normal mode.
+	PBMode RunMode = iota
 
-	// APINodeMode makes the bp behaviour like an API gateway. It becomes an API
-	// node, who syncs data from the bp network and exposes JSON-RPC API to users.
+	// APINodeMode makes the presbyterian behaviour like an API gateway. It becomes an API
+	// node, who syncs data from the presbyterian network and exposes JSON-RPC API to users.
 	APINodeMode
 )
 
 // Config is the main chain configuration.
 type Config struct {
 	Mode    RunMode
-	Genesis *types.BPBlock
+	Genesis *types.PBBlock
 
 	DataFile string
 
-	//wyong, 20201008 
-	//Server *rpc.Server
-
-	//wyong, 20201015
-	Host 	host.Host 
+	Host 	net.RoutedHost 
 
 	Peers            *proto.Peers
 	NodeID           proto.NodeID

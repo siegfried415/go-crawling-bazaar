@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 The CovenantSQL Authors.
+ * Copyright 2022 https://github.com/siegfried415
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,27 +22,16 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/siegfried415/gdf-rebuild/crypto/hash"
-	"github.com/siegfried415/gdf-rebuild/proto"
-
-	//wyong, 20200820 
-	//"github.com/ipfs/go-cid"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
 
 )
 
 //go:generate hsp
 
-// ResponseRow defines single row of query response.
-//type ResponseRow struct {
-//	Values []interface{}
-//}
-
 // ResponsePayload defines column names and rows of query response.
 type UrlCidResponsePayload struct {
-	//Columns   []string      `json:"c"`
-	//DeclTypes []string      `json:"t"`
-	//Rows      []ResponseRow `json:"r"`
-	Cids	  []string	`json:"c"`	//wyong, 20200907 
+	Cids	  []string	`json:"c"`
 }
 
 // ResponseHeader defines a query response header.

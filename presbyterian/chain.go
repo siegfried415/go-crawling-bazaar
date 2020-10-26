@@ -29,31 +29,24 @@ import (
 	"github.com/pkg/errors"
 	mw "github.com/zserge/metric"
 
-	//wyong, 20201015 
-	host "github.com/libp2p/go-libp2p-core/host"
-
-	pi "github.com/siegfried415/gdf-rebuild/presbyterian/interfaces"
-	"github.com/siegfried415/gdf-rebuild/conf"
-
-	"github.com/siegfried415/gdf-rebuild/crypto"
-	"github.com/siegfried415/gdf-rebuild/crypto/asymmetric"
-	"github.com/siegfried415/gdf-rebuild/crypto/hash"
-	"github.com/siegfried415/gdf-rebuild/kms"
-
-
-	"github.com/siegfried415/gdf-rebuild/proto"
-	//"github.com/siegfried415/gdf-rebuild/route"
-	//rpc "github.com/siegfried415/gdf-rebuild/rpc/mux"
-	"github.com/siegfried415/gdf-rebuild/types"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
-	xi "github.com/siegfried415/gdf-rebuild/xenomint/interfaces"
+	"github.com/siegfried415/go-crawling-bazaar/conf"
+	"github.com/siegfried415/go-crawling-bazaar/crypto"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
+	pi "github.com/siegfried415/go-crawling-bazaar/presbyterian/interfaces"
+	si "github.com/siegfried415/go-crawling-bazaar/state/interfaces"
+	"github.com/siegfried415/go-crawling-bazaar/kms"
+	net "github.com/siegfried415/go-crawling-bazaar/net"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/types"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 // Metric keys
 const (
-	mwKeyHeight      = "service:bp:height"
-	mwKeyTxPooled    = "service:bp:pooled"
-	mwKeyTxConfirmed = "service:bp:confirmed"
+	mwKeyHeight      = "service:pb:height"
+	mwKeyTxPooled    = "service:pb:pooled"
+	mwKeyTxConfirmed = "service:pb:confirmed"
 )
 
 func init() {
@@ -68,22 +61,16 @@ type Chain struct {
 	cancel context.CancelFunc
 	wg     *sync.WaitGroup
 
-	//wyong, 20201014 
-	// RPC components
-	//server *rpc.Server
-	//caller *rpc.Caller
-
-	//wyong, 20201015
-	host host.Host 
+	host net.RoutedHost 
 
 	// Other components
-	storage xi.Storage
+	storage si.Storage
 	// NOTE(leventeliu): this LRU object is only used for block cache control,
 	// do NOT read it in any case.
 	blockCache *lru.Cache
 
 	// Channels for incoming blocks and transactions
-	pendingBlocks    chan *types.BPBlock
+	pendingBlocks    chan *types.PBBlock
 	pendingAddTxReqs chan *types.AddTxReq
 
 	// The following fields are read-only in runtime
@@ -94,8 +81,8 @@ type Chain struct {
 	tick        time.Duration
 
 	sync.RWMutex // protects following fields
-	bpInfos      []*blockProducerInfo
-	localBPInfo  *blockProducerInfo
+	pbInfos      []*PresbyterianInfo
+	localPBInfo  *PresbyterianInfo
 	localNodeID  proto.NodeID
 	confirms     uint32
 	nextHeight   uint32
@@ -118,7 +105,7 @@ func NewChainWithContext(ctx context.Context, cfg *Config) (c *Chain, err error)
 	var (
 		ierr error
 
-		st        xi.Storage
+		st        si.Storage
 		cache     *lru.Cache
 		lastIrre  *blockNode
 		heads     []*blockNode
@@ -130,8 +117,8 @@ func NewChainWithContext(ctx context.Context, cfg *Config) (c *Chain, err error)
 		headIndex  int
 
 		addr        proto.AccountAddress
-		bpInfos     []*blockProducerInfo
-		localBPInfo *blockProducerInfo
+		pbInfos     []*PresbyterianInfo
+		localPBInfo *PresbyterianInfo
 	)
 
 	// Verify genesis block in config
@@ -220,7 +207,7 @@ func NewChainWithContext(ctx context.Context, cfg *Config) (c *Chain, err error)
 				if r.load() != nil {
 					continue
 				}
-				var block *types.BPBlock
+				var block *types.PBBlock
 				if block, ierr = loadBlock(st, r.hash); ierr != nil {
 					err = errors.Wrapf(
 						ierr, "failed to load block %s from database", r.hash.Short(4))
@@ -267,7 +254,7 @@ func NewChainWithContext(ctx context.Context, cfg *Config) (c *Chain, err error)
 		threshold    float64
 		needConfirms uint32
 	)
-	if localBPInfo, bpInfos, err = buildBlockProducerInfos(
+	if localPBInfo, pbInfos, err = buildPresbyterianInfos(
 		cfg.NodeID, cfg.Peers, cfg.Mode == APINodeMode,
 	); err != nil {
 		return
@@ -286,17 +273,12 @@ func NewChainWithContext(ctx context.Context, cfg *Config) (c *Chain, err error)
 		cancel: ccl,
 		wg:     &sync.WaitGroup{},
 
-		//wyong, 20201014 
-		//server: cfg.Server,
-		//caller: rpc.NewCaller(),
-
-		//wyong, 20201015 
 		host: cfg.Host, 
 
 		storage:    st,
 		blockCache: cache,
 
-		pendingBlocks:    make(chan *types.BPBlock),
+		pendingBlocks:    make(chan *types.PBBlock),
 		pendingAddTxReqs: make(chan *types.AddTxReq),
 
 		address:     addr,
@@ -305,8 +287,8 @@ func NewChainWithContext(ctx context.Context, cfg *Config) (c *Chain, err error)
 		period:      cfg.Period,
 		tick:        cfg.Tick,
 
-		bpInfos:     bpInfos,
-		localBPInfo: localBPInfo,
+		pbInfos:     pbInfos,
+		localPBInfo: localPBInfo,
 		localNodeID: cfg.NodeID,
 		confirms:    needConfirms,
 		nextHeight:  headBranch.head.height + 1,
@@ -319,7 +301,7 @@ func NewChainWithContext(ctx context.Context, cfg *Config) (c *Chain, err error)
 		txPool:      txPool,
 	}
 
-	// NOTE(leventeliu): this implies that BP chain is a singleton, otherwise we will need
+	// NOTE(leventeliu): this implies that PB chain is a singleton, otherwise we will need
 	// independent metric key for each chain instance.
 	if expvar.Get(mwKeyHeight) == nil {
 		expvar.Publish(mwKeyHeight, mw.NewGauge(fmt.Sprintf("5m%.0fs", cfg.Period.Seconds())))
@@ -327,7 +309,7 @@ func NewChainWithContext(ctx context.Context, cfg *Config) (c *Chain, err error)
 	expvar.Get(mwKeyHeight).(mw.Metric).Add(float64(c.head().height))
 
 	log.WithFields(log.Fields{
-		"local":  c.getLocalBPInfo(),
+		"local":  c.getLocalPBInfo(),
 		"period": c.period,
 		"tick":   c.tick,
 		"height": c.head().height,
@@ -356,7 +338,7 @@ func (c *Chain) Start() {
 func (c *Chain) Stop() (err error) {
 	// Stop main process
 	var le = log.WithFields(log.Fields{
-		"local": c.getLocalBPInfo(),
+		"local": c.getLocalPBInfo(),
 	})
 	le.Debug("stopping chain")
 	c.stop()
@@ -376,7 +358,7 @@ func (c *Chain) Stop() (err error) {
 	return
 }
 
-func (c *Chain) pushBlock(b *types.BPBlock) (err error) {
+func (c *Chain) pushBlock(b *types.PBBlock) (err error) {
 	var ierr error
 	if ierr = b.Verify(); ierr != nil {
 		err = errors.Wrap(ierr, "failed to check block")
@@ -392,7 +374,7 @@ func (c *Chain) pushBlock(b *types.BPBlock) (err error) {
 func (c *Chain) produceBlock(now time.Time) (err error) {
 	var (
 		priv *asymmetric.PrivateKey
-		b    *types.BPBlock
+		b    *types.PBBlock
 	)
 
 	if priv, err = kms.GetLocalPrivateKey(); err != nil {
@@ -408,7 +390,7 @@ func (c *Chain) produceBlock(now time.Time) (err error) {
 		"parent_hash": b.ParentHash().Short(4),
 	}).Debug("produced new block")
 
-	// Broadcast to other block producers
+	// Broadcast to other presbyterians  
 	c.nonblockingBroadcastBlock(b)
 	return
 }
@@ -418,7 +400,7 @@ func (c *Chain) advanceNextHeight(now time.Time, d time.Duration) {
 	var elapsed = -d
 
 	log.WithFields(log.Fields{
-		"local":            c.getLocalBPInfo(),
+		"local":            c.getLocalPBInfo(),
 		"enclosing_height": c.getNextHeight() - 1,
 		"using_timestamp":  now.Format(time.RFC3339Nano),
 		"elapsed_seconds":  elapsed.Seconds(),
@@ -458,7 +440,7 @@ func (c *Chain) syncHeads() {
 		)
 		if now.Before(c.genesisTime) {
 			log.WithFields(log.Fields{
-				"local": c.getLocalBPInfo(),
+				"local": c.getLocalPBInfo(),
 			}).Info("now time is before genesis time, waiting for genesis")
 			break
 		}
@@ -470,11 +452,11 @@ func (c *Chain) syncHeads() {
 			// on startup by now, need better solution here.
 			if conf.GConf.StartupSyncHoles {
 				log.WithFields(log.Fields{
-					"local":       c.getLocalBPInfo(),
+					"local":       c.getLocalPBInfo(),
 					"next_height": c.getNextHeight(),
 					"now_height":  nowHeight,
 				}).Debug("synchronizing head blocks")
-				c.blockingSyncCurrentHead(c.ctx, conf.BPStartupRequiredReachableCount)
+				c.blockingSyncCurrentHead(c.ctx, conf.PBStartupRequiredReachableCount)
 			}
 			c.increaseNextHeight()
 		}
@@ -530,7 +512,8 @@ func (c *Chain) processAddTxReq(addTxReq *types.AddTxReq) {
 			"type":    tx.GetTransactionType(),
 		})
 
-		base pi.AccountNonce
+		//base pi.AccountNonce
+
 		err  error
 	)
 
@@ -550,10 +533,13 @@ func (c *Chain) processAddTxReq(addTxReq *types.AddTxReq) {
 		le.WithError(err).Warn("failed to verify transaction")
 		return
 	}
+
+	/* TODO, 20220104 
 	if base, err = c.immutableNextNonce(addr); err != nil {
 		le.WithError(err).Warn("failed to load base nonce of transaction account")
 		return
 	}
+
 	if nonce < base || nonce >= base+conf.MaxPendingTxsPerAccount {
 		// TODO(leventeliu): should persist to somewhere for tx query?
 		le.WithFields(log.Fields{
@@ -562,8 +548,9 @@ func (c *Chain) processAddTxReq(addTxReq *types.AddTxReq) {
 		}).Warn("invalid transaction nonce")
 		return
 	}
+	*/
 
-	// Broadcast to other block producers
+	// Broadcast to other presbyterians  
 	if ttl > conf.MaxTxBroadcastTTL {
 		ttl = conf.MaxTxBroadcastTTL
 	}
@@ -614,7 +601,7 @@ func (c *Chain) mainCycle(ctx context.Context) {
 				c.advanceNextHeight(t, d)
 			} else {
 				log.WithFields(log.Fields{
-					"peer":        c.getLocalBPInfo(),
+					"peer":        c.getLocalPBInfo(),
 					"next_height": c.getNextHeight(),
 					"head_height": c.head().height,
 					"head_block":  c.head().hash.Short(4),
@@ -667,12 +654,18 @@ func (c *Chain) syncCurrentHead(ctx context.Context, requiredReachable uint32) (
 	// with timeout of one tick.
 	var (
 		unreachable = c.blockingFetchBlock(ctx, currentHeight)
-		serversNum  = c.getLocalBPInfo().total
+		serversNum  = c.getLocalPBInfo().total
 	)
 
 	switch c.mode {
-	case BPMode:
+	case PBMode:
 		ok = unreachable+requiredReachable <= serversNum
+		log.WithFields(log.Fields{
+			"serversNum":              serversNum,
+			"unreachable":  unreachable,
+			"requiredReachable":  requiredReachable ,
+		}).Infof("Chain/syncCurrentHead, ok=%s\n", ok )
+
 	case APINodeMode:
 		ok = unreachable < serversNum
 	default:
@@ -682,10 +675,10 @@ func (c *Chain) syncCurrentHead(ctx context.Context, requiredReachable uint32) (
 
 	if !ok {
 		log.WithFields(log.Fields{
-			"peer":              c.getLocalBPInfo(),
+			"peer":              c.getLocalPBInfo(),
 			"sync_head_height":  currentHeight,
 			"unreachable_count": unreachable,
-		}).Warn("one or more block producers are currently unreachable")
+		}).Warn("one or more presbyterians are currently unreachable")
 	}
 	return
 }
@@ -708,7 +701,7 @@ func (c *Chain) storeTx(tx pi.Transaction) (err error) {
 }
 
 func (c *Chain) replaceAndSwitchToBranch(
-	newBlock *types.BPBlock, originBrIdx int, newBranch *branch) (err error,
+	newBlock *types.PBBlock, originBrIdx int, newBranch *branch) (err error,
 ) {
 	var (
 		lastIrre *blockNode
@@ -855,7 +848,7 @@ func (c *Chain) stat() {
 	}
 }
 
-func (c *Chain) applyBlock(bl *types.BPBlock) (err error) {
+func (c *Chain) applyBlock(bl *types.PBBlock) (err error) {
 	var (
 		ok     bool
 		ierr   error
@@ -921,10 +914,10 @@ func (c *Chain) applyBlock(bl *types.BPBlock) (err error) {
 }
 
 func (c *Chain) produceAndStoreBlock(
-	now time.Time, priv  *asymmetric.PrivateKey) (out *types.BPBlock, err error,
+	now time.Time, priv  *asymmetric.PrivateKey) (out *types.PBBlock, err error,
 ) {
 	var (
-		bl   *types.BPBlock
+		bl   *types.PBBlock
 		br   *branch
 		ierr error
 	)
@@ -958,41 +951,6 @@ func (c *Chain) now() time.Time {
 }
 
 func (c *Chain) startService(chain *Chain) {
-	//wyong, 20201015 
-	//c.server.RegisterService(route.BlockProducerRPCName, &ChainRPCService{chain: chain})
-	// init dht node server
-	//log.Info("init consistent runtime")
-	//kvServer := NewKVServer(thisNode.ID, peers, st, dhtGossipTimeout)
-	//dht, err := route.NewDHTService(conf.GConf.DHTFileName, kvServer, true)
-	//if err != nil {
-	//	log.WithError(err).Error("init consistent hash failed")
-	//	return err
-	//}
-
-	//defer kvServer.Stop()
-
-	// set consistent handler to local storage
-	//kvServer.storage.consistent = dht.Consistent
-
-	// register dht service rpc
-	//log.Info("register dht service rpc")
-	//err = server.RegisterService(route.DHTRPCName, dht)
-	//if err != nil {
-	//	log.WithError(err).Error("register dht service failed")
-	//	return err
-	//}
-
-
-	// register gossip service rpc
-	//gossipService := NewGossipService(kvServer)
-	//log.Info("register dht gossip service rpc")
-	//err = server.RegisterService(route.DHTGossipRPCName, gossipService)
-	//if err != nil {
-	//	log.WithError(err).Error("register dht gossip service failed")
-	//	return err
-	//}
-
-
 	NewChainRPCService(c ) 
 }
 
@@ -1018,7 +976,7 @@ func (c *Chain) nextTick() (t time.Time, d time.Duration) {
 func (c *Chain) isMyTurn() bool {
 	c.RLock()
 	defer c.RUnlock()
-	return c.nextHeight%c.localBPInfo.total == c.localBPInfo.rank
+	return c.nextHeight%c.localPBInfo.total == c.localPBInfo.rank
 }
 
 // increaseNextHeight prepares the chain state for the next turn.
@@ -1045,28 +1003,28 @@ func (c *Chain) getNextHeight() uint32 {
 	return c.nextHeight
 }
 
-func (c *Chain) getLocalBPInfo() *blockProducerInfo {
+func (c *Chain) getLocalPBInfo() *PresbyterianInfo {
 	c.RLock()
 	defer c.RUnlock()
-	return c.localBPInfo
+	return c.localPBInfo
 }
 
-// getRemoteBPInfos remove this node from the peer list.
-func (c *Chain) getRemoteBPInfos() (remoteBPInfos []*blockProducerInfo) {
-	var localBPInfo, bpInfos = func() (*blockProducerInfo, []*blockProducerInfo) {
+// getRemotePBInfos remove this node from the peer list.
+func (c *Chain) getRemotePBInfos() (remotePBInfos []*PresbyterianInfo) {
+	var localPBInfo, pbInfos = func() (*PresbyterianInfo, []*PresbyterianInfo) {
 		c.RLock()
 		defer c.RUnlock()
-		return c.localBPInfo, c.bpInfos
+		return c.localPBInfo, c.pbInfos
 	}()
 
-	for _, info := range bpInfos {
-		if info.nodeID.IsEqual(&localBPInfo.nodeID) {
+	for _, info := range pbInfos {
+		if info.nodeID.IsEqual(&localPBInfo.nodeID) {
 			continue
 		}
-		remoteBPInfos = append(remoteBPInfos, info)
+		remotePBInfos = append(remotePBInfos, info)
 	}
 
-	return remoteBPInfos
+	return remotePBInfos
 }
 
 func (c *Chain) lastIrreversibleBlock() *blockNode {

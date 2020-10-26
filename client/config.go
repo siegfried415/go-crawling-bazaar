@@ -21,8 +21,7 @@ import (
 	"strconv"
 	"strings"
 
-	//wyong, 20201021
-	host "github.com/libp2p/go-libp2p-core/host" 
+	net "github.com/siegfried415/go-crawling-bazaar/net" 
 )
 
 const (
@@ -32,7 +31,6 @@ const (
 	paramMirror       = "mirror"
 )
 
-//wyong, 20200819 
 var (
 	// UseLeader use leader nodes to do queries
 	UseLeader = true 
@@ -68,9 +66,8 @@ type Config struct {
 	// Mirror option forces client to query from mirror server
 	Mirror string
 
-	//wyong, 20201021 
 	Protocol string  
-	Host 	host.Host 
+	Host 	net.RoutedHost 
 }
 
 // NewConfig creates a new config with default value.

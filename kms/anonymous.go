@@ -19,7 +19,7 @@ package kms
 import (
 	"strings"
 
-	"github.com/siegfried415/gdf-rebuild/proto"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
 )
 
 // AnonymousXXX is only used for DHT.Ping
