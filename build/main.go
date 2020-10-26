@@ -262,7 +262,7 @@ func buildGdf() {
 
 	runCmd(cmd([]string{
 		"go", "build",
-		//"-ldflags", fmt.Sprintf("-X github.com/siegfried415/gdf-rebuild/flags.Commit=%s", getCommitSha()),
+		"-ldflags", fmt.Sprintf("-X github.com/siegfried415/gdf-rebuild/flags.Commit=%s", getCommitSha()),
 		"-v", "-o", "bin/gdf", ".",
 	}...))
 }
