@@ -34,7 +34,7 @@ import (
 	//wyong, 20201022 
 	kms "github.com/siegfried415/gdf-rebuild/kms"
 	proto "github.com/siegfried415/gdf-rebuild/proto"
-        mine "github.com/siegfried415/gdf-rebuild/pow/cpuminer"
+        //mine "github.com/siegfried415/gdf-rebuild/pow/cpuminer"
 
 	//"github.com/siegfried415/gdf-rebuild/address"
 	"github.com/siegfried415/gdf-rebuild/conf"
@@ -43,7 +43,10 @@ import (
 
 	//node "github.com/siegfried415/gdf-rebuild/node"
 	"github.com/siegfried415/gdf-rebuild/paths"
-	"github.com/siegfried415/gdf-rebuild/repo"
+
+	//wyong, 20201027 
+	//"github.com/siegfried415/gdf-rebuild/repo"
+
 	//"github.com/siegfried415/gdf-rebuild/types"
 )
 
@@ -90,7 +93,8 @@ or input a passphrase by
 
 	Run: func(req *cmds.Request, re cmds.ResponseEmitter, env cmds.Environment) error {
 
-		repoDir, _ := req.Options[OptionRepoDir].(string)
+
+		repoDir, _ := req.Options[OptionRepoDir].(string)	
 		repoDir, err := paths.GetRepoPath(repoDir)
 		if err != nil {
 			return err
@@ -162,30 +166,34 @@ or input a passphrase by
 			//minerListenAddr string
 			//testnetRegion   string
 
-			password string 
+			//password string 
 			withPassword bool 
 		)
 
+		//wyong, 20201027 
+		password, _ := req.Options["password"].(string)
+
 		//wyong, 20201022 
-		withPassword = false 
-		if req.Options["withPassword"] == "yes" { 
+		withPasswordStr, _ := req.Options["withPassword"].(string) 
+		if withPasswordStr == "yes" { 
 			withPassword = true 	
 		}
 
 		// detect customized private key
-		if req.Options["PrivateKeyParam"] != "" {
+		privateKeyParam, _ := req.Options["PrivateKeyParam"].(string)  
+		if privateKeyParam != "" {
 			var (
 				oldPassword string
 			)
 
-			if req.Options["password"] == "" {
+			if password == "" {
 				fmt.Println("Please enter the passphrase of the existing private key")
 				oldPassword = readMasterKey(!withPassword )
 			} else {
-				oldPassword = req.Options["password"].(string)
+				oldPassword = password 
 			}
 
-			privateKey, err = kms.LoadPrivateKey(req.Options["PrivateKeyParam"].(string), []byte(oldPassword))
+			privateKey, err = kms.LoadPrivateKey(privateKeyParam, []byte(oldPassword))
 
 			if err != nil {
 				//ConsoleLog.WithError(err).Error("load specified private key failed")
@@ -195,8 +203,9 @@ or input a passphrase by
 		}
 
 		var port string
-		if req.Options["MinerListenAddr"] != "" {
-			minerListenAddrSplit := strings.Split(req.Options["MinerListenAddr"].(string), ":")
+		minerListenAddr, _ := req.Options["MinerListenAddr"].(string)
+		if minerListenAddr != "" {
+			minerListenAddrSplit := strings.Split(minerListenAddr, ":")
 			if len(minerListenAddrSplit) != 2 {
 				//ConsoleLog.Error("-miner only accepts listen address in ip:port format. e.g. 127.0.0.1:7458")
 				//SetExitStatus(1)
@@ -206,24 +215,26 @@ or input a passphrase by
 		}
 
 		var rawConfig *conf.Config
-		if req.Options["Source"] == "" {
+		source, _ := req.Options["Source"].(string)
+		if source == "" {
 			fmt.Printf("Generating testnet %s config\n", req.Options["TestnetRegion"])
 
 			// Load testnet config
 			rawConfig = testnet.GetTestNetConfig()
-			if req.Options["minerListenAddr"] != "" {
+			if minerListenAddr != "" {
 				testnet.SetMinerConfig(rawConfig)
 				rawConfig.ListenAddr = "0.0.0.0:" + port
 			}
 
-			if req.Options["TestnetRegion"] == testnetW {
+			testnetRegion , _ := req.Options["TestnetRegion"].(string) 
+			if testnetRegion == testnetW {
 				rawConfig.DNSSeed.BPCount = 3
 				rawConfig.DNSSeed.Domain = "testnetw.gridb.io"
 			}
 		} else {
 			// Load from template file
 			fmt.Printf("Generating config base on %s templete\n", req.Options["Source"])
-			sourceConfig, err := ioutil.ReadFile(req.Options["Source"].(string))
+			sourceConfig, err := ioutil.ReadFile(source)
 			if err != nil {
 				//ConsoleLog.WithError(err).Error("read config template failed")
 				//SetExitStatus(1)
@@ -270,12 +281,12 @@ or input a passphrase by
 		}
 
 		fmt.Println("Generating private key...")
-		if req.Options["password"] == "" {
+		if password == "" {
 			fmt.Println("Please enter passphrase for new private key")
 			password = readMasterKey(!withPassword)
 		}
 
-		if req.Options["PrivateKeyParam"] == "" {
+		if privateKeyParam == "" {
 			privateKey, _, err = asymmetric.GenSecp256k1KeyPair()
 			if err != nil {
 				//ConsoleLog.WithError(err).Error("generate key pair failed")
@@ -303,9 +314,9 @@ or input a passphrase by
 
 		fmt.Println("Generating nonce...")
 
-		//todo, wyong, 20201022 
-		//nonce := nonceGen(publicKey)
-		var nonce *mine.NonceInfo 
+		//wyong, 20201027 
+		//var nonce *mine.NonceInfo 
+		nonce := nonceGen(publicKey)
 
 		cliNodeID := proto.NodeID(nonce.Hash.String())
 		fmt.Println("Generated nonce.")
@@ -326,27 +337,13 @@ or input a passphrase by
 			PublicKey: publicKey,
 			Nonce:     nonce.Nonce,
 		}
-		if req.Options["minerListenAddr"] != "" {
+		if minerListenAddr != "" {
 			node.Role = proto.Miner
-			node.Addr = req.Options["minerListenAddr"].(string)
+			node.Addr = minerListenAddr
 		}
 		rawConfig.KnownNodes = append(rawConfig.KnownNodes, node)
 
 		// Write config
-		//out, err := yaml.Marshal(rawConfig)
-		//if err != nil {
-		//	ConsoleLog.WithError(err).Error("unexpected error")
-		//	SetExitStatus(1)
-		//	return
-		//}
-		//configFilePath := path.Join(repoDir, "config.yaml")
-		//err = ioutil.WriteFile(configFilePath, out, 0644)
-		//if err != nil {
-		//	ConsoleLog.WithError(err).Error("unexpected error")
-		//	SetExitStatus(1)
-		//	return
-		//}
-
 		configFilePath := filepath.Join(repoDir, "config.yaml")
 		err = rawConfig.WriteFile(configFilePath)
 		if err != nil {
@@ -355,16 +352,17 @@ or input a passphrase by
 			return err
 		}
 
+		//wyong, 20201027 
 		//create repo 
-		if err := repo.InitFSRepo(repoDir, repo.Version, rawConfig ); err != nil {
-			return err
-		}
-		rep, err := repo.OpenFSRepo(repoDir, repo.Version)
-		if err != nil {
-			return err
-		}
-		// The only error Close can return is that the repo has already been closed.
-		defer func() { _ = rep.Close() }()
+		//if err := repo.InitFSRepo(repoDir, repo.Version, rawConfig ); err != nil {
+		//	return err
+		//}
+		//rep, err := repo.OpenFSRepo(repoDir, repo.Version)
+		//if err != nil {
+		//	return err
+		//}
+		//// The only error Close can return is that the repo has already been closed.
+		//defer func() { _ = rep.Close() }()
 
 
 		fmt.Println("Generated config.")

@@ -17,7 +17,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/siegfried415/gdf-rebuild/paths"
-	"github.com/siegfried415/gdf-rebuild/repo"
+	"github.com/siegfried415/gdf-rebuild/conf"
 	//"github.com/siegfried415/gdf-rebuild/types"
 
 	env "github.com/siegfried415/gdf-rebuild/env" 
@@ -353,6 +353,7 @@ func getAPIAddress(req *cmds.Request) (string, error) {
 	}
 
 	fmt.Printf("getAPIAddress(30)\n") 
+
 	// we will read the api file if no other option is given.
 	if len(rawAddr) == 0 {
 		fmt.Printf("getAPIAddress(40)\n") 
@@ -362,8 +363,9 @@ func getAPIAddress(req *cmds.Request) (string, error) {
 			fmt.Printf("getAPIAddress(45)\n") 
 			return "", err
 		}
+
 		fmt.Printf("getAPIAddress(50)\n") 
-		rawAddr, err = repo.APIAddrFromRepoPath(repoDir)
+		rawAddr, err = conf.APIAddrFromRepoPath(repoDir)
 		if err != nil {
 			fmt.Printf("getAPIAddress(55)\n") 
 			return "", errors.Wrap(err, "can't find API endpoint address in environment, command-line, or local repo (is the daemon running?)")

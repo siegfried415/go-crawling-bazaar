@@ -120,6 +120,15 @@ type SwarmConfig struct {
 	PublicRelayAddress string `yaml:"public_relay_address,omitempty"`
 }
 
+//wyong, 20201027 
+// DatastoreConfig holds all the configuration options for the datastore.
+// TODO: use the advanced datastore configuration from ipfs
+type DatastoreConfig struct {
+        Type string `yaml:"type"`
+        Path string `yaml:"path"`
+}
+
+
 // Config holds all the config read from yaml config file.
 type Config struct {
 	//wyong, 20201003 
@@ -144,6 +153,10 @@ type Config struct {
 	//wyong, 20200908
 	//SwarmAddr 	   string		`yaml:"SwarmAddr"`
 	Swarm		   *SwarmConfig 	`yaml:"Swarm"`
+
+	//wyong, 20201027
+	Datastore     *DatastoreConfig     `yaml:"datastore"`
+
 
 	ListenDirectAddr   string            `yaml:"ListenDirectAddr,omitempty"`
 	ExternalListenAddr string            `yaml:"-"` // for metric purpose

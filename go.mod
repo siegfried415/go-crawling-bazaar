@@ -4,15 +4,27 @@ go 1.13
 
 require (
 	github.com/cyberdelia/go-metrics-graphite v0.0.0-20161219230853-39f87cc3b432
+	github.com/davecgh/go-spew v1.1.1
+	github.com/ipfs/go-cid v0.0.7
+	github.com/ipfs/go-ipfs-cmdkit v0.0.1
 	github.com/ipfs/go-ipfs-cmds v0.4.0
+	github.com/ipfs/go-ipfs-files v0.0.1
 	github.com/ipfs/go-log v1.0.4
 	github.com/libp2p/go-libp2p-core v0.7.0
+	github.com/libp2p/go-libp2p-host v0.1.0
+	github.com/mfonda/simhash v0.0.0-20151007195837-79f94a1100d6
+	github.com/multiformats/go-multiaddr v0.3.1
+	github.com/multiformats/go-multiaddr-net v0.2.0
+	github.com/pkg/errors v0.9.1
 	github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0
 	github.com/siegfried415/gdf-rebuild v0.0.0-00010101000000-000000000000
+	github.com/sirupsen/logrus v1.7.0
 
 	github.com/ugorji/go v1.1.2
 	github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8
 	github.com/whyrusleeping/go-logging v0.0.1
+	golang.org/x/crypto v0.0.0-20200423211502-4bdfaf469ed5
+	gopkg.in/yaml.v2 v2.2.4
 
 )
 

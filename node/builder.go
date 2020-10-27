@@ -63,7 +63,9 @@ import (
 	"github.com/siegfried415/gdf-rebuild/crypto/asymmetric" 
 	net "github.com/siegfried415/gdf-rebuild/net" 
 	dag "github.com/siegfried415/gdf-rebuild/dag" 
-	repo "github.com/siegfried415/gdf-rebuild/repo" 
+
+	//wyong, 20201027 
+	//repo "github.com/siegfried415/gdf-rebuild/repo" 
 
 	//wyong, 20201026 
 	//clock "github.com/siegfried415/gdf-rebuild/clock" 
@@ -98,7 +100,10 @@ type Builder struct {
         //Verifier    verification.Verifier
 
         //Rewarder    consensus.BlockRewarder
-        Repo        repo.Repo
+
+	//wyong, 20201027 
+        //Repo        repo.Repo
+
         IsRelay     bool
 
 	//wyong, 20201026 
@@ -127,7 +132,7 @@ func IsRelay() BuilderOpt {
 
 
 // New creates a new node.
-func New(ctx context.Context, opts ...BuilderOpt) (*Node, error) {
+func New(ctx context.Context, repoPath string, opts ...BuilderOpt) (*Node, error) {
         n := &Builder{}
         for _, o := range opts {
                 if err := o(n); err != nil {
@@ -135,7 +140,7 @@ func New(ctx context.Context, opts ...BuilderOpt) (*Node, error) {
                 }
         }
 
-        return n.build(ctx)
+        return n.build(ctx, repoPath )
 }
 
 
@@ -174,7 +179,7 @@ type blankValidator struct{}
 func (blankValidator) Validate(_ string, _ []byte) error        { return nil }
 func (blankValidator) Select(_ string, _ [][]byte) (int, error) { return 0, nil }
 
-func (nc *Builder) build(ctx context.Context) (*Node, error ) {
+func (nc *Builder) build(ctx context.Context, repoPath string ) (*Node, error ) {
         //if nc.Repo == nil {
         //        nc.Repo = repo.NewInMemoryRepo()
         //}
@@ -224,7 +229,10 @@ func (nc *Builder) build(ctx context.Context) (*Node, error ) {
 	route.InitKMS(conf.GConf.PubKeyStoreFile)
 
 
-        bs := bstore.NewBlockstore(nc.Repo.Datastore())
+	//wyong, 20201027 
+	ds, _ := conf.NewDatastore(repoPath) 
+
+        bs := bstore.NewBlockstore(ds)
         validator := blankValidator{}
 
 	//wyong, 20200911 
@@ -243,22 +251,21 @@ func (nc *Builder) build(ctx context.Context) (*Node, error ) {
 	makeDHT := func(h host.Host) (routing.Routing, error) {
 		//fmt.Printf("dag/makeDGT(10),host=%s\n", h) 
 
-		/* wyong, 20200921 
-		baseOpts := []dht.Option{
-			dht.ProtocolPrefix("/gdf/dht"),
-			dht.NamespacedValidator("v", blankValidator{}),
-			dht.DisableAutoRefresh(),
-			dht.Mode(dht.ModeServer), 
-		}
+		// wyong, 20200921 
+		//baseOpts := []dht.Option{
+		//	dht.ProtocolPrefix("/gdf/dht"),
+		//	dht.NamespacedValidator("v", blankValidator{}),
+		//	dht.DisableAutoRefresh(),
+		//	dht.Mode(dht.ModeServer), 
+		//}
 
 		//fmt.Printf("dag/makeDGT(20)\n") 
-		r, err := dht.New(ctx, h, baseOpts..., )
-		*/
+		//r, err := dht.New(ctx, h, baseOpts..., )
 
 		r, err := dht.New(
 			ctx,
 			h,
-			dhtopts.Datastore(nc.Repo.Datastore()),
+			dhtopts.Datastore(ds),
 			dhtopts.NamespacedValidator("v", validator),
 			dhtopts.Protocols(net.FilecoinDHT(network)),
 		)
@@ -439,7 +446,7 @@ func (nc *Builder) build(ctx context.Context) (*Node, error ) {
 
                 //Clock:       nc.Clock,
                 OfflineMode: nc.OfflineMode,
-                Repo:        nc.Repo,
+                //Repo:        nc.Repo,
                 Network: NetworkSubmodule{
                         //host:        peerHost,
                         //PeerHost:    peerHost,
@@ -553,14 +560,14 @@ func (nc *Builder) buildHost(ctx context.Context,
 
 	fmt.Printf("dag/buildHost(20)\n") 
         if nc.IsRelay {
-                cfg := nc.Repo.Config()
-                publicAddr, err := ma.NewMultiaddr(cfg.Swarm.PublicRelayAddress)
+                //cfg := nc.Repo.Config()
+                publicAddr, err := ma.NewMultiaddr(conf.GConf.Swarm.PublicRelayAddress)
                 if err != nil {
                         return nil, err
                 }
                 publicAddrFactory := func(lc *libp2p.Config) error {
                         lc.AddrsFactory = func(addrs []ma.Multiaddr) []ma.Multiaddr {
-                                if cfg.Swarm.PublicRelayAddress == "" {
+                                if conf.GConf.Swarm.PublicRelayAddress == "" {
                                         return addrs
                                 }
                                 return append(addrs, publicAddr)

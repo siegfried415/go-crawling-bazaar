@@ -30,7 +30,9 @@ import (
 	//"github.com/siegfried415/gdf-rebuild/consensus"
 	node "github.com/siegfried415/gdf-rebuild/node"
 	"github.com/siegfried415/gdf-rebuild/paths"
-	"github.com/siegfried415/gdf-rebuild/repo"
+
+	//wyong, 20201027 
+	//"github.com/siegfried415/gdf-rebuild/repo"
 
 	//wyong, 20201022 
 	utils "github.com/siegfried415/gdf-rebuild/utils" 
@@ -63,15 +65,6 @@ func daemonRun(req *cmds.Request, re cmds.ResponseEmitter) error {
 		err error
 	)
 
-	// third precedence is config file.
-	//rep, err := getRepo(req)
-
-	//repoDir, _ := req.Options[OptionRepoDir].(string)
-	//if err != nil {
-	//	return err
-	//}
-
-
 	repoDir, _ := req.Options[OptionRepoDir].(string)
 	repoDir, err = paths.GetRepoPath(repoDir)
 	if err != nil {
@@ -79,13 +72,14 @@ func daemonRun(req *cmds.Request, re cmds.ResponseEmitter) error {
 	}
 
 	if repoDir == "" {
-		repoDir = utils.HomeDirExpand("~/.gdf-minerd")
+		repoDir = utils.HomeDirExpand("~/.gdf")
 	}
 
-	repo, err := repo.OpenFSRepo(repoDir, repo.Version)
-	if err != nil {
-		return err
-	}
+	//wyong, 20201027 
+	//repo, err := repo.OpenFSRepo(repoDir, repo.Version)
+	//if err != nil {
+	//	return err
+	//}
 
 	configFile := filepath.Join(repoDir, "config.yaml")
         conf.GConf, err = conf.LoadConfig(configFile)
@@ -159,7 +153,7 @@ func daemonRun(req *cmds.Request, re cmds.ResponseEmitter) error {
 
 
 	// Instantiate the node.
-	n, err := node.New(req.Context, opts...)
+	n, err := node.New(req.Context, repoDir,  opts...)
 	if err != nil {
 		return err
 	}
@@ -187,7 +181,9 @@ func daemonRun(req *cmds.Request, re cmds.ResponseEmitter) error {
 	ready := make(chan interface{}, 1)
 	go func() {
 		<-ready
-		_ = re.Emit(fmt.Sprintf("API server listening on %s\n", repo.Config().API.Address))
+
+		//wyong, 20201027 
+		_ = re.Emit(fmt.Sprintf("API server listening on %s\n", conf.GConf.API.Address))
 	}()
 
 	var terminate = make(chan os.Signal, 1)
@@ -197,7 +193,7 @@ func daemonRun(req *cmds.Request, re cmds.ResponseEmitter) error {
 	// The request is expected to remain open so the daemon uses the request context.
 	// Pass a new context here if the flow changes such that the command should exit while leaving
 	// a forked deamon running.
-	return RunAPIAndWait(req.Context, n, repo.Config().API, ready, terminate)
+	return RunAPIAndWait(req.Context, n, repoDir,  conf.GConf.API, ready, terminate)
 }
 
 /*
@@ -216,7 +212,7 @@ func getRepo(req *cmds.Request) (repo.Repo, error) {
 // The `ready` channel is closed when the server is running and its API address has been
 // saved to the node's repo.
 // A message sent to or closure of the `terminate` channel signals the server to stop.
-func RunAPIAndWait(ctx context.Context, nd *node.Node, config *conf.APIConfig, ready chan interface{}, terminate chan os.Signal) error {
+func RunAPIAndWait(ctx context.Context, nd *node.Node, repoDir string, config *conf.APIConfig, ready chan interface{}, terminate chan os.Signal) error {
 
 	// wyong, 20200921 
 	//servenv := &Env{
@@ -268,7 +264,7 @@ func RunAPIAndWait(ctx context.Context, nd *node.Node, config *conf.APIConfig, r
 
 	// Write the resolved API address to the repo
 	config.Address = apiListener.Multiaddr().String()
-	if err := nd.Repo.SetAPIAddr(config.Address); err != nil {
+	if err := conf.SetAPIAddr(repoDir, config.Address); err != nil {
 		return errors.Wrap(err, "Could not save API address to repo")
 	}
 	// Signal that the sever has started and then wait for a signal to stop.

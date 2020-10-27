@@ -91,7 +91,9 @@ import (
 	//wyong, 20201022 
 	"github.com/siegfried415/gdf-rebuild/proto"
 
-	"github.com/siegfried415/gdf-rebuild/repo"
+	//wyong, 20201027 
+	//"github.com/siegfried415/gdf-rebuild/repo"
+
 	//"github.com/siegfried415/gdf-rebuild/state"
 	//"github.com/siegfried415/gdf-rebuild/types"
 	//"github.com/siegfried415/gdf-rebuild/version"
@@ -139,10 +141,11 @@ type Node struct {
 
 	//PorcelainAPI *porcelain.API
 
+	//wyong, 20201027
 	// Repo is the repo this node was created with.
 	//
 	// It contains all persistent artifacts of the filecoin node.
-	Repo repo.Repo
+	//Repo repo.Repo
 
 	//Blockstore BlockstoreSubmodule
 
@@ -262,9 +265,10 @@ func (node *Node) Stop(ctx context.Context) {
                 fmt.Printf("error closing host: %s\n", err)
         }
 
-        if err := node.Repo.Close(); err != nil {
-                fmt.Printf("error closing repo: %s\n", err)
-        }
+	//wyong, 20201027 
+        //if err := node.Repo.Close(); err != nil {
+        //        fmt.Printf("error closing repo: %s\n", err)
+        //}
 
         //node.Network.Bootstrapper.Stop()
         fmt.Println("stopping filecoin :(")
