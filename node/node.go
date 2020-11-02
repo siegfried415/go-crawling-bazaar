@@ -190,7 +190,9 @@ func (node *Node) Start(ctx context.Context) error {
 
 	if !node.OfflineMode {
 		// Start bootstrapper.
-		node.Network.Bootstrapper.Start(context.Background())
+		//context.Background()->ctx, wyong, 20201029 
+		//node.Network.Bootstrapper.Start(ctx)
+
 
 		// Register peer tracker disconnect function with network.
 		net.TrackerRegisterDisconnect(node.Network.host.Network(), node.Network.PeerTracker)
@@ -291,8 +293,10 @@ func (node *Node) Start(ctx context.Context) error {
 	//conf.GConf.GenerateKeyPair = genKeyPair
 
 	if !node.OfflineMode {
+
 		// Start bootstrapper.
-		node.Network.Bootstrapper.Start(context.Background())
+		//context.Background()->ctx, wyong, 20201029 
+		//node.Network.Bootstrapper.Start(ctx)
 
 		//todo, wyong, 20201015 
 		// Register peer tracker disconnect function with network.

@@ -32,7 +32,11 @@ import (
        	//"io/ioutil"
 	peer "github.com/libp2p/go-libp2p-core/peer" 
 	protocol "github.com/libp2p/go-libp2p-core/protocol" 
-        inet "github.com/libp2p/go-libp2p-net"
+
+	//go-libp2p-net -> go-libp2p-core/network
+	//wyong, 20201029 
+        inet "github.com/libp2p/go-libp2p-core/network"
+
         host "github.com/libp2p/go-libp2p-host"
 
 

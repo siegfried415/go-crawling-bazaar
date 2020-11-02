@@ -5,14 +5,26 @@ go 1.13
 require (
 	github.com/cyberdelia/go-metrics-graphite v0.0.0-20161219230853-39f87cc3b432
 	github.com/davecgh/go-spew v1.1.1
+	github.com/ipfs/go-bitswap v0.1.8
+	github.com/ipfs/go-blockservice v0.1.3
 	github.com/ipfs/go-cid v0.0.7
+	github.com/ipfs/go-ds-badger v0.2.3
+	github.com/ipfs/go-ipfs-blockstore v0.1.4
 	github.com/ipfs/go-ipfs-cmdkit v0.0.1
 	github.com/ipfs/go-ipfs-cmds v0.4.0
+	github.com/ipfs/go-ipfs-exchange-interface v0.0.1
 	github.com/ipfs/go-ipfs-files v0.0.1
+	github.com/ipfs/go-ipfs-keystore v0.0.1
 	github.com/ipfs/go-log v1.0.4
+	github.com/ipfs/go-merkledag v0.0.6
+	github.com/libp2p/go-libp2p v0.11.0
+	github.com/libp2p/go-libp2p-autonat-svc v0.2.0
+	github.com/libp2p/go-libp2p-circuit v0.3.1
 	github.com/libp2p/go-libp2p-core v0.7.0
 	github.com/libp2p/go-libp2p-host v0.1.0
+	github.com/libp2p/go-libp2p-kad-dht v0.0.0-00010101000000-000000000000
 	github.com/mfonda/simhash v0.0.0-20151007195837-79f94a1100d6
+	github.com/mitchellh/go-homedir v1.1.0
 	github.com/multiformats/go-multiaddr v0.3.1
 	github.com/multiformats/go-multiaddr-net v0.2.0
 	github.com/pkg/errors v0.9.1

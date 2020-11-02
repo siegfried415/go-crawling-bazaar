@@ -167,17 +167,17 @@ or input a passphrase by
 			//testnetRegion   string
 
 			//password string 
-			withPassword bool 
+			//withPassword bool 
 		)
 
 		//wyong, 20201027 
 		password, _ := req.Options["password"].(string)
 
 		//wyong, 20201022 
-		withPasswordStr, _ := req.Options["withPassword"].(string) 
-		if withPasswordStr == "yes" { 
-			withPassword = true 	
-		}
+		withPassword, _ := req.Options["with-password"].(bool) 
+		//if withPasswordStr == "yes" { 
+		//	withPassword = true 	
+		//}
 
 		// detect customized private key
 		privateKeyParam, _ := req.Options["PrivateKeyParam"].(string)  
@@ -333,7 +333,10 @@ or input a passphrase by
 		node := proto.Node{
 			ID:        cliNodeID,
 			Role:      proto.Client,
-			Addr:      "0.0.0.0:15151",
+
+			//wyong, 20201028 
+			Addr:      "/ip4/127.0.0.0/tcp/15151",
+
 			PublicKey: publicKey,
 			Nonce:     nonce.Nonce,
 		}

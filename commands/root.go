@@ -30,6 +30,9 @@ const (
 	// OptionRepoDir is the name of the option for specifying the directory of the repo.
 	OptionRepoDir = "repodir"
 
+	//wyong, 20201028
+	OptionRole = "role"
+
 	// OptionSectorDir is the name of the option for specifying the directory into which staged and sealed sectors will be written.
 	OptionSectorDir = "sectordir"
 
@@ -58,6 +61,9 @@ const (
 	// run with.  TODO: this should eventually be more explicitly grouped
 	// with testing as we won't be able to set blocktime in production.
 	BlockTime = "block-time"
+
+	//wyong, 20201030 
+	AdapterAddress = "adapter"
 
 	// PeerKeyFile is the path of file containing key to use for new nodes libp2p identity
 	PeerKeyFile = "peerkeyfile"
@@ -150,7 +156,7 @@ TOOL COMMANDS
 		cmdkit.StringOption("log-level", "Console log level: trace debug info warning error fatal panic"), 
 
 		//wyong, 20201007
-		cmdkit.StringOption("role", "The role of this node."), 
+		cmdkit.StringOption(OptionRole, "The role of this node."), 
 
 	},
 	Subcommands: make(map[string]*cmds.Command),

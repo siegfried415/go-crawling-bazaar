@@ -23,7 +23,9 @@ import (
 
 	yaml "gopkg.in/yaml.v2"
 
-	"github.com/siegfried415/gdf-rebuild/crypto"
+	//todo, wyong, 20201028 
+	//"github.com/siegfried415/gdf-rebuild/crypto"
+
 	"github.com/siegfried415/gdf-rebuild/crypto/asymmetric"
 	"github.com/siegfried415/gdf-rebuild/crypto/hash"
 	"github.com/siegfried415/gdf-rebuild/pow/cpuminer"
@@ -146,13 +148,18 @@ type Config struct {
 	WalletAddress      string            `yaml:"WalletAddress"`
 	DHTFileName        string            `yaml:"DHTFileName"`
 	ListenAddr         string            `yaml:"ListenAddr"`
+
+	//wyong, 20201028 	
+	PublicRelayAddress	string            `yaml:"PublicRelayAddress"`
+
 	
 	//wyong, 20200903
 	//AdapterAddr	   string	     `yaml:"AdapterAddr"` 
 
+	//wyong, 20201028
 	//wyong, 20200908
 	//SwarmAddr 	   string		`yaml:"SwarmAddr"`
-	Swarm		   *SwarmConfig 	`yaml:"Swarm"`
+	//Swarm		   *SwarmConfig 	`yaml:"Swarm"`
 
 	//wyong, 20201027
 	Datastore     *DatastoreConfig     `yaml:"datastore"`
@@ -273,6 +280,7 @@ func LoadConfig(configPath string) (config *Config, err error) {
 		config.Miner.RootDir = path.Join(configDir, config.Miner.RootDir)
 	}
 
+	/*todo, wyong, 20201028
 	if len(config.KnownNodes) > 0 {
 		for _, node := range config.KnownNodes {
 			if node.ID == config.ThisNodeID {
@@ -294,6 +302,7 @@ func LoadConfig(configPath string) (config *Config, err error) {
 			}
 		}
 	}
+	*/
 
 	return
 }

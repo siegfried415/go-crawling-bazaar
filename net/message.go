@@ -10,7 +10,10 @@ import (
 	"io/ioutil" 
 
         //"github.com/libp2p/go-libp2p-host"
-	inet "github.com/libp2p/go-libp2p-net"
+
+	//go-libp2p-net -> go-libp2p-core/network
+	//wyong, 20201029 
+	inet "github.com/libp2p/go-libp2p-core/network"
 
 	//wyong, 20200928
 	"github.com/ugorji/go/codec"

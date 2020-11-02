@@ -19,7 +19,12 @@ import (
 	//wyong, 20200925
         pstore "github.com/libp2p/go-libp2p-peerstore"
         host "github.com/libp2p/go-libp2p-core/host"
-	inet "github.com/libp2p/go-libp2p-net"
+
+	//go-libp2p-net -> go-libp2p-core/network,
+	//wyong, 20201029 
+	inet "github.com/libp2p/go-libp2p-core/network"
+	libp2phelpers "github.com/libp2p/go-libp2p-core/helpers"
+
 	protocol "github.com/libp2p/go-libp2p-core/protocol" 
 	peer "github.com/libp2p/go-libp2p-core/peer" 
 
@@ -290,7 +295,11 @@ func (pm *WantManager) SendBids(ctx context.Context, msg *types.UrlBidMessage ) 
 	fmt.Printf("WantManager/SendBids(30)\n")
 
 	//todo, wyong, 20200925 
-	go inet.AwaitEOF(s)
+
+	//wyong, 20201029 
+	//go inet.AwaitEOF(s)
+	go libp2phelpers.AwaitEOF(s)
+
         s.Close()
 
 }
@@ -378,7 +387,10 @@ func (mq *msgQueue) runQueue(ctx context.Context) {
 			//log.Debugf("runQueue, <-mq.done")
 			if mq.sender != nil {
 				//mq.sender.Close()
-				inet.FullClose(mq.sender) 
+
+				//wyong, 20201029 
+				//inet.FullClose(mq.sender) 
+				libp2phelpers.FullClose(mq.sender) 
 			}
 			return
 		case <-ctx.Done():

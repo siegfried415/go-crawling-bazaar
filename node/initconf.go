@@ -39,10 +39,11 @@ func initNodePeers(nodeID proto.NodeID, publicKeystorePath string) (nodes *[]pro
 	}
 
 	if conf.GConf.KnownNodes != nil {
-		for i, n := range conf.GConf.KnownNodes {
+		for _, n := range conf.GConf.KnownNodes {
 			if n.Role == proto.Leader || n.Role == proto.Follower {
+				//todo, wyong, 20201028
 				//FIXME all KnownNodes
-				conf.GConf.KnownNodes[i].PublicKey = kms.BP.PublicKey
+				//conf.GConf.KnownNodes[i].PublicKey = kms.BP.PublicKey
 				peers.Servers = append(peers.Servers, n.ID)
 			}
 		}

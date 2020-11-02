@@ -291,7 +291,7 @@ func (s *ServerRole) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err := unmarshal(&str); err != nil {
 		return err
 	}
-	dur, err := parseServerRole(str)
+	dur, err := ParseServerRole(str)
 	if err != nil {
 		return err
 	}
@@ -300,7 +300,7 @@ func (s *ServerRole) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
-func parseServerRole(roleStr string) (role ServerRole, err error) {
+func ParseServerRole(roleStr string) (role ServerRole, err error) {
 	switch strings.ToLower(roleStr) {
 	case "leader":
 		role = Leader

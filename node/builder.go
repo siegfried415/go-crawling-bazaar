@@ -25,7 +25,10 @@ import (
 	"context" 
 
 	//wyong, 20201021
-	ecdsa "crypto/ecdsa"
+	//ecdsa "crypto/ecdsa"
+
+	//wyong, 20201029 
+        //btcec "github.com/btcsuite/btcd/btcec"
 
 	//wyong, 20200911 
 	"github.com/pkg/errors"
@@ -59,29 +62,18 @@ import (
         autonatsvc "github.com/libp2p/go-libp2p-autonat-svc"
         circuit "github.com/libp2p/go-libp2p-circuit"
 
-	//wyong, 20200914
 	"github.com/siegfried415/gdf-rebuild/crypto/asymmetric" 
 	net "github.com/siegfried415/gdf-rebuild/net" 
 	dag "github.com/siegfried415/gdf-rebuild/dag" 
-
-	//wyong, 20201027 
-	//repo "github.com/siegfried415/gdf-rebuild/repo" 
-
-	//wyong, 20201026 
-	//clock "github.com/siegfried415/gdf-rebuild/clock" 
-
-	//wyong, 20200924 
 	frontera "github.com/siegfried415/gdf-rebuild/frontera"
-
-	//wyong, 20201014 
-        //"github.com/siegfried415/gdf-rebuild/wallet"
-
-	//wyong, 20201021 
 	conf "github.com/siegfried415/gdf-rebuild/conf" 
 	kms "github.com/siegfried415/gdf-rebuild/kms" 
+	proto "github.com/siegfried415/gdf-rebuild/proto" 
 	route "github.com/siegfried415/gdf-rebuild/route" 
         pb "github.com/siegfried415/gdf-rebuild/presbyterian"
 
+	//wyong, 20201014 
+        //"github.com/siegfried415/gdf-rebuild/wallet"
 )
 
 
@@ -132,7 +124,7 @@ func IsRelay() BuilderOpt {
 
 
 // New creates a new node.
-func New(ctx context.Context, repoPath string, opts ...BuilderOpt) (*Node, error) {
+func New(ctx context.Context, repoPath string, role proto.ServerRole, opts ...BuilderOpt) (*Node, error) {
         n := &Builder{}
         for _, o := range opts {
                 if err := o(n); err != nil {
@@ -140,7 +132,7 @@ func New(ctx context.Context, repoPath string, opts ...BuilderOpt) (*Node, error
                 }
         }
 
-        return n.build(ctx, repoPath )
+        return n.build(ctx, repoPath, role )
 }
 
 
@@ -179,7 +171,7 @@ type blankValidator struct{}
 func (blankValidator) Validate(_ string, _ []byte) error        { return nil }
 func (blankValidator) Select(_ string, _ [][]byte) (int, error) { return 0, nil }
 
-func (nc *Builder) build(ctx context.Context, repoPath string ) (*Node, error ) {
+func (nc *Builder) build(ctx context.Context, repoPath string, role proto.ServerRole) (*Node, error ) {
         //if nc.Repo == nil {
         //        nc.Repo = repo.NewInMemoryRepo()
         //}
@@ -288,7 +280,7 @@ func (nc *Builder) build(ctx context.Context, repoPath string ) (*Node, error ) 
 	}
 
 	//fmt.Printf("dag/BuildDAG(40)\n") 
-	peerHost, err = nc.buildHost(ctx, conf.GConf.Swarm.Address, privKey, makeDHT)
+	peerHost, err = nc.buildHost(ctx, conf.GConf.ListenAddr, privKey, makeDHT)
 	if err != nil {
 		fmt.Printf("dag/BuildDAG(45), err=%s\n", err.Error()) 
 		return nil, err
@@ -305,11 +297,10 @@ func (nc *Builder) build(ctx context.Context, repoPath string ) (*Node, error ) 
 
 
 	//todo, wyong, 20201007 
-	switch conf.RoleTag[0] {
-	
-	case conf.ClientBuildTag[0]:
-
-	case conf.BlockProducerBuildTag[0]:
+	switch role  {
+	case proto.Leader:
+		fallthrough 
+	case proto.Follower: 
 
 		//wyong, 20201021 
 		genesis, err := loadGenesis()
@@ -382,7 +373,7 @@ func (nc *Builder) build(ctx context.Context, repoPath string ) (*Node, error ) 
 		defer chain.Stop()
 
 
-	case conf.MinerBuildTag[0]: 
+	case proto.Miner: 
 		//fmt.Printf("dag/BuildDAG(50)\n") 
 		// set up bitswap
 		nwork := bsnet.NewFromIpfsHost(peerHost, router)
@@ -426,8 +417,10 @@ func (nc *Builder) build(ctx context.Context, repoPath string ) (*Node, error ) 
 			return nil, err 
 		}
 
-	case conf.UnknownBuildTag[0]:
-	//default :
+	case proto.Client:
+		//todo, wyong, 20201028
+
+	case proto.Unknown:
                 return nil, err
 	}	
 
@@ -561,13 +554,13 @@ func (nc *Builder) buildHost(ctx context.Context,
 	fmt.Printf("dag/buildHost(20)\n") 
         if nc.IsRelay {
                 //cfg := nc.Repo.Config()
-                publicAddr, err := ma.NewMultiaddr(conf.GConf.Swarm.PublicRelayAddress)
+                publicAddr, err := ma.NewMultiaddr(conf.GConf.PublicRelayAddress)
                 if err != nil {
                         return nil, err
                 }
                 publicAddrFactory := func(lc *libp2p.Config) error {
                         lc.AddrsFactory = func(addrs []ma.Multiaddr) []ma.Multiaddr {
-                                if conf.GConf.Swarm.PublicRelayAddress == "" {
+                                if conf.GConf.PublicRelayAddress == "" {
                                         return addrs
                                 }
                                 return append(addrs, publicAddr)
@@ -596,7 +589,12 @@ func (nc *Builder) buildHost(ctx context.Context,
         }
 
 	//wyong, 20201021 
-	libp2pPrivKey, _, _ := libp2pcrypto.ECDSAKeyPairFromKey((*ecdsa.PrivateKey)(privkey))
+	//libp2pPrivKey, _, _ := libp2pcrypto.ECDSAKeyPairFromKey((*ecdsa.PrivateKey)(privkey))
+	//libp2pPrivKey := &libp2pcrypto.ECDSAPrivateKey{(*ecdsa.PrivateKey)(privkey)}
+
+	//wyong, 20201029 
+	//btcecPrivKey := (*btcec.PrivateKey)(privkey)
+	libp2pPrivKey := (*libp2pcrypto.Secp256k1PrivateKey) (privkey) 
 
 	Libp2pOpts := []libp2p.Option { libp2p.ListenAddrStrings(swarmAddress),
 

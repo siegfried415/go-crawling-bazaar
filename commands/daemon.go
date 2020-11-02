@@ -22,21 +22,14 @@ import (
 	manet "github.com/multiformats/go-multiaddr-net"
 	"github.com/pkg/errors"
 
-	//"github.com/siegfried415/gdf-rebuild/clock"
-
 	//wyong, 20201003 
 	"github.com/siegfried415/gdf-rebuild/conf"
 
 	//"github.com/siegfried415/gdf-rebuild/consensus"
 	node "github.com/siegfried415/gdf-rebuild/node"
 	"github.com/siegfried415/gdf-rebuild/paths"
-
-	//wyong, 20201027 
-	//"github.com/siegfried415/gdf-rebuild/repo"
-
-	//wyong, 20201022 
+	"github.com/siegfried415/gdf-rebuild/proto"
 	utils "github.com/siegfried415/gdf-rebuild/utils" 
-
 	env "github.com/siegfried415/gdf-rebuild/env" 
 )
 
@@ -51,6 +44,9 @@ var daemonCmd = &cmds.Command{
 		cmdkit.BoolOption(ELStdout),
 		cmdkit.BoolOption(IsRelay, "advertise and allow filecoin network traffic to be relayed through this node"),
 		//cmdkit.StringOption(BlockTime, "time a node waits before trying to mine the next block").WithDefault(consensus.DefaultBlockTime.String()),
+
+		//wyong, 20201030 
+		cmdkit.StringOption(AdapterAddress, "multiaddress to listen on for application"),
 	},
 	Run: func(req *cmds.Request, re cmds.ResponseEmitter, env cmds.Environment) error {
 		return daemonRun(req, re)
@@ -64,6 +60,13 @@ func daemonRun(req *cmds.Request, re cmds.ResponseEmitter) error {
 	var (
 		err error
 	)
+
+	//wyong, 20201028 
+	roleStr, _ := req.Options[OptionRole].(string)
+	role, err := proto.ParseServerRole (roleStr) 	
+	if err != nil {
+		return err 
+	}
 
 	repoDir, _ := req.Options[OptionRepoDir].(string)
 	repoDir, err = paths.GetRepoPath(repoDir)
@@ -87,22 +90,24 @@ func daemonRun(req *cmds.Request, re cmds.ResponseEmitter) error {
                 //log.WithField("config", configFile).WithError(err).Fatal("load config failed")
         }
 
-        if conf.GConf.Miner == nil {
-                //log.Fatal("miner config does not exists")
-        }
-        if conf.GConf.Miner.ProvideServiceInterval.Seconds() <= 0 {
-                //log.Fatal("miner metric collect interval is invalid")
-        }
-        if conf.GConf.Miner.MaxReqTimeGap.Seconds() <= 0 {
-                //log.Fatal("miner request time gap is invalid")
-        }
-        if conf.GConf.Miner.DiskUsageInterval.Seconds() <= 0 {
-                // set to default disk usage interval
-                //log.Warning("miner disk usage interval not provided, set to default 10 minutes")
-                conf.GConf.Miner.DiskUsageInterval = time.Minute * 10
-        }
-
         //log.Debugf("config:\n%#v", conf.GConf)
+	//wyong, 20201030 
+	if role == proto.Miner {	
+		if conf.GConf.Miner == nil {
+			//log.Fatal("miner config does not exists")
+		}
+		if conf.GConf.Miner.ProvideServiceInterval.Seconds() <= 0 {
+			//log.Fatal("miner metric collect interval is invalid")
+		}
+		if conf.GConf.Miner.MaxReqTimeGap.Seconds() <= 0 {
+			//log.Fatal("miner request time gap is invalid")
+		}
+		if conf.GConf.Miner.DiskUsageInterval.Seconds() <= 0 {
+			// set to default disk usage interval
+			//log.Warning("miner disk usage interval not provided, set to default 10 minutes")
+			conf.GConf.Miner.DiskUsageInterval = time.Minute * 10
+		}
+	}
 
 
 	// second highest precedence is env vars.
@@ -116,11 +121,11 @@ func daemonRun(req *cmds.Request, re cmds.ResponseEmitter) error {
 	}
 
 	if swarmAddress, ok := req.Options[SwarmAddress].(string); ok && swarmAddress != "" {
-		conf.GConf.Swarm.Address = swarmAddress
+		conf.GConf.ListenAddr = swarmAddress
 	}
 
 	if publicRelayAddress, ok := req.Options[SwarmPublicRelayAddress].(string); ok && publicRelayAddress != "" {
-		conf.GConf.Swarm.PublicRelayAddress = publicRelayAddress
+		conf.GConf.PublicRelayAddress = publicRelayAddress
 	}
 
 	//todo, wyong, 20201003 
@@ -138,6 +143,11 @@ func daemonRun(req *cmds.Request, re cmds.ResponseEmitter) error {
 		opts = append(opts, node.IsRelay())
 	}
 
+	//wyong, 20201030 
+	if adapterAddress, ok := req.Options[AdapterAddress].(string); ok && adapterAddress != "" {
+		conf.GConf.API.Address = adapterAddress
+	}
+
 	// wyong, 20200922 
 	//durStr, ok := req.Options[BlockTime].(string)
 	//if !ok {
@@ -151,9 +161,8 @@ func daemonRun(req *cmds.Request, re cmds.ResponseEmitter) error {
 	//opts = append(opts, node.BlockTime(blockTime))
 	//opts = append(opts, node.ClockConfigOption(clock.NewSystemClock()))
 
-
 	// Instantiate the node.
-	n, err := node.New(req.Context, repoDir,  opts...)
+	n, err := node.New(req.Context, repoDir, role,  opts...)
 	if err != nil {
 		return err
 	}

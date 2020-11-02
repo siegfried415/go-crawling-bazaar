@@ -22,6 +22,10 @@ import (
 	//wyong, 20201002 
 	"crypto/x509"
 
+	//wyong, 20201028
+	//"crypto/elliptic" 
+	//"errors"
+
 	"encoding/hex"
 	"fmt"
 	"math/big"
@@ -134,16 +138,33 @@ func (k *PublicKey) Serialize() []byte {
 func ParsePubKey(pubKeyStr []byte) (*PublicKey, error) {
 	key, err := ec.ParsePubKey(pubKeyStr, ec.S256())
 	return (*PublicKey)(key), err
+	
+	//todo, wyong, 20201028 
+        //pubIfc, err := x509.ParsePKIXPublicKey(pubKeyStr)
+        //if err != nil {
+        //        return nil, err
+        //}
+        //pub, ok := pubIfc.(*ecdsa.PublicKey)
+        //if !ok {
+        //        return nil, errors.New("not an ecdsa public key") 
+        //}
+	//return (*PublicKey)(pub), nil  
+
 }
 
 // PrivKeyFromBytes returns a private and public key for `curve' based on the private key passed
 // as an argument as a byte slice.
 func PrivKeyFromBytes(pk []byte) (*PrivateKey, *PublicKey) {
+	//todo, wyong, 20201028 
 	x, y := ec.S256().ScalarBaseMult(pk)
+	//x, y := elliptic.P256().ScalarBaseMult(pk)
 
 	priv := &ecdsa.PrivateKey{
 		PublicKey: ecdsa.PublicKey{
-			Curve: ec.S256(),
+			//todo, wyong, 20201028, 
+			Curve:  ec.S256(),
+			//Curve:  elliptic.P256(), 	
+
 			X:     x,
 			Y:     y,
 		},
@@ -220,7 +241,7 @@ func GenSecp256k1KeyPair() (
 	publicKey *PublicKey,
 	err error) {
 
-	privateKeyEc, err := ec.NewPrivateKey(ec.S256())
+	privateKeyEc, err := ec.NewPrivateKey( /* todo, wyong, 20201028*/  ec.S256() /* elliptic.P256() */  )
 	if err != nil {
 		log.WithError(err).Error("private key generation failed")
 		return nil, nil, err
