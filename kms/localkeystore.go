@@ -21,7 +21,7 @@ import (
 	"sync"
 
 	"github.com/siegfried415/gdf-rebuild/crypto/asymmetric"
-	"github.com/siegfried415/gdf-rebuild/crypto/hash"
+	//"github.com/siegfried415/gdf-rebuild/crypto/hash"
 
 	mine "github.com/siegfried415/gdf-rebuild/pow/cpuminer"
 	"github.com/siegfried415/gdf-rebuild/proto"
@@ -89,15 +89,17 @@ func SetLocalKeyPair(private *asymmetric.PrivateKey, public *asymmetric.PublicKe
 }
 
 // SetLocalNodeIDNonce sets private and public key, this is a one time thing.
-func SetLocalNodeIDNonce(rawNodeID []byte, nonce *mine.Uint256) {
+func SetLocalNodeID /* Nonce */ (rawNodeID []byte /* , nonce *mine.Uint256  wyong, 20201116 */){
 	localKey.Lock()
 	defer localKey.Unlock()
 	localKey.nodeID = make([]byte, len(rawNodeID))
 	copy(localKey.nodeID, rawNodeID)
-	if nonce != nil {
-		localKey.nodeNonce = new(mine.Uint256)
-		*localKey.nodeNonce = *nonce
-	}
+
+	//wyong, 20201116 
+	//if nonce != nil {
+	//	localKey.nodeNonce = new(mine.Uint256)
+	//	*localKey.nodeNonce = *nonce
+	//}
 }
 
 // GetLocalNodeID gets current node ID in hash string format.
@@ -106,11 +108,14 @@ func GetLocalNodeID() (rawNodeID proto.NodeID, err error) {
 	if rawNodeIDBytes, err = GetLocalNodeIDBytes(); err != nil {
 		return
 	}
-	var h *hash.Hash
-	if h, err = hash.NewHash(rawNodeIDBytes); err != nil {
-		return
-	}
-	rawNodeID = proto.NodeID(h.String())
+
+	//todo, wyong, 20201114 
+	//var h *hash.Hash
+	//if h, err = hash.NewHash(rawNodeIDBytes); err != nil {
+	//	return
+	//}
+	//rawNodeID = proto.NodeID(h.String())
+	rawNodeID = proto.NodeID(string(rawNodeIDBytes)) 
 
 	return
 }

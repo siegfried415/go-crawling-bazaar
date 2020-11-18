@@ -28,7 +28,7 @@ import (
 	"github.com/pkg/errors"
 
 	//wyong, 20201018
-	"github.com/libp2p/go-libp2p-core/host"
+	//"github.com/libp2p/go-libp2p-core/host"
 
 	//wyong, 20200929 
 	"github.com/siegfried415/gdf-rebuild/conf"
@@ -48,6 +48,7 @@ import (
 	"github.com/siegfried415/gdf-rebuild/types"
 	"github.com/siegfried415/gdf-rebuild/utils/log"
 	x "github.com/siegfried415/gdf-rebuild/xenomint"
+	net "github.com/siegfried415/gdf-rebuild/net"
 
 	//wyong, 20200805 
 	lru "github.com/hashicorp/golang-lru"
@@ -105,7 +106,7 @@ type Domain struct {
 	nodeID         proto.NodeID
 
 	//wyong, 20201018
-	host 		host.Host
+	host 		net.RoutedHost
 
 	mux            *DomainKayakMuxService
 

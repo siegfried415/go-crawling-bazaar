@@ -22,9 +22,13 @@ import (
 
 	hsp "github.com/CovenantSQL/HashStablePack/marshalhash"
 
+        //wyong, 20201116
+        libp2pcrypto "github.com/libp2p/go-libp2p-core/crypto"
+        peer "github.com/libp2p/go-libp2p-core/peer"
+
 	"github.com/siegfried415/gdf-rebuild/crypto/asymmetric"
 	"github.com/siegfried415/gdf-rebuild/crypto/hash"
-	mine "github.com/siegfried415/gdf-rebuild/pow/cpuminer"
+	//mine "github.com/siegfried415/gdf-rebuild/pow/cpuminer"
 	"github.com/siegfried415/gdf-rebuild/utils/log"
 
 	//wyong, 20200730
@@ -54,8 +58,8 @@ type RawNodeID struct {
 // NodeID is the Hex of RawNodeID.
 type NodeID string
 
-func (n NodeID) String() string {
-	return string(n)  
+func (id *NodeID) String() string {
+	return string(*id)  
 }
 
 // IDFromString casts a string to the ID type, and validates
@@ -148,7 +152,9 @@ type Node struct {
 	Addr       string                `yaml:"Addr"`
 	DirectAddr string                `yaml:"DirectAddr,omitempty"`
 	PublicKey  *asymmetric.PublicKey `yaml:"PublicKey"`
-	Nonce      mine.Uint256          `yaml:"Nonce"`
+
+	//wyong, 20201116 
+	//Nonce      mine.Uint256          `yaml:"Nonce"`
 }
 
 // NewNode just return a new node struct.
@@ -191,6 +197,7 @@ func (id *NodeID) IsEqual(target *NodeID) bool {
 	return strings.Compare(string(*id), string(*target)) == 0
 }
 
+/*
 // MarshalBinary does the serialization.
 func (id *NodeID) MarshalBinary() (keyBytes []byte, err error) {
 	if id == nil {
@@ -215,6 +222,7 @@ func (id *NodeID) UnmarshalBinary(keyBytes []byte) (err error) {
 	*id = NodeID(h.String())
 	return
 }
+*/
 
 // InitNodeCryptoInfo generate Node asymmetric key pair and generate Node.NonceInfo.
 // Node.ID = Node.NonceInfo.Hash.
@@ -224,9 +232,21 @@ func (node *Node) InitNodeCryptoInfo(timeThreshold time.Duration) (err error) {
 		log.Error("failed to generate key pair")
 	}
 
-	nonce := asymmetric.GetPubKeyNonce(node.PublicKey, NewNodeIDDifficulty, timeThreshold, nil)
-	node.ID = NodeID(nonce.Hash.String())
-	node.Nonce = nonce.Nonce
+	//wyong, 20201116 
+	//nonce := asymmetric.GetPubKeyNonce(node.PublicKey, NewNodeIDDifficulty, timeThreshold, nil)
+	//node.ID = NodeID(nonce.Hash.String())
+	//node.Nonce = nonce.Nonce
+
+	//wyong, 20201116 
+	// Obtain Peer ID from public key, wyong, 20201114
+	libp2pPubKey := (*libp2pcrypto.Secp256k1PublicKey) (node.PublicKey)
+	nid, err := peer.IDFromPublicKey(libp2pPubKey)
+	if err != nil {
+		return err
+	}
+
+	node.ID = NodeID(nid.Pretty())
+
 	log.Debugf("node: %#v", node)
 	return
 }

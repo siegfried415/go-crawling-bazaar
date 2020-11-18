@@ -5,7 +5,7 @@ import (
 
 	"github.com/ipfs/go-ipfs-cmds"
 
-	host "github.com/libp2p/go-libp2p-core/host"
+	//host "github.com/libp2p/go-libp2p-core/host"
 
 	//wyong, 20200731 
 	"github.com/siegfried415/gdf-rebuild/frontera" 
@@ -20,7 +20,7 @@ type Env struct {
 	ctx            context.Context
 
 	//wyong, 20201022 
-	host	host.Host
+	host	net.RoutedHost
 
 	//wyong, 20200723 
 	frontera *frontera.Frontera 
@@ -29,20 +29,20 @@ type Env struct {
 	dag *dag.DAG 
 
 	//wyong, 20200912 
-	network *net.Network 
+	//network *net.Network 
 }
 
 var _ cmds.Environment = (*Env)(nil)
 
 // NewClientEnv returns a new environment for command API clients.
 // This environment lacks direct access to any internal APIs.
-func NewClientEnv(ctx context.Context, host host.Host,  frontera *frontera.Frontera, dag *dag.DAG, network *net.Network ) *Env {
+func NewClientEnv(ctx context.Context, host net.RoutedHost,  frontera *frontera.Frontera, dag *dag.DAG, /* network *net.Network */ ) *Env {
 	return &Env{
 		ctx	: ctx,
 		host 	: host, //wyong, 20201022 
 		frontera : frontera ,
 		dag 	: dag , 
-		network : network , 
+		//network : network , 
 	}
 }
 
@@ -52,7 +52,7 @@ func (ce *Env) Context() context.Context {
 }
 
 //wyong, 20201022 
-func (ce *Env) Host() host.Host {
+func (ce *Env) Host() net.RoutedHost {
 	return ce.host 
 }
 
@@ -69,7 +69,7 @@ func (ce *Env) DAG() *dag.DAG {
 }
 
 //wyong, 20200912
-func (ce *Env) Network() *net.Network {
-	//ce := env.(*Env)
-	return ce.network
-}
+//func (ce *Env) Network() *net.Network {
+//	//ce := env.(*Env)
+//	return ce.network
+//}

@@ -20,9 +20,10 @@ import (
 	"time"
 
 	//wyong, 20201018
-	"github.com/libp2p/go-libp2p-core/host"
+	//"github.com/libp2p/go-libp2p-core/host"
 
 	"github.com/siegfried415/gdf-rebuild/proto"
+	net "github.com/siegfried415/gdf-rebuild/net"
 )
 
 // RuntimeConfig defines the runtime config of kayak.
@@ -55,5 +56,5 @@ type RuntimeConfig struct {
 	LogWaitTimeout time.Duration
 
 	//wyong, 20201018
-	Host	host.Host 
+	Host	net.RoutedHost 
 }

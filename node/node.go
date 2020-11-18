@@ -124,7 +124,7 @@ var (
 
 // Node represents a full Filecoin node.
 type Node struct {
-        Host     host.Host
+        Host     net.RoutedHost
 
         PeerHost host.Host
 
@@ -178,7 +178,9 @@ type Node struct {
 
 	//wyong, 20200921 
 	DAG *dag.DAG 
-	Net *net.Network
+
+	//wyong, 20201107 
+	//Net *net.Network
 
 	//wyong, 20200921 
 	Frontera *frontera.Frontera 
@@ -315,7 +317,7 @@ func (node *Node) Start(ctx context.Context) error {
 	//}
 
 	//wyong, 20201020 
-	err := net.RegisterNodeToPB(node.Host, 30 * time.Second)
+	err := node.Host.RegisterNodeToPB(30 * time.Second)
 	if err != nil {
 		log.Fatalf("register node to BP failed: %v", err)
 	}
@@ -351,7 +353,7 @@ func (node *Node) Start(ctx context.Context) error {
 		for {
 			//wyong, 20201021 
 			//sendProvideService(reg)
-			sendProvideService(node.Host )
+			node.Host.SendProvideService()
 
 			select {
 			case <-stopCh:

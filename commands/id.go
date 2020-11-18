@@ -13,6 +13,7 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 
 	env "github.com/siegfried415/gdf-rebuild/env" 
+	//net "github.com/siegfried415/gdf-rebuild/net"  
 )
 
 // IDDetails is a collection of information about a node.
@@ -36,8 +37,9 @@ var idCmd = &cmds.Command{
 		//addrs := GetPorcelainAPI(env).NetworkGetPeerAddresses()
 		//hostID := GetPorcelainAPI(env).NetworkGetPeerID()
                 e := cmdenv.(*env.Env)
-                addrs := e.Network().GetPeerAddresses()
-                hostID := e.Network().GetPeerID()
+		host := e.Host()
+                addrs := host.Addrs()
+                hostID := host.ID()
 
 
 		details := IDDetails{

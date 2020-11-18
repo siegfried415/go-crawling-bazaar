@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package route
+package net
 
 import (
 	"fmt"
@@ -26,7 +26,10 @@ import (
 
 	"github.com/siegfried415/gdf-rebuild/crypto"
 	"github.com/siegfried415/gdf-rebuild/crypto/asymmetric"
-	"github.com/siegfried415/gdf-rebuild/pow/cpuminer"
+
+	//wyong, 20201116 
+	//"github.com/siegfried415/gdf-rebuild/pow/cpuminer"
+
 	"github.com/siegfried415/gdf-rebuild/proto"
 )
 
@@ -45,11 +48,11 @@ const (
 type IPv6SeedClient struct{}
 
 // GetBPFromDNSSeed gets BP info from the IPv6 domain
-func (isc *IPv6SeedClient) GetBPFromDNSSeed(BPDomain string) (BPNodes IDNodeMap, err error) {
+func (isc *IPv6SeedClient) GetBPFromDNSSeed(BPDomain string) (BPNodes map[proto.RawNodeID]proto.Node, err error) {
 	// Public key
 	var pubKeyBuf []byte
-	var pubBuf, nonceBuf, addrBuf, nodeIDBuf []byte
-	var pubErr, nonceErr, addrErr, nodeIDErr error
+	var pubBuf, /* nonceBuf, wyong, 20201116 */  addrBuf, nodeIDBuf []byte
+	var pubErr, /* nonceErr, wyong, 20201116 */  addrErr, nodeIDErr error
 	wg := new(sync.WaitGroup)
 	wg.Add(4)
 
@@ -61,11 +64,15 @@ func (isc *IPv6SeedClient) GetBPFromDNSSeed(BPDomain string) (BPNodes IDNodeMap,
 		defer wg.Done()
 		pubBuf, pubErr = ipv6.FromDomain(PUBKEY+BPDomain, f)
 	}()
+
+	/* wyong, 20201116 
 	// Nonce
 	go func() {
 		defer wg.Done()
 		nonceBuf, nonceErr = ipv6.FromDomain(NONCE+BPDomain, f)
 	}()
+	*/
+
 	// Addr
 	go func() {
 		defer wg.Done()
@@ -83,9 +90,12 @@ func (isc *IPv6SeedClient) GetBPFromDNSSeed(BPDomain string) (BPNodes IDNodeMap,
 	case pubErr != nil:
 		err = pubErr
 		return
-	case nonceErr != nil:
-		err = nonceErr
-		return
+
+	//wyong, 20201116 
+	//case nonceErr != nil:
+	//	err = nonceErr
+	//	return
+
 	case addrErr != nil:
 		err = addrErr
 		return
@@ -113,10 +123,11 @@ func (isc *IPv6SeedClient) GetBPFromDNSSeed(BPDomain string) (BPNodes IDNodeMap,
 		return
 	}
 
-	nonce, err := cpuminer.Uint256FromBytes(nonceBuf)
-	if err != nil {
-		return
-	}
+	//wyong, 20201116 
+	//nonce, err := cpuminer.Uint256FromBytes(nonceBuf)
+	//if err != nil {
+	//	return
+	//}
 
 	addrBytes, err := crypto.RemovePKCSPadding(addrBuf)
 	if err != nil {
@@ -129,12 +140,14 @@ func (isc *IPv6SeedClient) GetBPFromDNSSeed(BPDomain string) (BPNodes IDNodeMap,
 		return
 	}
 
-	BPNodes = make(IDNodeMap)
+	BPNodes = make(map[proto.RawNodeID]proto.Node)
 	BPNodes[nodeID] = proto.Node{
 		ID:        nodeID.ToNodeID(),
 		Addr:      string(addrBytes),
 		PublicKey: &pubKey,
-		Nonce:     *nonce,
+
+		//wyong, 20201116 
+		//Nonce:     *nonce,
 	}
 
 	return
@@ -159,14 +172,15 @@ func (isc *IPv6SeedClient) GenBPIPv6(node *proto.Node, domain string) (out strin
 		out += fmt.Sprintf("%02d.%s%s	1	IN	AAAA	%s\n", i, PUBKEY, domain, ip)
 	}
 
+	//wyong, 20201116 
 	// Nonce
-	nonceIps, err := ipv6.ToIPv6(node.Nonce.Bytes())
-	if err != nil {
-		return "", err
-	}
-	for i, ip := range nonceIps {
-		out += fmt.Sprintf("%02d.%s%s	1	IN	AAAA	%s\n", i, NONCE, domain, ip)
-	}
+	//nonceIps, err := ipv6.ToIPv6(node.Nonce.Bytes())
+	//if err != nil {
+	//	return "", err
+	//}
+	//for i, ip := range nonceIps {
+	//	out += fmt.Sprintf("%02d.%s%s	1	IN	AAAA	%s\n", i, NONCE, domain, ip)
+	//}
 
 	// Addr
 	addrIps, err := ipv6.ToIPv6(crypto.AddPKCSPadding([]byte(node.Addr)))

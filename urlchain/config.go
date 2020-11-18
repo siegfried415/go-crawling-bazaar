@@ -21,9 +21,11 @@ import (
 
 	"github.com/siegfried415/gdf-rebuild/proto"
 	"github.com/siegfried415/gdf-rebuild/types"
+	"github.com/siegfried415/gdf-rebuild/net"
 
 	//wyong, 20201014
-	host "github.com/libp2p/go-libp2p-host" 
+	//host "github.com/libp2p/go-libp2p-host" 
+
 )
 
 // Config represents a sql-chain config.
@@ -41,7 +43,7 @@ type Config struct {
 	Server     proto.NodeID
 
 	//wyong, 20201014
-	Host	host.Host 
+	Host	net.RoutedHost 
 
 	// QueryTTL sets the unacknowledged query TTL in block periods.
 	QueryTTL      int32

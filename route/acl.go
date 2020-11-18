@@ -17,9 +17,9 @@
 package route
 
 import (
-	"github.com/siegfried415/gdf-rebuild/kms"
+	//"github.com/siegfried415/gdf-rebuild/kms"
 	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	//"github.com/siegfried415/gdf-rebuild/utils/log"
 )
 
 /*
@@ -218,6 +218,7 @@ func (s RemoteFunc) String() string {
 
 // IsPermitted returns if the node is permitted to call the RPC func.
 func IsPermitted(callerEnvelope *proto.Envelope, funcName RemoteFunc) (ok bool) {
+	/* todo, wyong, 20201109 
 	callerETLSNodeID := callerEnvelope.GetNodeID()
 	// strict anonymous ETLS only used for Ping
 	// the envelope node id is set at NodeAwareServerCodec and CryptoListener.CHandler
@@ -246,6 +247,7 @@ func IsPermitted(callerEnvelope *proto.Envelope, funcName RemoteFunc) (ok bool) 
 			return false
 		}
 	}
+	*/
 
 	// BP can call any RPC
 	return true

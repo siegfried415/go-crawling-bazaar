@@ -6,22 +6,6 @@ import (
 	hsp "github.com/CovenantSQL/HashStablePack/marshalhash"
 )
 
-//wyong, 20200806 
-// MarshalHash marshals for hash
-func (z DomainID) MarshalHash() (o []byte, err error) {
-	var b []byte
-	o = hsp.Require(b, z.Msgsize())
-	o = hsp.AppendString(o, string(z))
-	return
-}
-
-//wyong, 20200806 
-// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
-func (z DomainID) Msgsize() (s int) {
-	s = hsp.StringPrefixSize + len(string(z))
-	return
-}
-
 // MarshalHash marshals for hash
 func (z DatabaseID) MarshalHash() (o []byte, err error) {
 	var b []byte
@@ -32,6 +16,20 @@ func (z DatabaseID) MarshalHash() (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z DatabaseID) Msgsize() (s int) {
+	s = hsp.StringPrefixSize + len(string(z))
+	return
+}
+
+// MarshalHash marshals for hash
+func (z DomainID) MarshalHash() (o []byte, err error) {
+	var b []byte
+	o = hsp.Require(b, z.Msgsize())
+	o = hsp.AppendString(o, string(z))
+	return
+}
+
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z DomainID) Msgsize() (s int) {
 	s = hsp.StringPrefixSize + len(string(z))
 	return
 }

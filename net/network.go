@@ -71,7 +71,10 @@ type Network struct {
 	//*pubsub.Subscriber
 	//*pubsub.Publisher
 	//metrics.Reporter
-	*Router
+
+	//wyong, 20201107
+	//*Router 
+
 	//*Pinger
 }
 
@@ -80,7 +83,10 @@ func New(
 	host host.Host,
 	//publisher *pubsub.Publisher,
 	//subscriber *pubsub.Subscriber,
-	router *Router,
+
+	//wyong, 20201107 
+	//router *Router,
+
 	//reporter metrics.Reporter,
 	//pinger *Pinger,
 ) *Network {
@@ -89,7 +95,10 @@ func New(
 		//Pinger:     pinger,
 		//Publisher:  publisher,
 		//Reporter:   reporter,
-		Router:     router,
+
+		//wyong, 20201107
+		//Router:     router,
+
 		//Subscriber: subscriber,
 	}
 }

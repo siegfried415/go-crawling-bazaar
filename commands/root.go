@@ -21,6 +21,7 @@ import (
 	//"github.com/siegfried415/gdf-rebuild/types"
 
 	env "github.com/siegfried415/gdf-rebuild/env" 
+	gdfnet "github.com/siegfried415/gdf-rebuild/net" 
 )
 
 const (
@@ -272,7 +273,7 @@ func Run(ctx context.Context, args []string, stdin, stdout, stderr *os.File) (in
 
 func buildEnv(ctx context.Context, _ *cmds.Request) (cmds.Environment, error) {
 	fmt.Printf("buildEnv(10)\n") 
-	return env.NewClientEnv(ctx, nil, nil, nil, nil ), nil
+	return env.NewClientEnv(ctx, gdfnet.RoutedHost{}, nil, nil ), nil
 }
 
 type executor struct {

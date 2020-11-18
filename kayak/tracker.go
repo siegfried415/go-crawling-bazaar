@@ -145,7 +145,7 @@ func (t *rpcTracker) callSingle(idx int) {
                 //}
 
 		//wyong, 20201008 
-		_, err := net.SendMsg(ctx, s, &t.req )
+		_, err := s.(net.Stream).SendMsg(ctx, &t.req )
 		if err != nil {
 			err = errors.Wrap(err, "send DHT.Ping failed")
 			return 

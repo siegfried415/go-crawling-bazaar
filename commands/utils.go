@@ -21,7 +21,7 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 
 	//wyong, 20201007 
-	host "github.com/libp2p/go-libp2p-host"
+	//host "github.com/libp2p/go-libp2p-host"
 	//protocol "github.com/libp2p/go-libp2p-core/protocol" 
 
         "github.com/siegfried415/gdf-rebuild/crypto/hash"
@@ -29,6 +29,8 @@ import (
         //"github.com/siegfried415/go-crawling-market/types"
         pi "github.com/siegfried415/gdf-rebuild/presbyterian/interfaces"
         client "github.com/siegfried415/gdf-rebuild/client"
+
+        net "github.com/siegfried415/gdf-rebuild/net"
 
 )
 
@@ -43,7 +45,7 @@ func PrintString(w io.Writer, s fmt.Stringer) error {
         return err
 }
 
-func wait(host host.Host, txHash hash.Hash) (err error) {
+func wait(host net.RoutedHost, txHash hash.Hash) (err error) {
         var ctx, cancel = context.WithTimeout(context.Background(), waitTxConfirmationMaxDuration)
         defer cancel()
         var state pi.TransactionState
@@ -58,7 +60,7 @@ func wait(host host.Host, txHash hash.Hash) (err error) {
         return
 }
 
-func getConn(host host.Host, protocol string,  dsn string) (c *client.Conn, err error) {
+func getConn(host net.RoutedHost, protocol string,  dsn string) (c *client.Conn, err error) {
         cfg := client.NewConfig()
         cfg.DomainID = dsn
 

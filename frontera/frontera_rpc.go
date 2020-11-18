@@ -110,7 +110,7 @@ func (rpc *FronteraRPCService) UrlRequestHandler (
 
         ctx := context.Background()
         var req types.UrlRequestMessage 
-        err := net.RecvMsg(ctx, s, &req)
+        err := s.(net.Stream).RecvMsg(ctx, &req)
         if err != nil {
                 return
         }
@@ -124,7 +124,7 @@ func (rpc *FronteraRPCService) UrlRequestHandler (
 	}
 
 	//*res = *r
-        net.SendMsg(ctx, s, res)
+        s.(net.Stream).SendMsg(ctx, res)
 
 	//return nil 
 }
@@ -147,7 +147,7 @@ func (rpc *FronteraRPCService) UrlCidRequestHandler (
 
         ctx := context.Background()
         var req types.UrlCidRequestMessage 
-        err := net.RecvMsg(ctx, s, &req)
+        err := s.(net.Stream).RecvMsg(ctx, &req)
         if err != nil {
                 return
         }
@@ -160,7 +160,7 @@ func (rpc *FronteraRPCService) UrlCidRequestHandler (
 
 	//*res = *r
 
-        net.SendMsg(ctx, s, res)
+        s.(net.Stream).SendMsg(ctx, res)
 	//return
 }
 
@@ -181,7 +181,7 @@ func (rpc *FronteraRPCService) BiddingMessageHandler (
 
         ctx := context.Background()
         var req types.UrlBiddingMessage 
-        err := net.RecvMsg(ctx, s, &req)
+        err := s.(net.Stream).RecvMsg(ctx, &req)
         if err != nil {
                 return
         }
@@ -210,7 +210,7 @@ func (rpc *FronteraRPCService) BidMessageHandler (
 
         ctx := context.Background()
         var req types.UrlBidMessage 
-        err := net.RecvMsg(ctx, s, &req)
+        err := s.(net.Stream).RecvMsg(ctx, &req)
         if err != nil {
                 return
         }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package node 
+package net
 
 import (
 	"fmt"
@@ -22,7 +22,7 @@ import (
 	//dto "github.com/prometheus/client_model/go"
 
 	//wyong, 20201021
-	host "github.com/libp2p/go-libp2p-core/host"
+	//host "github.com/libp2p/go-libp2p-core/host"
 
 	"github.com/siegfried415/gdf-rebuild/conf"
 	"github.com/siegfried415/gdf-rebuild/crypto"
@@ -33,7 +33,7 @@ import (
 
 	//wyong, 20201021 
 	//rpc "github.com/siegfried415/gdf-rebuild/rpc/mux"
-	net "github.com/siegfried415/gdf-rebuild/net"
+	//net "github.com/siegfried415/gdf-rebuild/net"
 
 	"github.com/siegfried415/gdf-rebuild/types"
 	//"github.com/siegfried415/gdf-rebuild/utils/log"
@@ -51,7 +51,7 @@ var (
 	metricKeySpace    = "node_filesystem_free_bytes"
 )
 
-func sendProvideService( /* reg *prometheus.Registry */ host host.Host ) {
+func (rh RoutedHost) SendProvideService( /* reg *prometheus.Registry */ ) {
 
 	var (
 		//memoryBytes uint64
@@ -156,7 +156,7 @@ func sendProvideService( /* reg *prometheus.Registry */ host host.Host ) {
 	nonceReq.Addr = minerAddr
 
 	fmt.Printf("sendProvideService(70)\n")
-	if err = net.RequestPB(host, route.MCCNextAccountNonce.String(), nonceReq, nonceResp); err != nil {
+	if err = rh.RequestPB(route.MCCNextAccountNonce.String(), nonceReq, nonceResp); err != nil {
 		// allocate nonce failed
 		//log.WithError(err).Error("allocate nonce for transaction failed")
 		return
@@ -192,7 +192,7 @@ func sendProvideService( /* reg *prometheus.Registry */ host host.Host ) {
 	req.TTL = 1
 	req.Tx = tx
 
-	if err = net.RequestPB(host, route.MCCAddTx.String(), req, resp); err != nil {
+	if err = rh.RequestPB(route.MCCAddTx.String(), req, resp); err != nil {
 		// add transaction failed
 		//log.WithError(err).Error("send provide service transaction failed")
 		return

@@ -17,12 +17,18 @@ import (
 	"encoding/hex"
         yaml "gopkg.in/yaml.v2"
 
+	//wyong, 20201114 
+        ma "github.com/multiformats/go-multiaddr"
 
 	//"github.com/ipfs/go-car"
 	//"github.com/ipfs/go-hamt-ipld"
 	//"github.com/ipfs/go-ipfs-blockstore"
 	"github.com/ipfs/go-ipfs-cmdkit"
 	"github.com/ipfs/go-ipfs-cmds"
+
+	//wyong, 20201114
+	libp2pcrypto "github.com/libp2p/go-libp2p-core/crypto"
+	peer "github.com/libp2p/go-libp2p-core/peer" 
 
 	//wyong, 20201022
 	"github.com/siegfried415/gdf-rebuild/conf/testnet"
@@ -202,7 +208,10 @@ or input a passphrase by
 			}
 		}
 
-		var port string
+		//wyong, 20201114 
+		host := "127.0.0.1" 
+		port := "1551" 
+		
 		minerListenAddr, _ := req.Options["MinerListenAddr"].(string)
 		if minerListenAddr != "" {
 			minerListenAddrSplit := strings.Split(minerListenAddr, ":")
@@ -211,6 +220,7 @@ or input a passphrase by
 				//SetExitStatus(1)
 				return errors.New("-miner only accepts listen address in ip:port format. e.g. 127.0.0.1:7458")
 			}
+			host = minerListenAddrSplit[0]
 			port = minerListenAddrSplit[1]
 		}
 
@@ -314,32 +324,51 @@ or input a passphrase by
 
 		fmt.Println("Generating nonce...")
 
+		//wyong, 20201114 
 		//wyong, 20201027 
 		//var nonce *mine.NonceInfo 
-		nonce := nonceGen(publicKey)
+		//nonce := nonceGen(publicKey)
 
-		cliNodeID := proto.NodeID(nonce.Hash.String())
-		fmt.Println("Generated nonce.")
+		//cliNodeID := proto.NodeID(nonce.Hash.String())
+		//fmt.Println("Generated nonce.")
+
+		//wyong, 20201114 
+		libp2pPubKey := (*libp2pcrypto.Secp256k1PublicKey) (publicKey)
+
+		// Obtain Peer ID from public key, wyong, 20201114 
+		cliNodeID, err := peer.IDFromPublicKey(libp2pPubKey)
+		if err != nil {
+			return err
+		}
+
 
 		fmt.Println("Generating config file...")
 
 		// Add client config
 		rawConfig.PrivateKeyFile = privateKeyFileName
 		rawConfig.WalletAddress = walletAddr
-		rawConfig.ThisNodeID = cliNodeID
+		rawConfig.ThisNodeID = proto.NodeID(cliNodeID.Pretty())
 		if rawConfig.KnownNodes == nil {
 			rawConfig.KnownNodes = make([]proto.Node, 0, 1)
 		}
+
+		//wyong, 20201114 
+		pipfs := ma.ProtocolWithCode(ma.P_P2P).Name
+		multiaddr := fmt.Sprintf("/ip4/%s/tcp/%s/%s/%s", host, port, pipfs, cliNodeID.Pretty())
+
 		node := proto.Node{
-			ID:        cliNodeID,
+			ID:        proto.NodeID(cliNodeID.Pretty()),
 			Role:      proto.Client,
 
-			//wyong, 20201028 
-			Addr:      "/ip4/127.0.0.0/tcp/15151",
+			//wyong, 20201114 
+			Addr: multiaddr, 
 
 			PublicKey: publicKey,
-			Nonce:     nonce.Nonce,
+
+			//wyong, 20201114 
+			//Nonce:     nonce.Nonce,
 		}
+
 		if minerListenAddr != "" {
 			node.Role = proto.Miner
 			node.Addr = minerListenAddr

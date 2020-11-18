@@ -18,11 +18,11 @@ import (
 
 	//wyong, 20200925
         pstore "github.com/libp2p/go-libp2p-peerstore"
-        host "github.com/libp2p/go-libp2p-core/host"
+        //host "github.com/libp2p/go-libp2p-core/host"
 
 	//go-libp2p-net -> go-libp2p-core/network,
 	//wyong, 20201029 
-	inet "github.com/libp2p/go-libp2p-core/network"
+	//inet "github.com/libp2p/go-libp2p-core/network"
 	libp2phelpers "github.com/libp2p/go-libp2p-core/helpers"
 
 	protocol "github.com/libp2p/go-libp2p-core/protocol" 
@@ -59,7 +59,7 @@ type WantManager struct {
 	completed_wantlist *wantlist.ThreadSafe 
 
 	//network fnet.BiddingNetwork
-	host host.Host 
+	host net.RoutedHost 
 
 	ctx     context.Context
 	cancel  func()
@@ -77,7 +77,7 @@ type peerStatus struct {
 	peer    proto.NodeID
 }
 
-func NewWantManager(ctx context.Context , /* network fnet.BiddingNetwork, */ host host.Host,   nodeID proto.NodeID  ) *WantManager {
+func NewWantManager(ctx context.Context , /* network fnet.BiddingNetwork, */ host net.RoutedHost,   nodeID proto.NodeID  ) *WantManager {
 	ctx, cancel := context.WithCancel(ctx)
 	//wantlistGauge := metrics.NewCtx(ctx, "wantlist_total",
 	//	"Number of items in wantlist.").Gauge()
@@ -116,14 +116,14 @@ type msgQueue struct {
 
 	//wyong, 20200925 
 	//network fnet.BiddingNetwork
-	host 	host.Host 
+	host 	net.RoutedHost 
 	
 	wl      *wantlist.ThreadSafe
 
 	//wyong, 20200924 
 	//sender fnet.MessageSender
         //caller rpc.PCaller
-	sender inet.Stream 
+	sender *net.Stream 
 
 	refcnt int
 
@@ -275,7 +275,7 @@ func (pm *WantManager) SendBids(ctx context.Context, msg *types.UrlBidMessage ) 
 
 	fmt.Printf("WantManager/SendBids(20), target=%s\n", target )
 	//caller = mux.NewPersistentCaller(target) 
-	s, err := pm.host.NewStream(ctx, peer.ID(target), protocol.ID("ProtocolFronteraBid"))
+	s, err := pm.host.NewStreamExt(ctx, target, protocol.ID("ProtocolFronteraBid"))
 	if err != nil {
                 return 
         }
@@ -287,7 +287,7 @@ func (pm *WantManager) SendBids(ctx context.Context, msg *types.UrlBidMessage ) 
 	//	return
 	//}
 
-        if _, err = net.SendMsg(ctx, s, msg ); err != nil {
+        if _, err = s.SendMsg(ctx, msg ); err != nil {
                 s.Reset()
                 return 
         }
@@ -385,7 +385,7 @@ func (mq *msgQueue) runQueue(ctx context.Context) {
 			mq.doWork(ctx)
 		case <-mq.done:
 			//log.Debugf("runQueue, <-mq.done")
-			if mq.sender != nil {
+			if mq.sender != nil  {
 				//mq.sender.Close()
 
 				//wyong, 20201029 
@@ -439,7 +439,7 @@ func (mq *msgQueue) doWork(ctx context.Context) {
 		//err := mq.sender.SendMsg(ctx, wlm)
         	//var response types.Response
 		//err := mq.caller.Call(route.FronteraBidding.String(), wlm, &response ) 
-		_, err := net.SendMsg(ctx, mq.sender, wlm)
+		_, err := (mq.sender).SendMsg(ctx, wlm)
 		if err == nil {
 			fmt.Printf("msgQueue/doWork(70)\n")
 			return
@@ -506,13 +506,13 @@ func (mq *msgQueue) openSender(ctx context.Context ) error {
 	//log.Debugf("openSender(20)")
 	//todo, "gdf/frontera/bidding",  wyong, 20200924 
 	//nsender, err := mq.network.NewMessageSender(ctx, mq.p)
-	s, err := mq.host.NewStream(ctx, peer.ID(mq.p), protocol.ID("ProtocolFronteraBidding"))
+	s, err := mq.host.NewStreamExt(ctx, mq.p, protocol.ID("ProtocolFronteraBidding"))
 	if err != nil {
 		return err
 	}
 
 	//log.Debugf("openSender(30)")
-	mq.sender = s 
+	mq.sender = &s 
 
 	//if cfg.UseDirectRPC {
 	//	caller = rpc.NewPersistentCaller(mq.p)

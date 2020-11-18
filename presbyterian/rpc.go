@@ -62,7 +62,7 @@ func NewChainRPCService(chain *Chain) (s *ChainRPCService, err error) {
 func (cs *ChainRPCService) AdviseNewBlockHandler(s network.Stream) {
 	ctx := context.Background()
 	var req types.AdviseNewBlockReq 
-	if err := net.RecvMsg(ctx, s, &req); err != nil {
+	if err := s.(net.Stream).RecvMsg(ctx, &req); err != nil {
 		return 
 	}
 
@@ -76,7 +76,7 @@ func (cs *ChainRPCService) AdviseNewBlockHandler(s network.Stream) {
 func (cs *ChainRPCService) FetchBlockHandler(s network.Stream ) {
 	ctx := context.Background()
 	var req types.FetchBlockReq  
-	err := net.RecvMsg(ctx, s, &req) 
+	err := s.(net.Stream).RecvMsg(ctx, &req) 
 	if err != nil {
 		return 
 	}
@@ -91,7 +91,7 @@ func (cs *ChainRPCService) FetchBlockHandler(s network.Stream ) {
 		Block : block, 
 		Count : count, 
 	}	
-	_, err = net.SendMsg(ctx, s, &resp) 
+	_, err = s.(net.Stream).SendMsg(ctx, &resp) 
 
 	//return err
 }
@@ -104,7 +104,7 @@ func (cs *ChainRPCService) FetchLastIrreversibleBlockHandler(
 
 	ctx := context.Background()
 	var req types.FetchLastIrreversibleBlockReq 
-	err := net.RecvMsg(ctx, s, &req) 
+	err := s.(net.Stream).RecvMsg(ctx, &req) 
 	if err != nil {
 		return 
 	}
@@ -122,7 +122,7 @@ func (cs *ChainRPCService) FetchLastIrreversibleBlockHandler(
 		SQLChains : cs.chain.loadSQLChainProfiles(req.Address), 
 	}	
 
-	net.SendMsg(ctx, s, &resp) 
+	s.(net.Stream).SendMsg(ctx, &resp) 
 	//return nil
 }
 
@@ -132,7 +132,7 @@ func (cs *ChainRPCService) FetchLastIrreversibleBlockHandler(
 func (cs *ChainRPCService) FetchBlockByCountHandler(s network.Stream ) {
 	ctx := context.Background()
 	var req types.FetchBlockByCountReq  
-	err := net.RecvMsg(ctx, s, &req) 
+	err := s.(net.Stream).RecvMsg(ctx, &req) 
 	if err != nil {
 		return 
 	}
@@ -149,7 +149,7 @@ func (cs *ChainRPCService) FetchBlockByCountHandler(s network.Stream ) {
 		Height: height, 
 	}	
 
-	net.SendMsg(ctx, s, &resp) 
+	s.(net.Stream).SendMsg(ctx, &resp) 
 	//return err
 }
 
@@ -168,7 +168,7 @@ func (cs *ChainRPCService) NextAccountNonceHandler(
 ) {
 	ctx := context.Background()
 	var req types.NextAccountNonceReq 
-	err := net.RecvMsg(ctx, s, &req) 
+	err := s.(net.Stream).RecvMsg(ctx, &req) 
 	if err != nil {
 		return 
 	}
@@ -183,7 +183,7 @@ func (cs *ChainRPCService) NextAccountNonceHandler(
 		Nonce : nonce, 
 	}	
 
-	net.SendMsg(ctx, s, &resp) 
+	s.(net.Stream).SendMsg(ctx, &resp) 
 	//return
 }
 
@@ -193,7 +193,7 @@ func (cs *ChainRPCService) NextAccountNonceHandler(
 func (cs *ChainRPCService) AddTxHandler(s network.Stream) {
 	ctx := context.Background()
 	var req types.AddTxReq 
-	err := net.RecvMsg(ctx, s, &req) 
+	err := s.(net.Stream).RecvMsg(ctx, &req) 
 	if err != nil {
 		return 
 	}
@@ -210,7 +210,7 @@ func (cs *ChainRPCService) QueryAccountTokenBalanceHandler(
 ) {
 	ctx := context.Background()
 	var req types.QueryAccountTokenBalanceReq 
-	err := net.RecvMsg(ctx, s, &req) 
+	err := s.(net.Stream).RecvMsg(ctx, &req) 
 	if err != nil {
 		return 
 	}
@@ -222,7 +222,7 @@ func (cs *ChainRPCService) QueryAccountTokenBalanceHandler(
 		OK: ok, 
 	}	
 
-	net.SendMsg(ctx, s, &resp) 
+	s.(net.Stream).SendMsg(ctx, &resp) 
 	//return
 }
 
@@ -234,7 +234,7 @@ func (cs *ChainRPCService) QuerySQLChainProfileHandler(
 ) {
 	ctx := context.Background()
 	var req types.QuerySQLChainProfileReq 
-	err := net.RecvMsg(ctx, s, &req) 
+	err := s.(net.Stream).RecvMsg(ctx, &req) 
 	if err != nil {
 		return 
 	}
@@ -249,7 +249,7 @@ func (cs *ChainRPCService) QuerySQLChainProfileHandler(
 		Profile: *p, 
 	}	
 
-	net.SendMsg(ctx, s, &resp) 
+	s.(net.Stream).SendMsg(ctx, &resp) 
 	//return
 
 }
@@ -262,7 +262,7 @@ func (cs *ChainRPCService) QueryTxStateHandler(
 ) {
 	ctx := context.Background()
 	var req types.QueryTxStateReq 
-	if err := net.RecvMsg(ctx, s, &req); err != nil {
+	if err := s.(net.Stream).RecvMsg(ctx, &req); err != nil {
 		return 
 	}
 
@@ -277,7 +277,7 @@ func (cs *ChainRPCService) QueryTxStateHandler(
 		State: state , 
 	}	
 
-	net.SendMsg(ctx, s, &resp) 
+	s.(net.Stream).SendMsg(ctx, &resp) 
 	//return
 }
 
@@ -289,7 +289,7 @@ func (cs *ChainRPCService) QueryAccountSQLChainProfilesHandler(
 ) {
 	ctx := context.Background()
 	var req types.QueryAccountSQLChainProfilesReq 
-	if err := net.RecvMsg(ctx, s, &req); err != nil {
+	if err := s.(net.Stream).RecvMsg(ctx, &req); err != nil {
 		return 
 	}
 
@@ -306,6 +306,6 @@ func (cs *ChainRPCService) QueryAccountSQLChainProfilesHandler(
 		Profiles: profiles, 
 	}	
 
-	net.SendMsg(ctx, s, &resp) 
+	s.(net.Stream).SendMsg(ctx, &resp) 
 	//return
 }

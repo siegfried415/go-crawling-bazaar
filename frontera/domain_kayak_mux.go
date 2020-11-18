@@ -88,7 +88,7 @@ func (ks *DomainKayakMuxService) ApplyHandler(s network.Stream ) {
         //}
         ctx := context.Background()
         var req kt.ApplyRequest  
-        err := net.RecvMsg(ctx, s, &req)
+        err := s.(net.Stream).RecvMsg(ctx, &req)
         if err != nil {
                 return
         }
@@ -111,7 +111,7 @@ func (ks *DomainKayakMuxService) ApplyHandler(s network.Stream ) {
 func (ks *DomainKayakMuxService) FetchHandler(s network.Stream) {
         ctx := context.Background()
         var req kt.FetchRequest  
-        err := net.RecvMsg(ctx, s, &req)
+        err := s.(net.Stream).RecvMsg(ctx, &req)
         if err != nil {
                 return
         }
@@ -134,7 +134,7 @@ func (ks *DomainKayakMuxService) FetchHandler(s network.Stream) {
 		Instance : req.Instance ,
 	}
 
-        net.SendMsg(ctx, s, &resp)
+        s.(net.Stream).SendMsg(ctx, &resp)
 	//return
 
 }

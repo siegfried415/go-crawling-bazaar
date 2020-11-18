@@ -30,7 +30,7 @@ import (
 	mw "github.com/zserge/metric"
 
 	//wyong, 20201015 
-	host "github.com/libp2p/go-libp2p-core/host"
+	//host "github.com/libp2p/go-libp2p-core/host"
 
 	pi "github.com/siegfried415/gdf-rebuild/presbyterian/interfaces"
 	"github.com/siegfried415/gdf-rebuild/conf"
@@ -39,6 +39,7 @@ import (
 	"github.com/siegfried415/gdf-rebuild/crypto/asymmetric"
 	"github.com/siegfried415/gdf-rebuild/crypto/hash"
 	"github.com/siegfried415/gdf-rebuild/kms"
+	net "github.com/siegfried415/gdf-rebuild/net"
 
 
 	"github.com/siegfried415/gdf-rebuild/proto"
@@ -74,7 +75,7 @@ type Chain struct {
 	//caller *rpc.Caller
 
 	//wyong, 20201015
-	host host.Host 
+	host net.RoutedHost 
 
 	// Other components
 	storage xi.Storage

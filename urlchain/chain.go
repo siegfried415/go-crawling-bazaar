@@ -45,8 +45,8 @@ import (
 
 	//wyong, 20201014
 	//"github.com/siegfried415/gdf-rebuild/address" 
-	host "github.com/libp2p/go-libp2p-host" 
-	peer "github.com/libp2p/go-libp2p-core/peer" 
+	//host "github.com/libp2p/go-libp2p-host" 
+	//peer "github.com/libp2p/go-libp2p-core/peer" 
 	protocol "github.com/libp2p/go-libp2p-core/protocol" 
 
 	"github.com/siegfried415/gdf-rebuild/proto"
@@ -122,7 +122,7 @@ type Chain struct {
 
 	//wyong, 20201014 
 	//cl *rpc.Caller
-	host host.Host 
+	host net.RoutedHost 
 
 	rt *runtime
 
@@ -646,19 +646,19 @@ func (c *Chain) produceBlock(now time.Time) (err error) {
 					//}
 
 					//wyong, 20200928
-					s, err := c.host.NewStream(ctx, peer.ID(remote), protocol.ID("ProtocolUrlChainAdviseNewBlock"))
+					s, err := c.host.NewStreamExt(ctx, remote, protocol.ID("ProtocolUrlChainAdviseNewBlock"))
 					if err != nil {
 						le.WithError(err).Error("error opening push stream")
 						return 
 					}
 
 					//wyong, 20201014 
-	                		if _, err := net.SendMsg(ctx, s, &req ) ; err != nil { 
+	                		if _, err := s.SendMsg(ctx, &req ) ; err != nil { 
 						le.WithError(err).Error("failed to advise new block")
 					}
 
 					//wyong, 20201014 
-	                		if err := net.RecvMsg(ctx, s, resp ) ; err != nil { 
+	                		if err := s.RecvMsg(ctx, resp ) ; err != nil { 
 						le.WithError(err).Error("failed to receive new block advise response")
 					}
 
@@ -737,14 +737,14 @@ func (c *Chain) syncHead() (err error) {
 			//}
 
 			//wyong, 20200928
-			s, err := c.host.NewStream(child, peer.ID(node), protocol.ID("ProtocolUrlChainFetchBlock"))
+			s, err := c.host.NewStreamExt(child, node, protocol.ID("ProtocolUrlChainFetchBlock"))
 			if err != nil {
 				ile.WithError(err).Error("error opening push stream")
 				return 
 			}
 
 			//wyong, 20201014 
-	                if _, err := net.SendMsg(child, s, &req ) ; err != nil { 
+	                if _, err := s.SendMsg(child, &req ) ; err != nil { 
 				ile.WithError(err).Error("failed to fetch block from peer")
 				return 
 			}
@@ -752,7 +752,7 @@ func (c *Chain) syncHead() (err error) {
 
 			//wyong, 20201020 
 			//resp, err = ioutil.ReadAll(s)
-			err = net.RecvMsg(child, s, resp) 
+			err = s.RecvMsg(child, resp) 
 			if err != nil {
 				ile.WithError(err).Error("failed to get response")
 				return 
@@ -930,7 +930,7 @@ func (c *Chain) processBlocks(ctx context.Context) {
 				nonceResp := &types.NextAccountNonceResp{}
 
 				//nonceReq.Addr = *c.addr
-				if err = net.RequestPB(c.host, route.MCCNextAccountNonce.String(), nonceReq, nonceResp); err != nil {
+				if err = c.host.RequestPB(route.MCCNextAccountNonce.String(), nonceReq, nonceResp); err != nil {
 					// allocate nonce failed
 					le.WithError(err).Warning("allocate nonce for transaction failed")
 				}
@@ -949,7 +949,7 @@ func (c *Chain) processBlocks(ctx context.Context) {
 				//	addTxReq.Tx.GetAccountNonce(), addTxReq.Tx.GetAccountAddress())
 
 				//wyong, 20201014 
-				if err = net.RequestPB(c.host, route.MCCAddTx.String(), addTxReq, addTxResp); err != nil {
+				if err = c.host.RequestPB(route.MCCAddTx.String(), addTxReq, addTxResp); err != nil {
 					le.WithError(err).Warning("send tx failed")
 				}
 			}

@@ -13,7 +13,7 @@ import (
 
 	//go-libp2p-net -> go-libp2p-core/network
 	//wyong, 20201029 
-	inet "github.com/libp2p/go-libp2p-core/network"
+	network "github.com/libp2p/go-libp2p-core/network"
 
 	//wyong, 20200928
 	"github.com/ugorji/go/codec"
@@ -21,19 +21,24 @@ import (
 
 var sendMessageTimeout = time.Minute * 10
 
+
+type Stream struct {
+	network.Stream
+}
+
 //wyong, 20200925 
-func SendMsg(ctx context.Context, s inet.Stream, msg interface{} ) (*bufio.Writer,  error) {
+func (s Stream)SendMsg(ctx context.Context, msg interface{} ) (*bufio.Writer,  error) {
 	//log.Debugf("msgToStream called...")
 
 	deadline := time.Now().Add(sendMessageTimeout)
 	if dl, ok := ctx.Deadline(); ok {
 		deadline = dl
 	}
-	if err := s.SetWriteDeadline(deadline); err != nil {
+	if err := s.Stream.SetWriteDeadline(deadline); err != nil {
 		//log.Warningf("error setting deadline: %s", err)
 	}
 
-	w := bufio.NewWriter(s)
+	w := bufio.NewWriter(s.Stream)
 
 	//Use Messagepack encoder, wyong, 20200928 
 	var encMsg []byte
@@ -54,15 +59,15 @@ func SendMsg(ctx context.Context, s inet.Stream, msg interface{} ) (*bufio.Write
 		return nil, err
 	}
 
-	if err := s.SetWriteDeadline(time.Time{}); err != nil {
+	if err := s.Stream.SetWriteDeadline(time.Time{}); err != nil {
 		//log.Warningf("error resetting deadline: %s", err)
 	}
 	return w, nil
 }
 
 //wyong, 20201018 
-func RecvMsg(ctx context.Context, s inet.Stream, resp interface{} ) error {
-	b, err := ioutil.ReadAll(s)
+func (s Stream)RecvMsg(ctx context.Context, resp interface{} ) error {
+	b, err := ioutil.ReadAll(s.Stream)
 	if err != nil {
 		return err 	
 	} 

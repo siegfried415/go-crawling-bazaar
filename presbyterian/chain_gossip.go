@@ -32,10 +32,10 @@ import (
 
 	//wyong, 20201015
 	//"github.com/libp2p/go-libp2p-core/host"
-	net "github.com/siegfried415/gdf-rebuild/net" 
+	//net "github.com/siegfried415/gdf-rebuild/net" 
 
 	//wyong, 20201018
-	"github.com/libp2p/go-libp2p-core/peer" 
+	//"github.com/libp2p/go-libp2p-core/peer" 
 	//network "github.com/libp2p/go-libp2p-core/network" 
 	"github.com/libp2p/go-libp2p-core/protocol" 
 
@@ -60,13 +60,13 @@ func (c *Chain) nonblockingBroadcastBlock(block *types.BPBlock) {
 				)
 
 				//wyong, 20201018
-				s, err := c.host.NewStream(ctx, peer.ID(remote.nodeID), protocol.ID("ProtocolMCCAdviseNewBlock"))
+				s, err := c.host.NewStreamExt(ctx, remote.nodeID, protocol.ID("ProtocolMCCAdviseNewBlock"))
 				if err != nil {
 					log.WithError(err).Error("error opening block advise stream")
 					return
 				}
 
-				if _, err := net.SendMsg(ctx, s, &req ) ; err != nil {
+				if _, err := s.SendMsg(ctx, &req ) ; err != nil {
 					log.WithError(err).Error("failed to advise new block")
 				}
 				
@@ -100,14 +100,14 @@ func (c *Chain) nonblockingBroadcastTx(ttl uint32, tx pi.Transaction) {
 
 				)
 				//wyong, 20201015 
-				s, err := c.host.NewStream(ctx, peer.ID(remote.nodeID), protocol.ID("ProtocolMCCAddTx"))
+				s, err := c.host.NewStreamExt(ctx, remote.nodeID, protocol.ID("ProtocolMCCAddTx"))
 				if err != nil {
 					log.WithError(err).Error("error opening addtx stream")
 					return
 				}
 
 				//wyong, 20201014
-				if _, err := net.SendMsg(ctx, s, &req ) ; err != nil {
+				if _, err := s.SendMsg(ctx, &req ) ; err != nil {
 					log.WithError(err).Error("failed to advise new block")
 				}
 
@@ -162,19 +162,19 @@ func (c *Chain) blockingFetchBlock(ctx context.Context, h uint32) (unreachable u
 			//}
 
 			//wyong, 20201015 
-			s, err := c.host.NewStream(ctx, peer.ID(remote.nodeID), protocol.ID("ProtocolMCCFetchBlock"))
+			s, err := c.host.NewStreamExt(ctx, remote.nodeID, protocol.ID("ProtocolMCCFetchBlock"))
 			if err != nil {
 				le.WithError(err).Error("error opening block-fetching stream")
 				return
 			}
 
-			if _, err := net.SendMsg(ctx, s, &req ) ; err != nil {
+			if _, err := s.SendMsg(ctx, &req ) ; err != nil {
 				le.WithError(err).Error("failed to fetch block")
 			}
 
 			//wyong, 20201018
 			//resp, err = ioutil.ReadAll(s)
-			err = net.RecvMsg(ctx, s, resp) 
+			err = s.RecvMsg(ctx, resp) 
                         if err != nil {
                                 le.WithError(err).Error("failed to get response")
                                 return

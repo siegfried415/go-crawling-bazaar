@@ -49,7 +49,8 @@ var swarmPeersCmd = &cmds.Command{
 
 		//out, err := GetPorcelainAPI(env).NetworkPeers(req.Context, verbose, latency, streams)
                 e := cmdenv.(*env.Env)
-                out, err := e.Network().Peers(req.Context, verbose, latency, streams)
+		host := e.Host()
+                out, err := host.Peers(req.Context, verbose, latency, streams)
 
 		if err != nil {
 			return err
@@ -104,20 +105,27 @@ go-filecoin swarm connect /ip4/104.131.131.82/tcp/4001/ipfs/QmaCpDMGvV2BGHeYERUE
 	Run: func(req *cmds.Request, re cmds.ResponseEmitter, cmdenv cmds.Environment) error {
 		//results, err := GetPorcelainAPI(env).NetworkConnect(req.Context, req.Arguments)
 		e := cmdenv.(*env.Env)
-                results, err := e.Network().Connect(req.Context, req.Arguments)
+		host := e.Host()
 
+		addrInfo, err := net.PeerAddrToAddrInfo(req.Arguments[0])
 		if err != nil {
 			return err
 		}
 
-		for result := range results {
-			if result.Err != nil {
-				return result.Err
-			}
-			if err := re.Emit(result.PeerID); err != nil {
-				return err
-			}
+                err = host.Connect(req.Context, *addrInfo)
+		if err != nil {
+			return err
 		}
+
+		//todo, wyong, 20201112 
+		//for result := range results {
+		//	if result.Err != nil {
+		//		return result.Err
+		//	}
+		//	if err := re.Emit(result.PeerID); err != nil {
+		//		return err
+		//	}
+		//}
 
 		return nil
 	},

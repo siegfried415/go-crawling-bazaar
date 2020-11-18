@@ -22,10 +22,11 @@ import (
 	"github.com/siegfried415/gdf-rebuild/proto"
 
 	//wyong, 20201015
-	host "github.com/libp2p/go-libp2p-core/host"
+	//host "github.com/libp2p/go-libp2p-core/host"
 
 	//wyong, 20201008 
 	//rpc "github.com/siegfried415/gdf-rebuild/rpc/mux"
+	net "github.com/siegfried415/gdf-rebuild/net"
 
 	"github.com/siegfried415/gdf-rebuild/types"
 )
@@ -53,7 +54,7 @@ type Config struct {
 	//Server *rpc.Server
 
 	//wyong, 20201015
-	Host 	host.Host 
+	Host 	net.RoutedHost 
 
 	Peers            *proto.Peers
 	NodeID           proto.NodeID

@@ -21,9 +21,10 @@ import (
 
 	"github.com/siegfried415/gdf-rebuild/proto"
 	"github.com/siegfried415/gdf-rebuild/urlchain"
+	net "github.com/siegfried415/gdf-rebuild/net"
 
 	//wyong, 20201018
-	"github.com/libp2p/go-libp2p-core/host" 
+	//"github.com/libp2p/go-libp2p-core/host" 
 )
 
 // DomainConfig defines the database config.
@@ -47,5 +48,5 @@ type DomainConfig struct {
 	//UrlChain		config.UrlChainConfig 
 
 	//wyong, 20201018
-	Host			host.Host 
+	Host			net.RoutedHost 
 }

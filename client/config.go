@@ -22,7 +22,9 @@ import (
 	"strings"
 
 	//wyong, 20201021
-	host "github.com/libp2p/go-libp2p-core/host" 
+	//host "github.com/libp2p/go-libp2p-core/host" 
+
+	net "github.com/siegfried415/gdf-rebuild/net" 
 )
 
 const (
@@ -70,7 +72,7 @@ type Config struct {
 
 	//wyong, 20201021 
 	Protocol string  
-	Host 	host.Host 
+	Host 	net.RoutedHost 
 }
 
 // NewConfig creates a new config with default value.

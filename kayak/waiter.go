@@ -29,13 +29,13 @@ import (
 
 	//wyong, 20201020
 	"github.com/libp2p/go-libp2p-core/protocol"
-	"github.com/libp2p/go-libp2p-core/peer"
+	//"github.com/libp2p/go-libp2p-core/peer"
 
 	kt "github.com/siegfried415/gdf-rebuild/kayak/types"
 
 	//wyong, 20201008
 	//rpc "github.com/siegfried415/gdf-rebuild/rpc/mux"
-	net "github.com/siegfried415/gdf-rebuild/net"
+	//net "github.com/siegfried415/gdf-rebuild/net"
 
 	"github.com/siegfried415/gdf-rebuild/utils/log"
 	"github.com/siegfried415/gdf-rebuild/utils/trace"
@@ -104,7 +104,7 @@ func (i *waitItem) run() {
 	ctx := context.Background()
 
         //todo, ProtoKayakFetch = "/gdf/kayak/fetch", wyong, 20200925
-        s, err := i.r.host.NewStream(ctx, peer.ID(i.r.peers.Leader), protocol.ID("ProtoKayakFetch"))
+        s, err := i.r.host.NewStreamExt(ctx, i.r.peers.Leader, protocol.ID("ProtoKayakFetch"))
         if err != nil {
                 //log.Debugf("error opening push stream to %s: %s", p, err.Error())
                 return
@@ -142,7 +142,7 @@ func (i *waitItem) run() {
 		//}
 
 		//wyong, 20201007 
-		_, err := net.SendMsg(ctx, s, &req )
+		_, err := s.SendMsg(ctx, &req )
                 if err == nil {
 			log.WithFields(log.Fields{
 				"index":    i.index,
@@ -153,7 +153,7 @@ func (i *waitItem) run() {
 
 		//wyong, 20201018 
 		//r, err := ioutil.ReadAll(s)
-		err = net.RecvMsg(ctx, s, &resp) 
+		err = s.RecvMsg(ctx, &resp) 
 		if err!= nil {
 			log.WithFields(log.Fields{
 				"index":    i.index,

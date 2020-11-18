@@ -30,9 +30,10 @@ import (
 	"github.com/siegfried415/gdf-rebuild/utils/log"
 	"github.com/siegfried415/gdf-rebuild/utils/timer"
 	"github.com/siegfried415/gdf-rebuild/utils/trace"
+	net "github.com/siegfried415/gdf-rebuild/net"
 
 	//wyong, 20201018
-	"github.com/libp2p/go-libp2p-core/host" 
+	//"github.com/libp2p/go-libp2p-core/host" 
 )
 
 const (
@@ -57,7 +58,7 @@ type Runtime struct {
 	nodeID proto.NodeID
 
 	//wyong, 20201018
-	host host.Host 
+	host net.RoutedHost 
 
 	// instance identifies kayak in multi-instance environment
 	// e.g. use database id for SQLChain scenario.

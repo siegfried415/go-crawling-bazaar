@@ -69,7 +69,7 @@ import (
 	conf "github.com/siegfried415/gdf-rebuild/conf" 
 	kms "github.com/siegfried415/gdf-rebuild/kms" 
 	proto "github.com/siegfried415/gdf-rebuild/proto" 
-	route "github.com/siegfried415/gdf-rebuild/route" 
+	//route "github.com/siegfried415/gdf-rebuild/route" 
         pb "github.com/siegfried415/gdf-rebuild/presbyterian"
 
 	//wyong, 20201014 
@@ -171,6 +171,30 @@ type blankValidator struct{}
 func (blankValidator) Validate(_ string, _ []byte) error        { return nil }
 func (blankValidator) Select(_ string, _ [][]byte) (int, error) { return 0, nil }
 
+/* wyong, 20201109 
+func (nc *Builder) build(ctx context.Context, repoPath string, role proto.ServerRole) (*Node, error ) {
+	//todo, wyong, 20201007 
+	switch role  {
+	case proto.Client:
+		//todo, wyong, 20201028
+		return doBuildClientNode(ctx, repoPath)
+
+	case proto.Leader: fallthrough 
+	case proto.Follower: 
+		return doPBNode(ctx, repoPath) 
+
+	case proto.Miner: 
+		return doMinerNode(ctx, repoPath) 
+
+	//case proto.Unknown:
+        //        return nil, err
+	}	
+
+	return nil, err 
+}
+*/
+
+
 func (nc *Builder) build(ctx context.Context, repoPath string, role proto.ServerRole) (*Node, error ) {
         //if nc.Repo == nil {
         //        nc.Repo = repo.NewInMemoryRepo()
@@ -185,7 +209,7 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
 		//wyong, 20201021 
 		bswap exchange.Interface 	
 		g *dag.DAG 
-		n *net.Network
+		//n *net.Network
 		f *frontera.Frontera 
 		
 		//wyong, 20201021
@@ -207,18 +231,15 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
 		return nil, err 
 	}
 
-        //wyong, 20201015  init nodes
+
+        //wyong, 20201112,	init nodes
         //log.WithField("node", nodeID).Info("init peers")
-        _, peers, /* thisNode */ _, err := initNodePeers(conf.GConf.ThisNodeID, conf.GConf.PubKeyStoreFile)
+        peers, err := GetPeersFromConf(conf.GConf.PubKeyStoreFile)
         if err != nil {
                 //log.WithError(err).Error("init nodes and peers failed")
                 return nil, err 
         }
 
-	//log.Info("init routes")
-
-	// init kms routing
-	route.InitKMS(conf.GConf.PubKeyStoreFile)
 
 
 	//wyong, 20201027 
@@ -228,8 +249,8 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
         validator := blankValidator{}
 
 	//wyong, 20200911 
-        var router routing.Routing
-        var peerHost host.Host
+        //var router net.Router
+        var peerHost net.RoutedHost
 
 	//fmt.Printf("dag/BuildDAG(10), swarmAddress=%s\n", swarmAddress )
 	//ds := dss.MutexWrap(datastore.NewMapDatastore())
@@ -240,20 +261,10 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
 
 	//fmt.Printf("dag/BuildDAG(20)\n") 
         //if !nc.OfflineMode {
-	makeDHT := func(h host.Host) (routing.Routing, error) {
+	makeDHT := func(h host.Host) (routing.ContentRouting, error) {
 		//fmt.Printf("dag/makeDGT(10),host=%s\n", h) 
 
-		// wyong, 20200921 
-		//baseOpts := []dht.Option{
-		//	dht.ProtocolPrefix("/gdf/dht"),
-		//	dht.NamespacedValidator("v", blankValidator{}),
-		//	dht.DisableAutoRefresh(),
-		//	dht.Mode(dht.ModeServer), 
-		//}
-
-		//fmt.Printf("dag/makeDGT(20)\n") 
-		//r, err := dht.New(ctx, h, baseOpts..., )
-
+		//wyong, 20201108 
 		r, err := dht.New(
 			ctx,
 			h,
@@ -262,12 +273,13 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
 			dhtopts.Protocols(net.FilecoinDHT(network)),
 		)
 
-		if err != nil {
-			fmt.Printf("dag/makeDGT(25)\n") 
-			return nil, errors.Wrap(err, "failed to setup routing")
-		}
+		//if err != nil {
+		//	fmt.Printf("dag/makeDGT(25)\n") 
+		//	return nil, errors.Wrap(err, "failed to setup routing")
+		//}
+
 		//fmt.Printf("dag/makeDGT(30)\n") 
-		router = r
+		//router = r
 		return r, err
 	}
 
@@ -295,11 +307,16 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
         // set up peer tracking
         //peerTracker := net.NewPeerTracker(peerHost.ID())
 
+	//wyong, 20201113
+	// init kms routing
+	net.InitKMS(peerHost, conf.GConf.PubKeyStoreFile)
 
 	//todo, wyong, 20201007 
 	switch role  {
-	case proto.Leader:
-		fallthrough 
+	case proto.Client:
+		//todo, wyong, 20201028
+
+	case proto.Leader: fallthrough 
 	case proto.Follower: 
 
 		//wyong, 20201021 
@@ -319,7 +336,7 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
                 // init dht node server
                 //log.Info("init consistent runtime")
                 kvServer := NewKVServer(peerHost, conf.GConf.ThisNodeID, peers, st, dhtGossipTimeout)
-                dht, err := route.NewDHTService(conf.GConf.DHTFileName, kvServer, true)
+                dht, err := net.NewDHTService(peerHost, conf.GConf.DHTFileName, kvServer, true)
                 if err != nil {
                         //log.WithError(err).Error("init consistent hash failed")
                         return nil, err
@@ -376,7 +393,8 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
 	case proto.Miner: 
 		//fmt.Printf("dag/BuildDAG(50)\n") 
 		// set up bitswap
-		nwork := bsnet.NewFromIpfsHost(peerHost, router)
+		
+		nwork := bsnet.NewFromIpfsHost(peerHost, peerHost.Router())
 		//fmt.Printf("dag/BuildDAG(60)\n") 
 		bswap = bitswap.New(ctx, nwork, bs)
 		//fmt.Printf("dag/BuildDAG(70)\n") 
@@ -388,8 +406,9 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
 		g = dag.NewDAG(s)
 
 
-		fmt.Printf("dag/BuildDAG(100)\n") 
-		n = net.New(peerHost, net.NewRouter(router))
+		//wyong, 20201107 
+		//fmt.Printf("dag/BuildDAG(100)\n") 
+		//n = net.New(peerHost, net.NewRouter(router))
 
 		//wyong, 20200929 
 		//RootDir = nc.Repo.Path()
@@ -417,9 +436,6 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
 			return nil, err 
 		}
 
-	case proto.Client:
-		//todo, wyong, 20201028
-
 	case proto.Unknown:
                 return nil, err
 	}	
@@ -440,16 +456,18 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
                 //Clock:       nc.Clock,
                 OfflineMode: nc.OfflineMode,
                 //Repo:        nc.Repo,
-                Network: NetworkSubmodule{
-                        //host:        peerHost,
-                        //PeerHost:    peerHost,
-                        NetworkName: network,
 
-			//todo, wyong, 20201015 
-                        //PeerTracker: peerTracker,
-
-                        Router:      router,
-                },
+		//wyong, 20201111 
+                //Network: NetworkSubmodule{
+                //        //host:        peerHost,
+                //        //PeerHost:    peerHost,
+                //        NetworkName: network,
+		//
+		//	//todo, wyong, 20201015 
+                //      //PeerTracker: peerTracker,
+		//
+                //        Router:      peerHost.Router(),
+                //},
 
 		//wyong, 20201014 
                 //Wallet: WalletSubmodule{
@@ -484,7 +502,10 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
 
 		//wyong, 20200921 
 		DAG : g, 
-		Net : n, 
+
+		//wyong, 20201107
+		//Net : n, 
+
 		Frontera : f , 
         }
 
@@ -514,6 +535,13 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
         //        Wallet:        fcWallet,
         //}))
 
+        //wyong, 20201015  init nodes
+        //log.WithField("node", nodeID).Info("init peers")
+        _,  _, err = nd.InitNodePeers(conf.GConf.PubKeyStoreFile)
+        if err != nil {
+                //log.WithError(err).Error("init nodes and peers failed")
+                return nil, err 
+        }
 
 	/*todo, wyong, 20201021 
 	//fmt.Printf("dag/BuildDAG(110)\n") 
@@ -537,26 +565,45 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
 	return nd, nil 
 }
 
+
 //wyong, 20200908
 func (nc *Builder) buildHost(ctx context.Context, 
 					swarmAddress string, 
 				privkey *asymmetric.PrivateKey, 
-	makeDHT func(host host.Host) (routing.Routing, error)) (host.Host, error) {
+	makeDHT func(host host.Host) (routing.ContentRouting, error),
+) (net.RoutedHost, error) {
 
 	//fmt.Printf("dag/buildHost(10), swarmAddress=%s\n", swarmAddress) 
         // Node must build a host acting as a libp2p relay.  Additionally it
         // runs the autoNAT service which allows other nodes to check for their
         // own dialability by having this node attempt to dial them.
-        makeDHTRightType := func(h host.Host) (routing.PeerRouting, error) {
-                return makeDHT(h)
+
+	//wyong, 20201111
+        makeDHTRightType := func(h host.Host) (*net.PBRouter, error) {
+                //return makeDHT(h)
+		dht, err := makeDHT(h) 
+		if err != nil {
+			fmt.Printf("dag/makeDGT(15)\n") 
+			return nil, errors.Wrap(err, "failed to setup dht routing")
+		}		
+
+		//wyong, 20201111
+		r, err := net.NewPBRouter(h, dht )
+		if err != nil {
+			fmt.Printf("dag/makeDGT(25)\n") 
+			return nil, errors.Wrap(err, "failed to setup routing")
+		}
+
+		return r, nil 
         }
+
 
 	fmt.Printf("dag/buildHost(20)\n") 
         if nc.IsRelay {
                 //cfg := nc.Repo.Config()
                 publicAddr, err := ma.NewMultiaddr(conf.GConf.PublicRelayAddress)
                 if err != nil {
-                        return nil, err
+                        return net.RoutedHost{}, err
                 }
                 publicAddrFactory := func(lc *libp2p.Config) error {
                         lc.AddrsFactory = func(addrs []ma.Multiaddr) []ma.Multiaddr {
@@ -571,29 +618,34 @@ func (nc *Builder) buildHost(ctx context.Context,
                         ctx,
                         libp2p.EnableRelay(circuit.OptHop),
                         libp2p.EnableAutoRelay(),
-                        libp2p.Routing(makeDHTRightType),
+                        //libp2p.Routing(makeDHTRightType), 
                         publicAddrFactory,
                         libp2p.ChainOptions(nc.Libp2pOpts...),
                 )
                 if err != nil {
-                        return nil, err
+                        return net.RoutedHost{}, err
                 }
                 // Set up autoNATService as a streamhandler on the host.
 		// add parameter forceEnabled, wyong, 20201021 
 		// todo, Deprecated - use autonat.EnableService
                 _, err = autonatsvc.NewAutoNATService(ctx, relayHost, true )
                 if err != nil {
-                        return nil, err
+                        return net.RoutedHost{}, err
                 }
-                return relayHost, nil
+
+		//wyong, 20201109
+                //return relayHost, nil
+	
+		router, err := makeDHTRightType(relayHost.(host.Host))
+		if err != nil {
+			return net.RoutedHost{}, err 
+		}
+
+		rh := net.NewRoutedHost(relayHost.(host.Host), router)
+		return rh, nil  
         }
 
-	//wyong, 20201021 
-	//libp2pPrivKey, _, _ := libp2pcrypto.ECDSAKeyPairFromKey((*ecdsa.PrivateKey)(privkey))
-	//libp2pPrivKey := &libp2pcrypto.ECDSAPrivateKey{(*ecdsa.PrivateKey)(privkey)}
-
 	//wyong, 20201029 
-	//btcecPrivKey := (*btcec.PrivateKey)(privkey)
 	libp2pPrivKey := (*libp2pcrypto.Secp256k1PrivateKey) (privkey) 
 
 	Libp2pOpts := []libp2p.Option { libp2p.ListenAddrStrings(swarmAddress),
@@ -603,10 +655,22 @@ func (nc *Builder) buildHost(ctx context.Context,
 					libp2p.Identity(libp2pPrivKey), 
 				      }
 	fmt.Printf("dag/buildHost(30)\n") 
-        return libp2p.New(
-                ctx,
-                libp2p.EnableAutoRelay(),
-                libp2p.Routing(makeDHTRightType),
-                libp2p.ChainOptions(Libp2pOpts...),
+        host, err := libp2p.New(ctx,
+					//libp2p.EnableAutoRelay(),
+					//libp2p.Routing(makeDHTRightType),
+				libp2p.ChainOptions(Libp2pOpts...),
         )
+	if err != nil {
+		return net.RoutedHost{}, err 
+	}
+
+	router, err := makeDHTRightType(host)
+	if err != nil {
+		return net.RoutedHost{}, err 
+	}
+
+	//wyong, 20201109 
+	rh := net.NewRoutedHost(host, router)
+	return rh, nil 
 }
+

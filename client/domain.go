@@ -159,7 +159,8 @@ func Init(host host.Host, configFile string, masterKey []byte) (err error) {
 		return
 	}
 
-	route.InitKMS(conf.GConf.PubKeyStoreFile)
+	//todo, wyong, 20201110 
+	//route.InitKMS(conf.GConf.PubKeyStoreFile)
 	if err = kms.InitLocalKeyPair(conf.GConf.PrivateKeyFile, masterKey); err != nil {
 		return
 	}
@@ -205,8 +206,9 @@ func CreateDomain(host host.Host, meta ResourceMeta) (txHash hash.Hash, /* dsn s
 	// allocate nonce
 	nonceReq.Addr = clientAddr
 
+	//wyong, 20201108 
 	//wyong, 20201021 
-	if err = net.RequestPB(host, route.MCCNextAccountNonce.String(), nonceReq, nonceResp); err != nil {
+	if err = host.(net.RoutedHost).RequestPB(route.MCCNextAccountNonce.String(), nonceReq, nonceResp); err != nil {
 		err = errors.Wrap(err, "allocate create database transaction nonce failed")
 		return
 	}
@@ -249,8 +251,9 @@ func CreateDomain(host host.Host, meta ResourceMeta) (txHash hash.Hash, /* dsn s
 		return
 	}
 
+	//wyong, 20201108 
 	//wyong, 20201021 
-	if err = net.RequestPB(host, route.MCCAddTx.String(), req, resp); err != nil {
+	if err = host.(net.RoutedHost).RequestPB(route.MCCAddTx.String(), req, resp); err != nil {
 		err = errors.Wrap(err, "call create database transaction failed")
 		return
 	}
@@ -312,7 +315,8 @@ func WaitPBDomainCreation(
 			fmt.Printf("WaitPBDomainCreation(30)\n") 
 			count++
 
-			if err = net.RequestPB(host, route.MCCQuerySQLChainProfile.String(), req, resp,); err != nil {
+			//wyong, 20201108 
+			if err = host.(net.RoutedHost).RequestPB(route.MCCQuerySQLChainProfile.String(), req, resp,); err != nil {
 				fmt.Printf("WaitPBDomainCreation(40)\n") 
 				if !strings.Contains(err.Error(), pb.ErrDatabaseNotFound.Error()) {
 					// err != nil && err != ErrDatabaseNotFound (unexpected error)
@@ -529,7 +533,8 @@ func WaitTxConfirmation(
 	defer ticker.Stop()
 	defer fmt.Printf("\n")
 	for {
-		if err = net.RequestPB(host, method.String(), req, resp); err != nil {
+		//wyong, 20201108 
+		if err = host.(net.RoutedHost).RequestPB(method.String(), req, resp); err != nil {
 			err = errors.Wrapf(err, "failed to call %s", method)
 			return
 		}
@@ -605,7 +610,7 @@ func registerNode(host host.Host ) (err error) {
 
 	if nodeInfo.Role != proto.Leader && nodeInfo.Role != proto.Follower {
 		log.Infof("Self register to blockproducer: %v", conf.GConf.BP.NodeID)
-		err = net.PingPB(host, nodeInfo, conf.GConf.BP.NodeID)
+		err = host.(net.RoutedHost).PingPB(nodeInfo, conf.GConf.BP.NodeID)
 	}
 
 	return
@@ -702,7 +707,9 @@ func getPeers(host host.Host, domainID proto.DomainID, privKey *asymmetric.Priva
 	profileReq := &types.QuerySQLChainProfileReq{}
 	profileResp := &types.QuerySQLChainProfileResp{}
 	profileReq.DomainID = domainID
-	err = net.RequestPB(host, route.MCCQuerySQLChainProfile.String(), profileReq, profileResp)
+
+	//wyong, 20201108 
+	err = host.(net.RoutedHost).RequestPB(route.MCCQuerySQLChainProfile.String(), profileReq, profileResp)
 	if err != nil {
 		err = errors.Wrap(err, "get sqlchain profile failed in getPeers")
 		return

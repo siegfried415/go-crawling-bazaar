@@ -236,7 +236,7 @@ func RunAPIAndWait(ctx context.Context, nd *node.Node, repoDir string, config *c
 	//}
 
 	//wyong, 20201022 
-	servenv := env.NewClientEnv(ctx, nd.Host,  nd.Frontera, nd.DAG, nd.Net)
+	servenv := env.NewClientEnv(ctx, nd.Host,  nd.Frontera, nd.DAG )
 
 	cfg := cmdhttp.NewServerConfig()
 	cfg.APIPath = APIPrefix

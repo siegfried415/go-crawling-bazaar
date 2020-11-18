@@ -26,8 +26,8 @@ import (
 	"github.com/pkg/errors"
 
 	//wyong, 20201021
-	host "github.com/libp2p/go-libp2p-core/host"
-	peer "github.com/libp2p/go-libp2p-core/peer"
+	//host "github.com/libp2p/go-libp2p-core/host"
+	//peer "github.com/libp2p/go-libp2p-core/peer"
 	protocol "github.com/libp2p/go-libp2p-core/protocol"
 
 	//"github.com/siegfried415/gdf-rebuild/consistent"
@@ -49,7 +49,7 @@ type KVServer struct {
 	current   proto.NodeID
 	
 	//wyong, 20201021
-	host	host.Host
+	host	net.RoutedHost
 
 	peers     *proto.Peers
 	storage   *LocalStorage
@@ -60,7 +60,7 @@ type KVServer struct {
 }
 
 // NewKVServer returns the kv server instance.
-func NewKVServer(host host.Host, currentNode proto.NodeID, peers *proto.Peers, storage *LocalStorage, timeout time.Duration) (s *KVServer) {
+func NewKVServer(host net.RoutedHost, currentNode proto.NodeID, peers *proto.Peers, storage *LocalStorage, timeout time.Duration) (s *KVServer) {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 
 	return &KVServer{
@@ -101,6 +101,18 @@ func (s *KVServer) SetNodeEx(node *proto.Node, ttl uint32, origin proto.NodeID) 
 	//	"ttl":    ttl,
 	//	"origin": origin,
 	//}).Debug("update node to kv storage")
+
+	//wyong, 20201112 
+	router := s.host.Router()
+	
+	//node.ID.ToRawNodeID() -> &node.ID, wyong, 20201114 
+        err = router.SetNodeAddrCache(&node.ID, node.Addr)
+        if err != nil {
+                //log.WithFields(log.Fields{
+                //      "id":   node.ID,
+                //      "addr": node.Addr,
+                //}).WithError(err).Error("set node addr cache failed")
+        }
 
 	// set local
 	if err = s.storage.SetNode(node); err != nil {
@@ -198,12 +210,12 @@ func (s *KVServer) nonBlockingSync(node *proto.Node, origin proto.NodeID, ttl ui
 
 				//wyong, 20201021 
 				//_ = rpc.NewCaller().CallNodeWithContext(c, node, route.DHTGSetNode.String(), req, nil)
-				s, err := s.host.NewStream(c, peer.ID(node), protocol.ID(route.DHTGSetNode.String()))
+				s, err := s.host.NewStreamExt(c, node, protocol.ID(route.DHTGSetNode.String()))
 				if err != nil {
 					return
 				}
 				
-				if _, err = net.SendMsg(c, s, req ); err != nil {
+				if _, err = s.SendMsg(c, req ); err != nil {
 					s.Reset()
 					return
 				}

@@ -175,7 +175,7 @@ func (bs *BusService) fetchBlockByCount(count uint32) (block *types.BPBlock, err
 		}
 		resp = &types.FetchBlockResp{}
 	)
-	if err = net.RequestPB(bs.host, route.MCCFetchBlockByCount.String(), req, resp); err != nil {
+	if err = bs.host.(net.RoutedHost).RequestPB(route.MCCFetchBlockByCount.String(), req, resp); err != nil {
 		return
 	}
 	block = resp.Block
@@ -190,7 +190,7 @@ func (bs *BusService) requestLastBlock() (
 	}
 	resp := &types.FetchLastIrreversibleBlockResp{}
 
-	if err := net.RequestPB(bs.host, route.MCCFetchLastIrreversibleBlock.String(), req, resp); err != nil {
+	if err := bs.host.(net.RoutedHost).RequestPB(route.MCCFetchLastIrreversibleBlock.String(), req, resp); err != nil {
 		log.WithError(err).Warning("fetch last block failed")
 		return
 	}

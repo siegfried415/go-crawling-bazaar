@@ -30,14 +30,14 @@ import (
 
 	//wyong, 20201007 
        	//"io/ioutil"
-	peer "github.com/libp2p/go-libp2p-core/peer" 
+	//peer "github.com/libp2p/go-libp2p-core/peer" 
 	protocol "github.com/libp2p/go-libp2p-core/protocol" 
 
 	//go-libp2p-net -> go-libp2p-core/network
 	//wyong, 20201029 
-        inet "github.com/libp2p/go-libp2p-core/network"
+        //inet "github.com/libp2p/go-libp2p-core/network"
 
-        host "github.com/libp2p/go-libp2p-host"
+        //host "github.com/libp2p/go-libp2p-host"
 
 
 	"github.com/siegfried415/gdf-rebuild/crypto/asymmetric"
@@ -70,7 +70,7 @@ type Conn struct {
 	localNodeID proto.NodeID
 
 	//wyong, 20201007
-	host host.Host 
+	host net.RoutedHost 
 
 	privKey     *asymmetric.PrivateKey
 
@@ -89,7 +89,7 @@ type pconn struct {
 
 	//wyong, 20201007
 	//pCaller rpc.PCaller
-	pCaller inet.Stream 
+	pCaller *net.Stream 
 }
 
 const workerCount int = 2
@@ -130,7 +130,7 @@ func NewConn(cfg *Config) (c *Conn, err error) {
 
 	if cfg.Mirror != "" {
 		//wyong, 20201007
-		caller, err := c.host.NewStream(ctx, peer.ID(cfg.Mirror), protocol.ID(cfg.Protocol))
+		caller, err := c.host.NewStreamExt(ctx, proto.NodeID(cfg.Mirror), protocol.ID(cfg.Protocol))
 		if err != nil {
 			return nil, errors.WithMessage(err, "open stream failed")
 		}
@@ -138,7 +138,7 @@ func NewConn(cfg *Config) (c *Conn, err error) {
 		c.leader = &pconn{
 			wg:      &sync.WaitGroup{},
 			parent:  c,
-			pCaller: caller, //mux.NewRawCaller(cfg.Mirror),
+			pCaller: &caller, //mux.NewRawCaller(cfg.Mirror),
 		}
 
 		// no ack workers required, mirror mode does not support ack worker
@@ -152,7 +152,7 @@ func NewConn(cfg *Config) (c *Conn, err error) {
 			//}
 
 			//wyong, 20201007
-			caller, err := c.host.NewStream(ctx, peer.ID(peers.Leader), protocol.ID(cfg.Protocol))
+			caller, err := c.host.NewStreamExt(ctx, peers.Leader, protocol.ID(cfg.Protocol))
 			if err != nil {
 				return nil, errors.WithMessage(err, "open stream failed")
 			}
@@ -161,7 +161,7 @@ func NewConn(cfg *Config) (c *Conn, err error) {
 				wg:      &sync.WaitGroup{},
 				ackCh:   make(chan *types.Ack, workerCount*4),
 				parent:  c,
-				pCaller: caller,
+				pCaller: &caller,
 			}
 		}
 
@@ -178,7 +178,7 @@ func NewConn(cfg *Config) (c *Conn, err error) {
 					//}
 
 					//wyong, 20201007
-					caller, err := c.host.NewStream(ctx, peer.ID(node), protocol.ID(cfg.Protocol))
+					caller, err := c.host.NewStreamExt(ctx, node, protocol.ID(cfg.Protocol))
 					if err != nil {
 						return nil, errors.WithMessage(err, "open stream failed")
 					}
@@ -187,7 +187,7 @@ func NewConn(cfg *Config) (c *Conn, err error) {
 						wg:      &sync.WaitGroup{},
 						ackCh:   make(chan *types.Ack, workerCount*4),
 						parent:  c,
-						pCaller: caller,
+						pCaller: &caller,
 					}
 					break
 				}
@@ -264,14 +264,14 @@ ackWorkerLoop:
 		//wyong, 20201008 
 		// send ack back
 		//if err = pc.Call(route.DBSAck.String(), ack, &ackRes); err != nil {
-		if _, err = net.SendMsg(ctx, c.pCaller, ack ); err != nil {
+		if _, err = c.pCaller.SendMsg(ctx, ack ); err != nil {
 			log.WithError(err).Debug("send ack failed")
 			continue
 		}
 		
 		//wyong, 20201021 
 		var ackRes types.AckResponse
-		err = net.RecvMsg(ctx, c.pCaller, ackRes) 
+		err = c.pCaller.RecvMsg(ctx, ackRes) 
 		if err != nil { 
 			log.WithError(err).Debug("receice ack response failed")
 			continue
@@ -369,14 +369,14 @@ func (c *pconn) close() error {
 	
 	//wyong, 20201007 
 	//if err = uc.pCaller.Call(route.FronteraURLRequest.String(), reqMsg, &response); err != nil {
-	if _, err = net.SendMsg(ctx, uc.pCaller, reqMsg ); err != nil {
+	if _, err = uc.pCaller.SendMsg(ctx, reqMsg ); err != nil {
 		fmt.Printf("Client/Conn/sendUrlRequest(45), err=%s\n", err.Error()) 
 		return
 	}
 
 	//wyong, 20201021 
 	var response types.Response
-	err = net.RecvMsg(ctx, uc.pCaller, response) 
+	err = uc.pCaller.RecvMsg(ctx, response) 
 	if err != nil {
 		fmt.Printf("Client/Conn/sendUrlRequest(47), err=%s\n", err.Error()) 
 		return
@@ -515,14 +515,14 @@ func (c *Conn) PutUrlRequest(ctx context.Context, parent types.UrlRequest, reque
 	
 	//wyong, 20201008 
 	//if err = uc.pCaller.Call(route.FronteraURLCidRequest.String(), reqMsg, &response); err != nil {
-	if _, err = net.SendMsg(ctx, uc.pCaller, reqMsg ); err != nil {
+	if _, err = uc.pCaller.SendMsg(ctx, reqMsg ); err != nil {
 		fmt.Printf("conn/sendUrlCidRequest(35), err=%s\n", err.Error()) 
 		return
 	}
 
 	//wyong, 20201021 
 	var response types.UrlCidResponse
-	net.RecvMsg(ctx, uc.pCaller, response) 
+	uc.pCaller.RecvMsg(ctx, response) 
 	if err != nil {
 		fmt.Printf("Client/Conn/sendUrlRequest(47), err=%s\n", err.Error()) 
 		return
@@ -860,13 +860,13 @@ func (c *Conn) sendQuery(ctx context.Context, queryType types.QueryType, queries
 
 	//wyong, 20201008 
 	//if err = uc.pCaller.Call(route.DBSQuery.String(), req, &response); err != nil {
-	if _, err = net.SendMsg(ctx, uc.pCaller, req); err != nil {
+	if _, err = uc.pCaller.SendMsg(ctx, req); err != nil {
 		return
 	}
 
 	//wyong, 20201021 
 	var response types.Response
-	err = net.RecvMsg(ctx, uc.pCaller, response) 
+	err = uc.pCaller.RecvMsg(ctx, response) 
 	if err != nil {
 		fmt.Printf("Client/Conn/sendUrlRequest(47), err=%s\n", err.Error()) 
 		return

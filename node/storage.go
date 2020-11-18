@@ -28,7 +28,7 @@ import (
 	"github.com/siegfried415/gdf-rebuild/consistent"
 	"github.com/siegfried415/gdf-rebuild/kms"
 	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/route"
+	//"github.com/siegfried415/gdf-rebuild/route"
 	//rpc "github.com/siegfried415/gdf-rebuild/rpc/mux"
 	"github.com/siegfried415/gdf-rebuild/storage"
 	"github.com/siegfried415/gdf-rebuild/utils"
@@ -76,13 +76,15 @@ func (s *LocalStorage) SetNode(node *proto.Node) (err error) {
 		return
 	}
 
-	err = route.SetNodeAddrCache(node.ID.ToRawNodeID(), node.Addr)
-	if err != nil {
-		//log.WithFields(log.Fields{
-		//	"id":   node.ID,
-		//	"addr": node.Addr,
-		//}).WithError(err).Error("set node addr cache failed")
-	}
+	//wyong, 20201112 
+	//err = route.SetNodeAddrCache(node.ID.ToRawNodeID(), node.Addr)
+	//if err != nil {
+	//	//log.WithFields(log.Fields{
+	//	//	"id":   node.ID,
+	//	//	"addr": node.Addr,
+	//	//}).WithError(err).Error("set node addr cache failed")
+	//}
+
 	err = kms.SetNode(node)
 	if err != nil {
 		//log.WithField("node", node).WithError(err).Error("kms set node failed")

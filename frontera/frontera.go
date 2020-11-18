@@ -62,12 +62,13 @@ import (
 	"github.com/siegfried415/gdf-rebuild/types"
 	"github.com/siegfried415/gdf-rebuild/utils"
 	"github.com/siegfried415/gdf-rebuild/utils/log"
+	net "github.com/siegfried415/gdf-rebuild/net"
 
 	process "github.com/jbenet/goprocess" 
 	cid "github.com/ipfs/go-cid" 
 	//peer "github.com/libp2p/go-libp2p-peer" 
 
-	"github.com/libp2p/go-libp2p-host"
+	//"github.com/libp2p/go-libp2p-host"
 )
 
 const (
@@ -147,7 +148,7 @@ type Frontera struct {
 
 	// network delivers messages on behalf of the session
 	//network fnet.BiddingNetwork
-	host host.Host 
+	host net.RoutedHost 
 
 	// blockstore is the local database
 	// NB: ensure threadsafety
@@ -191,7 +192,7 @@ type Frontera struct {
 }
 
 // NewFrontera returns new database management instance.
-func NewFrontera( cfg *FronteraConfig, peerHost host.Host  ) (f *Frontera, err error) {
+func NewFrontera( cfg *FronteraConfig, peerHost net.RoutedHost  ) (f *Frontera, err error) {
 	log.Infof("NewFrontera(10)") 
 
 	//wyong, 20200721 

@@ -104,7 +104,7 @@ func (ms *MuxService) AdviseNewBlockHandler(s network.Stream ) {
         //}
         ctx := context.Background()
         var req MuxAdviseNewBlockReq 
-        err := net.RecvMsg(ctx, s, &req)
+        err := s.(net.Stream).RecvMsg(ctx, &req)
         if err != nil {
                 return
         }
@@ -138,7 +138,7 @@ func (ms *MuxService) FetchBlockHandler(s network.Stream) {
 
         ctx := context.Background()
         var req MuxFetchBlockReq 
-        err := net.RecvMsg(ctx, s, &req)
+        err := s.(net.Stream).RecvMsg(ctx, &req)
         if err != nil {
                 return
         }
