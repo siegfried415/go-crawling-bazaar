@@ -314,11 +314,9 @@ func (rh RoutedHost)PingPB(node *proto.Node, PBNodeID proto.NodeID) (err error) 
 	ctx := context.Background()
 
 	//client := NewCaller()
-	req := &proto.PingReq{
+	req := proto.PingReq{
 		Node: *node,
 	}
-
-	resp := new(proto.PingResp)
 
 	//wyong, 20201008 
 	//err = client.CallNode(PBNodeID, "DHT.Ping", req, resp)
@@ -338,7 +336,8 @@ func (rh RoutedHost)PingPB(node *proto.Node, PBNodeID proto.NodeID) (err error) 
 	}
 
 	//resp, err = ioutil.ReadAll(s)
-	err = s.RecvMsg(ctx, resp) 
+	resp := new(proto.PingResp)
+	err = s.RecvMsg(ctx, &resp) 
 	if err!= nil {
 		err = errors.Wrap(err, "get DHT.Ping result failed")
 		return 
@@ -503,7 +502,7 @@ func (rh RoutedHost) RegisterNodeToPB(timeout time.Duration) (err error) {
 			for {
 				//wyong, 20201020 
 				//log.Infof("ping PB %s", id )
-				fmt.Printf("ping PB %s\n", id )
+				fmt.Printf("ping PB : localNodeInfo=%s, id=%s\n", localNodeInfo, id )
 
 				err := rh.PingPB(localNodeInfo, id)
 				if err == nil {

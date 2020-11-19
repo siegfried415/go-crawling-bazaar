@@ -21,18 +21,15 @@ import (
 	"context" 
 
 	//wyong, 20201102 
-        host "github.com/libp2p/go-libp2p-core/host"
+        //host "github.com/libp2p/go-libp2p-core/host"
         protocol "github.com/libp2p/go-libp2p-core/protocol"
         network "github.com/libp2p/go-libp2p-core/network"
 
-	"github.com/siegfried415/gdf-rebuild/conf"
+	//"github.com/siegfried415/gdf-rebuild/conf"
 	"github.com/siegfried415/gdf-rebuild/consistent"
 	//"github.com/siegfried415/gdf-rebuild/kms"
 	"github.com/siegfried415/gdf-rebuild/proto"
 	"github.com/siegfried415/gdf-rebuild/utils/log"
-
-	//wyong, 20201107 
-	//"github.com/siegfried415/gdf-rebuild/route"
 )
 
 // DHTService is server side RPC implementation.
@@ -49,7 +46,7 @@ func NewDHTServiceWithRing(c *consistent.Consistent) (s *DHTService, err error) 
 }
 
 // NewDHTService will return a new DHTService.
-func NewDHTService(h host.Host, DHTStorePath string, persistImpl consistent.Persistence, initBP bool) (s *DHTService, err error) {
+func NewDHTService(h RoutedHost, DHTStorePath string, persistImpl consistent.Persistence, initBP bool) (s *DHTService, err error) {
 	c, err := consistent.InitConsistent(DHTStorePath, persistImpl, initBP)
 	if err != nil {
 		log.WithError(err).Error("init DHT service failed")
@@ -88,7 +85,10 @@ func (DHT *DHTService) FindNodeHandler(
 
         ctx := context.Background()
         var req proto.FindNodeReq 
-        err := s.(Stream).RecvMsg(ctx, &req)
+
+	//wyong, 20201118 
+	ns := Stream{ Stream: s } 
+        err := ns.RecvMsg(ctx, &req)
         if err != nil {
                 return
         }
@@ -112,7 +112,7 @@ func (DHT *DHTService) FindNodeHandler(
 		Node : node ,
 	}
 
-        s.(Stream).SendMsg(ctx, resp)
+        ns.SendMsg(ctx, resp)
 	return
 }
 
@@ -123,7 +123,10 @@ func (DHT *DHTService) FindNeighborHandler(
 ) {
         ctx := context.Background()
         var req proto.FindNeighborReq 
-        err := s.(Stream).RecvMsg(ctx, &req)
+
+	//wyong, 20201118 
+	ns := Stream{ Stream: s } 
+        err := ns.RecvMsg(ctx, &req)
         if err != nil {
                 return
         }
@@ -152,7 +155,7 @@ func (DHT *DHTService) FindNeighborHandler(
 		"req":        req,
 	}).Debug("found nodes for find neighbor request")
 
-        s.(Stream).SendMsg(ctx, resp)
+        ns.SendMsg(ctx, resp)
 	return
 }
 
@@ -161,16 +164,21 @@ func (DHT *DHTService) PingHandler(
 	//req *proto.PingReq, resp *proto.PingResp) (err error
 	s network.Stream,
 ) {
-	log.Debugf("got ping req, Yeah!")
-	fmt.Printf("gott ping req, Yeah!")
+	//log.Debugf("got ping req, Yeah!")
+	fmt.Printf("DHTService/PingHandler(10),got ping req, Yeah!\n")
 
         ctx := context.Background()
         var req proto.PingReq 
-        err := s.(Stream).RecvMsg(ctx, &req)
-        if err != nil {
-                return
-        }
 
+	//wyong, 20201118 
+	ns := Stream{ Stream: s } 
+        err := ns.RecvMsg(ctx, &req)
+        //if err != nil {
+	//	fmt.Printf("DHTService/PingHandler(15), err=%s\n", err )
+        //      return
+        //}
+
+	fmt.Printf("DHTService/PingHandler(20)\n")
 
 	//todo, wyong, 20201110 
 	//if permissionCheckFunc != nil && !permissionCheckFunc(&req.Envelope, DHTPing) {
@@ -186,6 +194,7 @@ func (DHT *DHTService) PingHandler(
 		return
 	}
 
+	fmt.Printf("DHTService/PingHandler(30)\n")
 	// todo, wyong, 20201114 
 	// Checking if ID Nonce Pubkey matched
 	//if !kms.IsIDPubNonceValid(req.Node.ID.ToRawNodeID(), &req.Node.Nonce, req.Node.PublicKey) {
@@ -194,22 +203,28 @@ func (DHT *DHTService) PingHandler(
 	//	return
 	//}
 
+	//todo, wyong, 20201118 
 	// Checking MinNodeIDDifficulty
-	if req.Node.ID.Difficulty() < conf.GConf.MinNodeIDDifficulty {
-		err = fmt.Errorf("node: %s difficulty too low", req.Node.ID)
-		log.Error(err)
-		return
-	}
+	//if req.Node.ID.Difficulty() < conf.GConf.MinNodeIDDifficulty {
+	//	err = fmt.Errorf("node: %s difficulty too low", req.Node.ID)
+	//	log.Error(err)
+	//	return
+	//}
 
+	fmt.Printf("DHTService/PingHandler(40)\n")
 	err = DHT.Consistent.Add(req.Node)
 	if err != nil {
 		err = fmt.Errorf("DHT.Consistent.Add %v failed: %s", req.Node, err)
+		fmt.Printf("DHTService/PingHandler(45), err=%s\n", err)
 	} else {
+		fmt.Printf("DHTService/PingHandler(47)\n")
 		//resp.Msg = "Pong"
 		resp := &proto.PingResp {
 			Msg: "Pong",
 		}
-        	s.(Stream).SendMsg(ctx, resp)
+        	ns.SendMsg(ctx, resp)
 	}
+
+	fmt.Printf("DHTService/PingHandler(50)\n")
 	return
 }
