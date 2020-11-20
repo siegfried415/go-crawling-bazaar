@@ -42,17 +42,17 @@ func NewChainRPCService(chain *Chain) (s *ChainRPCService, err error) {
                 chain: chain,
         }
 
-	chain.host.SetStreamHandler(protocol.ID("ProtocolPBChainAdviseNewBlock"), s.AdviseNewBlockHandler)
-	chain.host.SetStreamHandler(protocol.ID("ProtocolPBChainFetchBlock"), s.FetchBlockHandler)
-	chain.host.SetStreamHandler(protocol.ID("ProtocolPBChainFetchLastIrreversibleBlock"), s.FetchLastIrreversibleBlockHandler)
-	chain.host.SetStreamHandler(protocol.ID("ProtocolPBChainFetchBlockByCount"), s.FetchBlockByCountHandler)
-	chain.host.SetStreamHandler(protocol.ID("ProtocolPBChainFetchTxBilling"), s.FetchTxBillingHandler)
-	chain.host.SetStreamHandler(protocol.ID("ProtocolPBChainNextAccountNonce"), s.NextAccountNonceHandler)
-	chain.host.SetStreamHandler(protocol.ID("ProtocolPBChainAddTx"), s.AddTxHandler)
-	chain.host.SetStreamHandler(protocol.ID("ProtocolPBChainQueryAccountTokenBalance"), s.QueryAccountTokenBalanceHandler)
-	chain.host.SetStreamHandler(protocol.ID("ProtocolPBChainQuerySQLChainProfile"), s.QuerySQLChainProfileHandler)
-	chain.host.SetStreamHandler(protocol.ID("ProtocolPBChainQueryTxState"), s.QueryTxStateHandler)
-	chain.host.SetStreamHandler(protocol.ID("ProtocolKayakApply"), s.QueryAccountSQLChainProfilesHandler)
+	chain.host.SetStreamHandler(protocol.ID("MCC.AdviseNewBlock"), s.AdviseNewBlockHandler)
+	chain.host.SetStreamHandler(protocol.ID("MCC.FetchBlock"), s.FetchBlockHandler)
+	chain.host.SetStreamHandler(protocol.ID("MCC.FetchLastIrreversibleBlock"), s.FetchLastIrreversibleBlockHandler)
+	chain.host.SetStreamHandler(protocol.ID("MCC.FetchBlockByCount"), s.FetchBlockByCountHandler)
+	chain.host.SetStreamHandler(protocol.ID("MCC.FetchTxBilling"), s.FetchTxBillingHandler)
+	chain.host.SetStreamHandler(protocol.ID("MCC.NextAccountNonce"), s.NextAccountNonceHandler)
+	chain.host.SetStreamHandler(protocol.ID("MCC.AddTx"), s.AddTxHandler)
+	chain.host.SetStreamHandler(protocol.ID("MCC.QueryAccountTokenBalance"), s.QueryAccountTokenBalanceHandler)
+	chain.host.SetStreamHandler(protocol.ID("MCC.QuerySQLChainProfile"), s.QuerySQLChainProfileHandler)
+	chain.host.SetStreamHandler(protocol.ID("MCC.QueryTxState"), s.QueryTxStateHandler)
+	chain.host.SetStreamHandler(protocol.ID("MCC.QueryAccountSQLChainProfiles"), s.QueryAccountSQLChainProfilesHandler)
 
         return
 }
@@ -62,7 +62,10 @@ func NewChainRPCService(chain *Chain) (s *ChainRPCService, err error) {
 func (cs *ChainRPCService) AdviseNewBlockHandler(s network.Stream) {
 	ctx := context.Background()
 	var req types.AdviseNewBlockReq 
-	if err := s.(net.Stream).RecvMsg(ctx, &req); err != nil {
+
+	//wyong, 20201119 
+        ns := net.Stream{ Stream: s }
+	if err := ns.RecvMsg(ctx, &req); err != nil {
 		return 
 	}
 
@@ -76,7 +79,10 @@ func (cs *ChainRPCService) AdviseNewBlockHandler(s network.Stream) {
 func (cs *ChainRPCService) FetchBlockHandler(s network.Stream ) {
 	ctx := context.Background()
 	var req types.FetchBlockReq  
-	err := s.(net.Stream).RecvMsg(ctx, &req) 
+
+	//wyong, 20201119 
+        ns := net.Stream{ Stream: s }
+	err := ns.RecvMsg(ctx, &req) 
 	if err != nil {
 		return 
 	}
@@ -91,7 +97,7 @@ func (cs *ChainRPCService) FetchBlockHandler(s network.Stream ) {
 		Block : block, 
 		Count : count, 
 	}	
-	_, err = s.(net.Stream).SendMsg(ctx, &resp) 
+	_, err = ns.SendMsg(ctx, &resp) 
 
 	//return err
 }
@@ -104,7 +110,10 @@ func (cs *ChainRPCService) FetchLastIrreversibleBlockHandler(
 
 	ctx := context.Background()
 	var req types.FetchLastIrreversibleBlockReq 
-	err := s.(net.Stream).RecvMsg(ctx, &req) 
+
+	//wyong, 20201119 
+        ns := net.Stream{ Stream: s }
+	err := ns.RecvMsg(ctx, &req) 
 	if err != nil {
 		return 
 	}
@@ -122,7 +131,7 @@ func (cs *ChainRPCService) FetchLastIrreversibleBlockHandler(
 		SQLChains : cs.chain.loadSQLChainProfiles(req.Address), 
 	}	
 
-	s.(net.Stream).SendMsg(ctx, &resp) 
+	ns.SendMsg(ctx, &resp) 
 	//return nil
 }
 
@@ -132,7 +141,10 @@ func (cs *ChainRPCService) FetchLastIrreversibleBlockHandler(
 func (cs *ChainRPCService) FetchBlockByCountHandler(s network.Stream ) {
 	ctx := context.Background()
 	var req types.FetchBlockByCountReq  
-	err := s.(net.Stream).RecvMsg(ctx, &req) 
+
+	//wyong, 20201119 
+        ns := net.Stream{ Stream: s }
+	err := ns.RecvMsg(ctx, &req) 
 	if err != nil {
 		return 
 	}
@@ -149,7 +161,7 @@ func (cs *ChainRPCService) FetchBlockByCountHandler(s network.Stream ) {
 		Height: height, 
 	}	
 
-	s.(net.Stream).SendMsg(ctx, &resp) 
+	ns.SendMsg(ctx, &resp) 
 	//return err
 }
 
@@ -168,7 +180,11 @@ func (cs *ChainRPCService) NextAccountNonceHandler(
 ) {
 	ctx := context.Background()
 	var req types.NextAccountNonceReq 
-	err := s.(net.Stream).RecvMsg(ctx, &req) 
+
+	//wyong, 20201119 
+        ns := net.Stream{ Stream: s }
+
+	err := ns.RecvMsg(ctx, &req) 
 	if err != nil {
 		return 
 	}
@@ -183,7 +199,7 @@ func (cs *ChainRPCService) NextAccountNonceHandler(
 		Nonce : nonce, 
 	}	
 
-	s.(net.Stream).SendMsg(ctx, &resp) 
+	ns.SendMsg(ctx, &resp) 
 	//return
 }
 
@@ -193,7 +209,10 @@ func (cs *ChainRPCService) NextAccountNonceHandler(
 func (cs *ChainRPCService) AddTxHandler(s network.Stream) {
 	ctx := context.Background()
 	var req types.AddTxReq 
-	err := s.(net.Stream).RecvMsg(ctx, &req) 
+
+	//wyong, 20201119 
+        ns := net.Stream{ Stream: s }
+	err := ns.RecvMsg(ctx, &req) 
 	if err != nil {
 		return 
 	}
@@ -210,7 +229,10 @@ func (cs *ChainRPCService) QueryAccountTokenBalanceHandler(
 ) {
 	ctx := context.Background()
 	var req types.QueryAccountTokenBalanceReq 
-	err := s.(net.Stream).RecvMsg(ctx, &req) 
+
+	//wyong, 20201119 
+        ns := net.Stream{ Stream: s }
+	err := ns.RecvMsg(ctx, &req) 
 	if err != nil {
 		return 
 	}
@@ -222,7 +244,7 @@ func (cs *ChainRPCService) QueryAccountTokenBalanceHandler(
 		OK: ok, 
 	}	
 
-	s.(net.Stream).SendMsg(ctx, &resp) 
+	ns.SendMsg(ctx, &resp) 
 	//return
 }
 
@@ -234,7 +256,10 @@ func (cs *ChainRPCService) QuerySQLChainProfileHandler(
 ) {
 	ctx := context.Background()
 	var req types.QuerySQLChainProfileReq 
-	err := s.(net.Stream).RecvMsg(ctx, &req) 
+
+	//wyong, 20201119 
+        ns := net.Stream{ Stream: s }
+	err := ns.RecvMsg(ctx, &req) 
 	if err != nil {
 		return 
 	}
@@ -249,7 +274,7 @@ func (cs *ChainRPCService) QuerySQLChainProfileHandler(
 		Profile: *p, 
 	}	
 
-	s.(net.Stream).SendMsg(ctx, &resp) 
+	ns.SendMsg(ctx, &resp) 
 	//return
 
 }
@@ -262,7 +287,10 @@ func (cs *ChainRPCService) QueryTxStateHandler(
 ) {
 	ctx := context.Background()
 	var req types.QueryTxStateReq 
-	if err := s.(net.Stream).RecvMsg(ctx, &req); err != nil {
+
+	//wyong, 20201119 
+        ns := net.Stream{ Stream: s }
+	if err := ns.RecvMsg(ctx, &req); err != nil {
 		return 
 	}
 
@@ -277,7 +305,7 @@ func (cs *ChainRPCService) QueryTxStateHandler(
 		State: state , 
 	}	
 
-	s.(net.Stream).SendMsg(ctx, &resp) 
+	ns.SendMsg(ctx, &resp) 
 	//return
 }
 
@@ -289,7 +317,10 @@ func (cs *ChainRPCService) QueryAccountSQLChainProfilesHandler(
 ) {
 	ctx := context.Background()
 	var req types.QueryAccountSQLChainProfilesReq 
-	if err := s.(net.Stream).RecvMsg(ctx, &req); err != nil {
+
+	//wyong, 20201119 
+        ns := net.Stream{ Stream: s }
+	if err := ns.RecvMsg(ctx, &req); err != nil {
 		return 
 	}
 
@@ -306,6 +337,6 @@ func (cs *ChainRPCService) QueryAccountSQLChainProfilesHandler(
 		Profiles: profiles, 
 	}	
 
-	s.(net.Stream).SendMsg(ctx, &resp) 
+	ns.SendMsg(ctx, &resp) 
 	//return
 }

@@ -383,7 +383,6 @@ func (rh RoutedHost) GetCurrentPB() (bpNodeID proto.NodeID, err error) {
 		},
 		Count: 1,
 	}
-	res := new(proto.FindNeighborResp)
 	//wyong, 20201008 
 	//if err = NewCaller().CallNode(randomPB, "DHT.FindNeighbor", req, res); err != nil {
         s, err := rh.NewStreamExt(ctx, randomPB, protocol.ID("DHT.FindNeighbor"))
@@ -399,7 +398,8 @@ func (rh RoutedHost) GetCurrentPB() (bpNodeID proto.NodeID, err error) {
 	}
 
 	//res, err = ioutil.ReadAll(s)
-	err = s.RecvMsg(ctx, res) 
+	res := new(proto.FindNeighborResp)
+	err = s.RecvMsg(ctx, &res) 
 	if err!= nil {
 		err = errors.Wrap(err, "get DHT.FindNeighbor result failed")
 		return 
@@ -462,7 +462,7 @@ func (rh RoutedHost)RequestPB(method string, req interface{}, resp interface{}) 
 		return err 
 	}
 
-	err = s.RecvMsg(ctx, resp )
+	err = s.RecvMsg(ctx, &resp )
 	if err!= nil {
 		//log.WithFields(log.Fields{
 		//	"index":    i.index,

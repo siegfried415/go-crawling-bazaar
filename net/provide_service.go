@@ -29,7 +29,7 @@ import (
 	"github.com/siegfried415/gdf-rebuild/crypto/asymmetric"
 	"github.com/siegfried415/gdf-rebuild/kms"
 	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/route"
+	//"github.com/siegfried415/gdf-rebuild/route"
 
 	//wyong, 20201021 
 	//rpc "github.com/siegfried415/gdf-rebuild/rpc/mux"
@@ -156,9 +156,10 @@ func (rh RoutedHost) SendProvideService( /* reg *prometheus.Registry */ ) {
 	nonceReq.Addr = minerAddr
 
 	fmt.Printf("sendProvideService(70)\n")
-	if err = rh.RequestPB(route.MCCNextAccountNonce.String(), nonceReq, nonceResp); err != nil {
+	if err = rh.RequestPB(/* route.MCCNextAccountNonce.String() */ "MCC.NextAccountNonce", nonceReq, nonceResp); err != nil {
 		// allocate nonce failed
 		//log.WithError(err).Error("allocate nonce for transaction failed")
+		fmt.Printf("sendProvideService(75), err=%s\n", err )
 		return
 	}
 
@@ -192,7 +193,7 @@ func (rh RoutedHost) SendProvideService( /* reg *prometheus.Registry */ ) {
 	req.TTL = 1
 	req.Tx = tx
 
-	if err = rh.RequestPB(route.MCCAddTx.String(), req, resp); err != nil {
+	if err = rh.RequestPB(/* route.MCCAddTx.String()*/ "MCC.AddTx", req, resp); err != nil {
 		// add transaction failed
 		//log.WithError(err).Error("send provide service transaction failed")
 		return

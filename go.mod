@@ -11,6 +11,7 @@ require (
 	github.com/ipfs/go-block-format v0.0.2
 	github.com/ipfs/go-blockservice v0.1.3
 	github.com/ipfs/go-cid v0.0.7
+	github.com/ipfs/go-datastore v0.4.4
 	github.com/ipfs/go-ds-badger v0.2.3
 	github.com/ipfs/go-graphsync v0.0.0-00010101000000-000000000000
 	github.com/ipfs/go-ipfs-blockstore v0.1.4
@@ -19,6 +20,9 @@ require (
 	github.com/ipfs/go-ipfs-exchange-interface v0.0.1
 	github.com/ipfs/go-ipfs-files v0.0.1
 	github.com/ipfs/go-ipfs-keystore v0.0.1
+	github.com/ipfs/go-ipfs-routing v0.1.0
+	github.com/ipfs/go-ipld-cbor v0.0.1
+	github.com/ipfs/go-ipld-format v0.0.2
 	github.com/ipfs/go-log v1.0.4
 	github.com/ipfs/go-merkledag v0.0.6
 	github.com/ipld/go-ipld-prime v0.5.0
@@ -40,10 +44,12 @@ require (
 	github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0
 	github.com/siegfried415/gdf-rebuild v0.0.0-00010101000000-000000000000
 	github.com/sirupsen/logrus v1.7.0
+	github.com/stretchr/testify v1.6.1
 
 	github.com/ugorji/go v1.1.2
 	github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8
 	github.com/whyrusleeping/go-logging v0.0.1
+	github.com/zserge/metric v0.1.0
 	golang.org/x/crypto v0.0.0-20200423211502-4bdfaf469ed5
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a
 	gopkg.in/yaml.v2 v2.2.4

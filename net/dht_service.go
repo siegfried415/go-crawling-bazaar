@@ -108,11 +108,11 @@ func (DHT *DHTService) FindNodeHandler(
 	}
 
 	//resp.Node = node
-	resp := &proto.FindNodeResp {
+	resp := proto.FindNodeResp {
 		Node : node ,
 	}
 
-        ns.SendMsg(ctx, resp)
+        ns.SendMsg(ctx, &resp)
 	return
 }
 
@@ -146,7 +146,7 @@ func (DHT *DHTService) FindNeighborHandler(
 	}
 
 	//resp.Nodes = nodes
-	resp := &proto.FindNeighborResp {
+	resp := proto.FindNeighborResp {
 		Nodes : nodes ,
 	}
 
@@ -155,7 +155,7 @@ func (DHT *DHTService) FindNeighborHandler(
 		"req":        req,
 	}).Debug("found nodes for find neighbor request")
 
-        ns.SendMsg(ctx, resp)
+        ns.SendMsg(ctx, &resp)
 	return
 }
 
@@ -219,10 +219,10 @@ func (DHT *DHTService) PingHandler(
 	} else {
 		fmt.Printf("DHTService/PingHandler(47)\n")
 		//resp.Msg = "Pong"
-		resp := &proto.PingResp {
+		resp := proto.PingResp {
 			Msg: "Pong",
 		}
-        	ns.SendMsg(ctx, resp)
+        	ns.SendMsg(ctx, &resp)
 	}
 
 	fmt.Printf("DHTService/PingHandler(50)\n")

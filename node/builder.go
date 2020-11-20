@@ -451,7 +451,10 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
         nd := &Node{
 		//wyong, 20200924 
 		Host : peerHost, 
-                PeerHost: peerHost,
+
+		//wyong, 20201119 
+		Role : role, 
+                //PeerHost: peerHost,
 
                 //Clock:       nc.Clock,
                 OfflineMode: nc.OfflineMode,

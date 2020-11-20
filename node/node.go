@@ -45,7 +45,7 @@ import (
 
 	//"github.com/libp2p/go-libp2p-core/crypto"
         //"github.com/libp2p/go-libp2p"
-        "github.com/libp2p/go-libp2p-core/host"
+        //"github.com/libp2p/go-libp2p-core/host"
         //"github.com/libp2p/go-libp2p-core/routing"
         //dht "github.com/libp2p/go-libp2p-kad-dht"
         //dhtopts "github.com/libp2p/go-libp2p-kad-dht/opts"
@@ -126,7 +126,8 @@ var (
 type Node struct {
         Host     net.RoutedHost
 
-        PeerHost host.Host
+	//wyong, 20201119 
+        //PeerHost host.Host
 
 	//wyong, 20201022 
 	Role proto.ServerRole 
@@ -316,10 +317,12 @@ func (node *Node) Start(ctx context.Context) error {
 	//	log.WithError(err).Fatal("init node failed")
 	//}
 
-	//wyong, 20201020 
-	err := node.Host.RegisterNodeToPB(30 * time.Second)
-	if err != nil {
-		log.Fatalf("register node to BP failed: %v", err)
+	//wyong, 20201119
+	if node.Role == proto.Miner {
+		err := node.Host.RegisterNodeToPB(30 * time.Second)
+		if err != nil {
+			log.Fatalf("register node to BP failed: %v", err)
+		}
 	}
 
 	//initMetrics()
@@ -345,23 +348,26 @@ func (node *Node) Start(ctx context.Context) error {
 	// start prometheus collector
 	//reg := metric.StartMetricCollector()
 
-	// start periodic provide service transaction generator
-	go func() {
-		tick := time.NewTicker(conf.GConf.Miner.ProvideServiceInterval)
-		defer tick.Stop()
+	//wyong, 20201119
+	if node.Role == proto.Miner {
+		// start periodic provide service transaction generator
+		go func() {
+			tick := time.NewTicker(conf.GConf.Miner.ProvideServiceInterval)
+			defer tick.Stop()
 
-		for {
-			//wyong, 20201021 
-			//sendProvideService(reg)
-			node.Host.SendProvideService()
+			for {
+				//wyong, 20201021 
+				//sendProvideService(reg)
+				node.Host.SendProvideService()
 
-			select {
-			case <-stopCh:
-				return
-			case <-tick.C:
+				select {
+				case <-stopCh:
+					return
+				case <-tick.C:
+				}
 			}
-		}
-	}()
+		}()
+	}
 
 	// start periodic disk usage metric update
 	//go func() {
@@ -399,28 +405,29 @@ func (node *Node) Start(ctx context.Context) error {
 	//	log.WithError(err).Fatal("init network failed")
 	//}
 
+	//wyong, 20201119
+	if node.Role == proto.Miner {
+		// start frontera 
+		//var f *frontera.Frontera 
 
-	// start frontera 
-	//var f *frontera.Frontera 
+		//wyong, 20201021 
+		//if f, err = startFrontera(server, direct, func() {
+		//	sendProvideService(reg)
+		//}); err != nil {
+		if err := node.Frontera.Start(ctx); err != nil {
+			// FIXME(auxten): if restart all miners with the same db,
+			// miners will fail to start
+			time.Sleep(10 * time.Second)
+			//log.WithError(err).Fatal("start dbms failed")
+		}
 
-	//wyong, 20201021 
-	//if f, err = startFrontera(server, direct, func() {
-	//	sendProvideService(reg)
-	//}); err != nil {
-	if err = node.Frontera.Start(ctx); err != nil {
-		// FIXME(auxten): if restart all miners with the same db,
-		// miners will fail to start
-		time.Sleep(10 * time.Second)
-		//log.WithError(err).Fatal("start dbms failed")
+		defer node.Frontera.Shutdown()
+
+		//todo, wyong, 20200723 
+		//cancelFunc := startAdapterServer(f, g, n, adapterAddr, "")
+		//ExitIfErrors()
+		//defer cancelFunc()
 	}
-
-	defer node.Frontera.Shutdown()
-
-	//todo, wyong, 20200723 
-        //cancelFunc := startAdapterServer(f, g, n, adapterAddr, "")
-        //ExitIfErrors()
-        //defer cancelFunc()
-
 
 	//if metricLog {
 	//	go metrics.Log(metrics.DefaultRegistry, 5*time.Second, log.StandardLogger())
