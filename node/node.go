@@ -29,7 +29,10 @@ import (
 	//"github.com/siegfried415/gdf-rebuild/route"
 	//"github.com/siegfried415/gdf-rebuild/rpc"
 	//"github.com/siegfried415/gdf-rebuild/rpc/mux"
-	"github.com/siegfried415/gdf-rebuild/utils"
+
+	//wyong, 20201125 
+	//"github.com/siegfried415/gdf-rebuild/utils"
+
 	//"github.com/siegfried415/gdf-rebuild/utils/log"
 
 	//wyong, 20200911 
@@ -105,6 +108,9 @@ import (
 	//wyong, 20200921 
 	dag "github.com/siegfried415/gdf-rebuild/dag" 
 	frontera "github.com/siegfried415/gdf-rebuild/frontera" 
+
+	//wyong, 20201125 
+	pb "github.com/siegfried415/gdf-rebuild/presbyterian" 
 )
 
 const (
@@ -150,7 +156,7 @@ type Node struct {
 
 	//Blockstore BlockstoreSubmodule
 
-	Network NetworkSubmodule
+	//Network NetworkSubmodule
 
 	//Messaging MessagingSubmodule
 
@@ -176,6 +182,9 @@ type Node struct {
 
 	//todo, wyong, 20201021 
 	//Wallet WalletSubmodule
+
+	//wyong, 20201125 
+	Chain *pb.Chain 
 
 	//wyong, 20200921 
 	DAG *dag.DAG 
@@ -252,19 +261,27 @@ func (node *Node) Start(ctx context.Context) error {
 
 // Stop initiates the shutdown of the node.
 func (node *Node) Stop(ctx context.Context) {
+	//todo, wyong, 20201125 
         //node.Chain.ChainReader.HeadEvents().Unsub(node.Chain.HeaviestTipSetCh)
         //node.StopMining(ctx)
 
         //node.cancelSubscriptions()
         //node.Chain.ChainReader.Stop()
 
-        // wyong, 20200410
-        //if node.SectorBuilder() != nil {
-        //        if err := node.SectorBuilder().Close(); err != nil {
-        //                fmt.Printf("error closing sector builder: %s\n", err)
-        //        }
-        //        node.SectorStorage.sectorBuilder = nil
-        //}
+	switch node.Role  {
+	case proto.Client:
+
+	case proto.Leader: fallthrough 
+	case proto.Follower: 
+		node.Chain.Stop()
+
+	case proto.Miner: 
+		node.Frontera.Shutdown()
+
+	case proto.Unknown:
+                return 
+	}	
+
 
         if err := node.Host.Close(); err != nil {
                 fmt.Printf("error closing host: %s\n", err)
@@ -279,17 +296,10 @@ func (node *Node) Stop(ctx context.Context) {
         fmt.Println("stopping filecoin :(")
 }
 
-/*
-// Host returns the nodes host.
-func (node *Node) Host() host.Host {
-        return node.Host
-}
-*/
 
 func (node *Node) Start(ctx context.Context) error {
 
-	// init profile, if cpuProfile, memProfile length is 0, nothing will be done
-	//_ = utils.StartProfile(cpuProfile, memProfile)
+	fmt.Printf("Node/Start(10)\n") 
 
 	//todo, wyong, 20201021 
 	// set generate key pair config
@@ -306,50 +316,31 @@ func (node *Node) Start(ctx context.Context) error {
 		//net.TrackerRegisterDisconnect(node.Network.host.Network(), node.Network.PeerTracker)
 	}
 
+	fmt.Printf("Node/Start(20)\n") 
 
-	// start rpc
-	//var (
-	//	server *mux.Server
-	//	direct *rpc.Server
-	//)
-	
-	//if server, direct, err = initNode(); err != nil {
-	//	log.WithError(err).Fatal("init node failed")
-	//}
+	//wyong, 20201125
+	switch node.Role {
+	case proto.Client: 
+		fmt.Printf("Node/Start(30)\n") 
+		return nil
 
-	//wyong, 20201119
-	if node.Role == proto.Miner {
-		err := node.Host.RegisterNodeToPB(30 * time.Second)
-		if err != nil {
-			log.Fatalf("register node to BP failed: %v", err)
-		}
-	}
+	case proto.Leader: 
+		fallthrough
+	case proto.Follower:
+		fmt.Printf("Node/Start(40)\n") 
+		node.Chain.Start()
 
-	//initMetrics()
+	case proto.Miner: 
+		fmt.Printf("Node/Start(50)\n") 
+		go func() {
+			err := node.Host.RegisterNodeToPB(30 * time.Second)
+			if err != nil {
+				log.Fatalf("register node to BP failed: %v", err)
+			}
+		}()
 
-	// stop channel for all daemon routines
-	stopCh := make(chan struct{})
-	defer close(stopCh)
 
-	//if len(profileServer) > 0 {
-	//	go func() {
-	//		log.Println(http.ListenAndServe(profileServer, nil))
-	//	}()
-	//}
-
-	//if len(metricWeb) > 0 {
-	//	err = metric.InitMetricWeb(metricWeb)
-	//	if err != nil {
-	//		log.Errorf("start metric web server on %s failed: %v", metricWeb, err)
-	//		os.Exit(-1)
-	//	}
-	//}
-
-	// start prometheus collector
-	//reg := metric.StartMetricCollector()
-
-	//wyong, 20201119
-	if node.Role == proto.Miner {
+		fmt.Printf("Node/Start(60)\n") 
 		// start periodic provide service transaction generator
 		go func() {
 			tick := time.NewTicker(conf.GConf.Miner.ProvideServiceInterval)
@@ -361,59 +352,14 @@ func (node *Node) Start(ctx context.Context) error {
 				node.Host.SendProvideService()
 
 				select {
-				case <-stopCh:
-					return
+				//case <-stopCh:
+				//	return
 				case <-tick.C:
 				}
 			}
 		}()
-	}
 
-	// start periodic disk usage metric update
-	//go func() {
-	//	for {
-	//		err := collectDiskUsage()
-	//		if err != nil {
-	//			log.WithError(err).Error("collect disk usage failed")
-	//		}
-	//
-	//		select {
-	//		case <-stopCh:
-	//			return
-	//		case <-time.After(conf.GConf.Miner.DiskUsageInterval):
-	//		}
-	//	}
-	//}()
-
-	// start rpc server
-	//go func() {
-	//	server.Serve()
-	//}()
-	//defer server.Stop()
-
-	// start direct rpc server
-	//if direct != nil {
-	//	go func() {
-	//		direct.Serve()
-	//	}()
-	//	defer direct.Stop()
-	//}
-
-	//int&start network, wyong, 20200916 
-	//g, n, err := initNetwork() 
-	//if err != nil {
-	//	log.WithError(err).Fatal("init network failed")
-	//}
-
-	//wyong, 20201119
-	if node.Role == proto.Miner {
-		// start frontera 
-		//var f *frontera.Frontera 
-
-		//wyong, 20201021 
-		//if f, err = startFrontera(server, direct, func() {
-		//	sendProvideService(reg)
-		//}); err != nil {
+		fmt.Printf("Node/Start(70)\n") 
 		if err := node.Frontera.Start(ctx); err != nil {
 			// FIXME(auxten): if restart all miners with the same db,
 			// miners will fail to start
@@ -421,123 +367,20 @@ func (node *Node) Start(ctx context.Context) error {
 			//log.WithError(err).Fatal("start dbms failed")
 		}
 
-		defer node.Frontera.Shutdown()
+		fmt.Printf("Node/Start(80)\n") 
 
-		//todo, wyong, 20200723 
-		//cancelFunc := startAdapterServer(f, g, n, adapterAddr, "")
-		//ExitIfErrors()
-		//defer cancelFunc()
+	case proto.Unknown:
+		fmt.Printf("Node/Start(90)\n") 
+                return nil
+
 	}
 
-	//if metricLog {
-	//	go metrics.Log(metrics.DefaultRegistry, 5*time.Second, log.StandardLogger())
-	//}
 
-	//if metricGraphite != "" {
-	//	addr, err := net.ResolveTCPAddr("tcp", metricGraphite)
-	//	if err != nil {
-	//		log.WithError(err).Error("resolve metric graphite server addr failed")
-	//		return
-	//	}
-	//	minerName := fmt.Sprintf("miner-%s", conf.GConf.ThisNodeID[len(conf.GConf.ThisNodeID)-5:])
-	//	go graphite.Graphite(metrics.DefaultRegistry, 5*time.Second, minerName, addr)
-	//}
+	//todo, wyong, 20201125 
+	//<-utils.WaitForExit()
+	//utils.StopProfile()
 
-	//if traceFile != "" {
-	//	f, err := os.Create(traceFile)
-	//	if err != nil {
-	//		log.WithError(err).Fatal("failed to create trace output file")
-	//	}
-	//	defer func() {
-	//		if err := f.Close(); err != nil {
-	//			log.WithError(err).Fatal("failed to close trace file")
-	//		}
-	//	}()
-	//
-	//	if err := trace.Start(f); err != nil {
-	//		log.WithError(err).Fatal("failed to start trace")
-	//	}
-	//	defer trace.Stop()
-	//}
-
-	<-utils.WaitForExit()
-	utils.StopProfile()
-
+	fmt.Printf("Node/Start(100)\n") 
 	return nil 
 }
 
-/*
-func setupServer() (server *mux.Server, direct *rpc.Server,  err error) {
-	var masterKey []byte
-	if !conf.GConf.UseTestMasterKey {
-		// read master key
-		fmt.Print("Type in Master key to continue: ")
-		masterKey, err = terminal.ReadPassword(syscall.Stdin)
-		if err != nil {
-			fmt.Printf("Failed to read Master Key: %v", err)
-		}
-		fmt.Println("")
-	}
-
-	// todo, wyong, 20201001 
-	//if err = kms.InitLocalKeyPair(conf.GConf.PrivateKeyFile, masterKey); err != nil {
-	//	log.WithError(err).Error("init local key pair failed")
-	//	return
-	//}
-
-	log.Info("init routes")
-
-	//todo, wyong, 20201001 
-	// init kms routing
-	//route.InitKMS(conf.GConf.PubKeyStoreFile)
-
-	err = mux.RegisterNodeToBP(30 * time.Second)
-	if err != nil {
-		log.Fatalf("register node to BP failed: %v", err)
-	}
-
-	// init server
-	//utils.RemoveAll(conf.GConf.PubKeyStoreFile + "*")
-	//if server, err = createServer(
-	//	conf.GConf.PrivateKeyFile, masterKey, conf.GConf.ListenAddr); err != nil {
-	//	log.WithError(err).Error("create server failed")
-	//	return
-	//}
-	//if direct, err = createDirectServer(
-	//	conf.GConf.PrivateKeyFile, masterKey, conf.GConf.ListenDirectAddr); err != nil {
-	//	log.WithError(err).Error("create direct server failed")
-	//	return
-	//}
-
-	return
-}
-
-func createServer(privateKeyPath string, masterKey []byte, listenAddr string) (server *mux.Server, err error) {
-	server = mux.NewServer()
-	err = server.InitRPCServer(listenAddr, privateKeyPath, masterKey)
-	return
-}
-
-func createDirectServer(privateKeyPath string, masterKey []byte, listenAddr string) (server *rpc.Server, err error) {
-	if listenAddr == "" {
-		return nil, nil
-	}
-	server = rpc.NewServer()
-	err = server.InitRPCServer(listenAddr, privateKeyPath, masterKey)
-	return
-}
-
-func initMetrics() {
-	if conf.GConf != nil {
-		expvar.NewString(mwMinerAddr).Set(conf.GConf.ListenAddr)
-		expvar.NewString(mwMinerExternalAddr).Set(conf.GConf.ExternalListenAddr)
-		expvar.NewString(mwMinerNodeID).Set(string(conf.GConf.ThisNodeID))
-		expvar.NewString(mwMinerWallet).Set(conf.GConf.WalletAddress)
-
-		if conf.GConf.Miner != nil {
-			expvar.NewString(mwMinerDiskRoot).Set(conf.GConf.Miner.RootDir)
-		}
-	}
-}
-
-*/

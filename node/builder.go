@@ -171,30 +171,6 @@ type blankValidator struct{}
 func (blankValidator) Validate(_ string, _ []byte) error        { return nil }
 func (blankValidator) Select(_ string, _ [][]byte) (int, error) { return 0, nil }
 
-/* wyong, 20201109 
-func (nc *Builder) build(ctx context.Context, repoPath string, role proto.ServerRole) (*Node, error ) {
-	//todo, wyong, 20201007 
-	switch role  {
-	case proto.Client:
-		//todo, wyong, 20201028
-		return doBuildClientNode(ctx, repoPath)
-
-	case proto.Leader: fallthrough 
-	case proto.Follower: 
-		return doPBNode(ctx, repoPath) 
-
-	case proto.Miner: 
-		return doMinerNode(ctx, repoPath) 
-
-	//case proto.Unknown:
-        //        return nil, err
-	}	
-
-	return nil, err 
-}
-*/
-
-
 func (nc *Builder) build(ctx context.Context, repoPath string, role proto.ServerRole) (*Node, error ) {
         //if nc.Repo == nil {
         //        nc.Repo = repo.NewInMemoryRepo()
@@ -212,6 +188,9 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
 		//n *net.Network
 		f *frontera.Frontera 
 		
+		//wyong, 20201125
+		chain *pb.Chain
+
 		//wyong, 20201021
 		err error 
 	)
@@ -381,13 +360,17 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
 			Tick:           conf.GConf.BPTick,
 			BlockCacheSize: 1000,
 		}
-		chain, err := pb.NewChain(chainConfig)
+		chain, err = pb.NewChain(chainConfig)
 		if err != nil {
 			//log.WithError(err).Error("init chain failed")
 			return nil, err
 		}
-		chain.Start()
-		defer chain.Stop()
+		
+		//todo, move chain.Start() to node.Start(), wyong, 20201124
+		//chain.Start()
+
+		//todo, move chain.Stop() to proper position, bugfix, wyong, 20201124 
+		//defer chain.Stop()
 
 
 	case proto.Miner: 
@@ -501,6 +484,9 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
                 //        MessageStore: messageStore,
                 //        Syncer:       chainSyncer,
                 //},
+
+		//wyong, 20201125
+		Chain : chain, 
 		
 
 		//wyong, 20200921 

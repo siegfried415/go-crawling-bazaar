@@ -13,11 +13,17 @@ import (
 	//wyong, 20200914
 	dag "github.com/siegfried415/gdf-rebuild/dag" 
 	net "github.com/siegfried415/gdf-rebuild/net" 
+
+	//wyong, 20201126 
+	"github.com/siegfried415/gdf-rebuild/proto" 
 )
 
 // Env is the environment for command API handlers.
 type Env struct {
 	ctx            context.Context
+
+        //wyong, 20201126
+        role proto.ServerRole
 
 	//wyong, 20201022 
 	host	net.RoutedHost
@@ -36,9 +42,10 @@ var _ cmds.Environment = (*Env)(nil)
 
 // NewClientEnv returns a new environment for command API clients.
 // This environment lacks direct access to any internal APIs.
-func NewClientEnv(ctx context.Context, host net.RoutedHost,  frontera *frontera.Frontera, dag *dag.DAG, /* network *net.Network */ ) *Env {
+func NewClientEnv(ctx context.Context, role proto.ServerRole, host net.RoutedHost,  frontera *frontera.Frontera, dag *dag.DAG, /* network *net.Network */ ) *Env {
 	return &Env{
 		ctx	: ctx,
+		role	: role, //wyong, 20201126 
 		host 	: host, //wyong, 20201022 
 		frontera : frontera ,
 		dag 	: dag , 
@@ -49,6 +56,11 @@ func NewClientEnv(ctx context.Context, host net.RoutedHost,  frontera *frontera.
 // Context returns the context of the environment.
 func (ce *Env) Context() context.Context {
 	return ce.ctx
+}
+
+//wyong, 20201126 
+func (ce *Env) Role() proto.ServerRole {
+	return ce.role 
 }
 
 //wyong, 20201022 

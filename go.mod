@@ -7,6 +7,7 @@ require (
 	github.com/CovenantSQL/beacon v0.0.0-20190521023351-8402bfe07ece
 	github.com/cyberdelia/go-metrics-graphite v0.0.0-20161219230853-39f87cc3b432
 	github.com/davecgh/go-spew v1.1.1
+	github.com/hashicorp/golang-lru v0.5.4
 	github.com/ipfs/go-bitswap v0.1.8
 	github.com/ipfs/go-block-format v0.0.2
 	github.com/ipfs/go-blockservice v0.1.3
@@ -37,6 +38,7 @@ require (
 	github.com/libp2p/go-libp2p-swarm v0.2.8
 	github.com/mfonda/simhash v0.0.0-20151007195837-79f94a1100d6
 	github.com/mitchellh/go-homedir v1.1.0
+	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 	github.com/multiformats/go-multiaddr v0.3.1
 	github.com/multiformats/go-multiaddr-net v0.2.0
 	github.com/multiformats/go-multihash v0.0.14

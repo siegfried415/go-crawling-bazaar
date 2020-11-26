@@ -38,15 +38,19 @@ var daemonCmd = &cmds.Command{
 		Tagline: "Start a long-running daemon process",
 	},
 	Options: []cmdkit.Option{
-		cmdkit.StringOption(SwarmAddress, "multiaddress to listen on for filecoin network connections"),
-		cmdkit.StringOption(SwarmPublicRelayAddress, "public multiaddress for routing circuit relay traffic.  Necessary for relay nodes to provide this if they are not publically dialable"),
+		//wyong, 20201125 
+		//cmdkit.StringOption(SwarmAddress, "multiaddress to listen on for filecoin network connections"),
+		//cmdkit.StringOption(SwarmPublicRelayAddress, "public multiaddress for routing circuit relay traffic.  Necessary for relay nodes to provide this if they are not publically dialable"),
+
 		cmdkit.BoolOption(OfflineMode, "start the node without networking"),
 		cmdkit.BoolOption(ELStdout),
 		cmdkit.BoolOption(IsRelay, "advertise and allow filecoin network traffic to be relayed through this node"),
+
 		//cmdkit.StringOption(BlockTime, "time a node waits before trying to mine the next block").WithDefault(consensus.DefaultBlockTime.String()),
 
+		//wyong, 20201125 
 		//wyong, 20201030 
-		cmdkit.StringOption(AdapterAddress, "multiaddress to listen on for application"),
+		//cmdkit.StringOption(AdapterAddress, "multiaddress to listen on for application"),
 	},
 	Run: func(req *cmds.Request, re cmds.ResponseEmitter, env cmds.Environment) error {
 		return daemonRun(req, re)
@@ -58,6 +62,9 @@ var daemonCmd = &cmds.Command{
 
 func daemonRun(req *cmds.Request, re cmds.ResponseEmitter) error {
 	var (
+		//wyong, 20201125 
+		rawAdapterAddr string
+
 		err error
 	)
 
@@ -109,16 +116,23 @@ func daemonRun(req *cmds.Request, re cmds.ResponseEmitter) error {
 		}
 	}
 
-
+	// get api/adapter address for daemon, wyong, 20201125 
 	// second highest precedence is env vars.
 	if envAPI := os.Getenv("FIL_API"); envAPI != "" {
-		conf.GConf.API.Address = envAPI
+		rawAdapterAddr = envAPI
 	}
 
 	// highest precedence is cmd line flag.
 	if flagAPI, ok := req.Options[OptionAPI].(string); ok && flagAPI != "" {
-		conf.GConf.API.Address = flagAPI
+		//conf.GConf.AdapterAddr = flagAPI
+		rawAdapterAddr = flagAPI 
 	}
+
+        //lowest precedence is wyong, 20201125 
+        if len(rawAdapterAddr) == 0 {
+		rawAdapterAddr = conf.GConf.AdapterAddr 
+        }
+
 
 	if swarmAddress, ok := req.Options[SwarmAddress].(string); ok && swarmAddress != "" {
 		conf.GConf.ListenAddr = swarmAddress
@@ -143,10 +157,11 @@ func daemonRun(req *cmds.Request, re cmds.ResponseEmitter) error {
 		opts = append(opts, node.IsRelay())
 	}
 
+	//wyong, 20201125 
 	//wyong, 20201030 
-	if adapterAddress, ok := req.Options[AdapterAddress].(string); ok && adapterAddress != "" {
-		conf.GConf.API.Address = adapterAddress
-	}
+	//if adapterAddress, ok := req.Options[AdapterAddress].(string); ok && adapterAddress != "" {
+	//	conf.GConf.AdapterAddr = adapterAddress
+	//}
 
 	// wyong, 20200922 
 	//durStr, ok := req.Options[BlockTime].(string)
@@ -180,11 +195,16 @@ func daemonRun(req *cmds.Request, re cmds.ResponseEmitter) error {
 		writer.WriterGroup.AddWriter(os.Stdout)
 	}
 
+	fmt.Println("daemonRun(100), before call n.Start()")
+
 	// Start the node.
 	if err := n.Start(req.Context); err != nil {
 		return err
 	}
 	defer n.Stop(req.Context)
+
+	//wyong, 20201125 
+	fmt.Println("daemonRun(110), after call n.Start()")
 
 	// Run API server around the node.
 	ready := make(chan interface{}, 1)
@@ -192,17 +212,20 @@ func daemonRun(req *cmds.Request, re cmds.ResponseEmitter) error {
 		<-ready
 
 		//wyong, 20201027 
-		_ = re.Emit(fmt.Sprintf("API server listening on %s\n", conf.GConf.API.Address))
+		_ = re.Emit(fmt.Sprintf("API server listening on %s\n", rawAdapterAddr))
 	}()
+
+	fmt.Println("daemonRun(120)")
 
 	var terminate = make(chan os.Signal, 1)
 	signal.Notify(terminate, os.Interrupt, syscall.SIGTERM)
 	defer signal.Stop(terminate)
 
+	fmt.Println("daemonRun(130)")
 	// The request is expected to remain open so the daemon uses the request context.
 	// Pass a new context here if the flow changes such that the command should exit while leaving
 	// a forked deamon running.
-	return RunAPIAndWait(req.Context, n, repoDir,  conf.GConf.API, ready, terminate)
+	return RunAPIAndWait(req.Context, n, repoDir, /* conf.GConf.API, wyong, 20201125 */ rawAdapterAddr, ready, terminate)
 }
 
 /*
@@ -221,8 +244,9 @@ func getRepo(req *cmds.Request) (repo.Repo, error) {
 // The `ready` channel is closed when the server is running and its API address has been
 // saved to the node's repo.
 // A message sent to or closure of the `terminate` channel signals the server to stop.
-func RunAPIAndWait(ctx context.Context, nd *node.Node, repoDir string, config *conf.APIConfig, ready chan interface{}, terminate chan os.Signal) error {
+func RunAPIAndWait(ctx context.Context, nd *node.Node, repoDir string, /* config *conf.APIConfig, wyong, 20201125 */ rawAdapterAddr string,  ready chan interface{}, terminate chan os.Signal) error {
 
+	fmt.Println("RunAPIAndWait(10)")
 	// wyong, 20200921 
 	//servenv := &Env{
 	//	blockMiningAPI: nd.BlockMining.BlockMiningAPI,
@@ -235,26 +259,33 @@ func RunAPIAndWait(ctx context.Context, nd *node.Node, repoDir string, config *c
 	//	//storageAPI:     nd.StorageProtocol.StorageAPI,
 	//}
 
+	//wyong, 20201126 
 	//wyong, 20201022 
-	servenv := env.NewClientEnv(ctx, nd.Host,  nd.Frontera, nd.DAG )
+	servenv := env.NewClientEnv(ctx, nd.Role, nd.Host,  nd.Frontera, nd.DAG )
 
 	cfg := cmdhttp.NewServerConfig()
 	cfg.APIPath = APIPrefix
-	cfg.SetAllowedOrigins(config.AccessControlAllowOrigin...)
-	cfg.SetAllowedMethods(config.AccessControlAllowMethods...)
-	cfg.SetAllowCredentials(config.AccessControlAllowCredentials)
 
-	maddr, err := ma.NewMultiaddr(config.Address)
+	//todo, wyong, 20201125 
+	//cfg.SetAllowedOrigins(config.AccessControlAllowOrigin...)
+	//cfg.SetAllowedMethods(config.AccessControlAllowMethods...)
+	//cfg.SetAllowCredentials(config.AccessControlAllowCredentials)
+
+	fmt.Println("RunAPIAndWait(20)")
+	//wyong, 20201125 
+	maddr, err := ma.NewMultiaddr(rawAdapterAddr )
 	if err != nil {
 		return err
 	}
 
+	fmt.Println("RunAPIAndWait(30)")
 	// Listen on the configured address in order to bind the port number in case it has
 	// been configured as zero (i.e. OS-provided)
 	apiListener, err := manet.Listen(maddr)
 	if err != nil {
 		return err
 	}
+	fmt.Println("RunAPIAndWait(40)")
 
 	handler := http.NewServeMux()
 	handler.Handle("/debug/pprof/", http.DefaultServeMux)
@@ -264,6 +295,7 @@ func RunAPIAndWait(ctx context.Context, nd *node.Node, repoDir string, config *c
 		Handler: handler,
 	}
 
+	fmt.Println("RunAPIAndWait(50)")
 	go func() {
 		err := apiserv.Serve(manet.NetListener(apiListener))
 		if err != nil && err != http.ErrServerClosed {
@@ -271,11 +303,15 @@ func RunAPIAndWait(ctx context.Context, nd *node.Node, repoDir string, config *c
 		}
 	}()
 
+	fmt.Println("RunAPIAndWait(60), before SetAPIAddr, rawAdapterAddr=%s", rawAdapterAddr)
 	// Write the resolved API address to the repo
-	config.Address = apiListener.Multiaddr().String()
-	if err := conf.SetAPIAddr(repoDir, config.Address); err != nil {
+	//wyong, 20201125 
+	//config.Address = apiListener.Multiaddr().String()
+	if err := conf.SetAPIAddr(repoDir, rawAdapterAddr); err != nil {
 		return errors.Wrap(err, "Could not save API address to repo")
 	}
+
+	fmt.Println("RunAPIAndWait(70)")
 	// Signal that the sever has started and then wait for a signal to stop.
 	close(ready)
 	received := <-terminate

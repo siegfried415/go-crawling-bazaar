@@ -94,6 +94,7 @@ func (rh RoutedHost) Connect(ctx context.Context, pi peer.AddrInfo) error {
 		//addrs, err = rh.findPeerAddrs(ctx, pi.ID)
 		pi, err = rh.findPeerAddrs(ctx, pi.ID)
 		if err != nil {
+			err = errors.Wrap(err, "can't find peer address")
 			return err
 		}
 
@@ -288,12 +289,14 @@ func (rh RoutedHost) NewStream(ctx context.Context, p peer.ID, pids ...protocol.
 	if nodial, _ := network.GetNoDial(ctx); !nodial {
 		err := rh.Connect(ctx, peer.AddrInfo{ID: p})
 		if err != nil {
+			err = errors.Wrap(err, "can't connect to remote peer")
 			return result, err
 		}
 	}
 
 	s, err := rh.host.NewStream(ctx, p, pids...)
 	if err != nil {
+		err = errors.Wrap(err, "can't create stream")
 		return result, err
 	}
 	
@@ -442,6 +445,8 @@ func (rh RoutedHost)RequestPB(method string, req interface{}, resp interface{}) 
 	if bp, err = rh.GetCurrentPB(); err != nil {
 		return err
 	}
+
+	fmt.Printf("RoutedHost/RequestPB, current pb is %s\n", bp.String()) 
 
 	//todo, method->protocol, wyong, 20201008 
 	//return NewCaller().CallNode(bp, method, req, resp)

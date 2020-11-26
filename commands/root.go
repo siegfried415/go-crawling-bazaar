@@ -22,11 +22,14 @@ import (
 
 	env "github.com/siegfried415/gdf-rebuild/env" 
 	gdfnet "github.com/siegfried415/gdf-rebuild/net" 
+
+	//wyong, 20201126 
+	"github.com/siegfried415/gdf-rebuild/proto" 
 )
 
 const (
 	// OptionAPI is the name of the option for specifying the api port.
-	OptionAPI = "cmdapiaddr"
+	OptionAPI = "apiaddr"
 
 	// OptionRepoDir is the name of the option for specifying the directory of the repo.
 	OptionRepoDir = "repodir"
@@ -63,8 +66,9 @@ const (
 	// with testing as we won't be able to set blocktime in production.
 	BlockTime = "block-time"
 
+	//wyong, 20201125 
 	//wyong, 20201030 
-	AdapterAddress = "adapter"
+	//AdapterAddress = "adapter"
 
 	// PeerKeyFile is the path of file containing key to use for new nodes libp2p identity
 	PeerKeyFile = "peerkeyfile"
@@ -273,7 +277,7 @@ func Run(ctx context.Context, args []string, stdin, stdout, stderr *os.File) (in
 
 func buildEnv(ctx context.Context, _ *cmds.Request) (cmds.Environment, error) {
 	fmt.Printf("buildEnv(10)\n") 
-	return env.NewClientEnv(ctx, gdfnet.RoutedHost{}, nil, nil ), nil
+	return env.NewClientEnv(ctx, proto.Unknown, gdfnet.RoutedHost{}, nil, nil ), nil
 }
 
 type executor struct {
@@ -321,10 +325,16 @@ func makeExecutor(req *cmds.Request, env interface{}) (cmds.Executor, error) {
 	if isDaemonRequired {
 		fmt.Printf("makeExecutor(20)\n") 
 		var err error
-		api, err = getAPIAddress(req)
+		maddr, err := getAPIAddress(req)
 		if err != nil {
 			fmt.Printf("makeExecutor(25)\n") 
 			return nil, err
+		}
+
+		_, api, err = manet.DialArgs(maddr)
+		if err != nil {
+			fmt.Printf("getAPIAddress(75)\n") 
+			return nil, errors.Wrap(err, fmt.Sprintf("unable to dial API endpoint address %s", maddr))
 		}
 
 		fmt.Printf("makeExecutor(30)\n") 
@@ -342,7 +352,7 @@ func makeExecutor(req *cmds.Request, env interface{}) (cmds.Executor, error) {
 
 }
 
-func getAPIAddress(req *cmds.Request) (string, error) {
+func getAPIAddress(req *cmds.Request) (ma.Multiaddr, error) {
 	fmt.Printf("getAPIAddress(10)\n") 
 	var rawAddr string
 	var err error
@@ -368,33 +378,33 @@ func getAPIAddress(req *cmds.Request) (string, error) {
 		repoDir, err = paths.GetRepoPath(repoDir)
 		if err != nil {
 			fmt.Printf("getAPIAddress(45)\n") 
-			return "", err
+			return nil, err
 		}
 
-		fmt.Printf("getAPIAddress(50)\n") 
+		fmt.Printf("getAPIAddress(50), repoDir=%s\n", repoDir ) 
 		rawAddr, err = conf.APIAddrFromRepoPath(repoDir)
 		if err != nil {
 			fmt.Printf("getAPIAddress(55)\n") 
-			return "", errors.Wrap(err, "can't find API endpoint address in environment, command-line, or local repo (is the daemon running?)")
+			return nil, errors.Wrap(err, "can't find API endpoint address in environment, command-line, or local repo (is the daemon running?)")
 		}
 	}
 
-	fmt.Printf("getAPIAddress(60)\n") 
+	fmt.Printf("getAPIAddress(60), rawAddr=%s\n", rawAddr ) 
 	maddr, err := ma.NewMultiaddr(rawAddr)
 	if err != nil {
 		fmt.Printf("getAPIAddress(65)\n") 
-		return "", errors.Wrap(err, fmt.Sprintf("unable to convert API endpoint address %s to a multiaddr", rawAddr))
+		return nil, errors.Wrap(err, fmt.Sprintf("unable to convert API endpoint address %s to a multiaddr", rawAddr))
 	}
 
-	fmt.Printf("getAPIAddress(70)\n") 
-	_, host, err := manet.DialArgs(maddr)
-	if err != nil {
-		fmt.Printf("getAPIAddress(75)\n") 
-		return "", errors.Wrap(err, fmt.Sprintf("unable to dial API endpoint address %s", maddr))
-	}
+	//fmt.Printf("getAPIAddress(70)\n") 
+	//_, host, err := manet.DialArgs(maddr)
+	//if err != nil {
+	//	fmt.Printf("getAPIAddress(75)\n") 
+	//	return "", errors.Wrap(err, fmt.Sprintf("unable to dial API endpoint address %s", maddr))
+	//}
 
 	fmt.Printf("getAPIAddress(80)\n") 
-	return host, nil
+	return maddr, nil
 }
 
 func requiresDaemon(req *cmds.Request) bool {

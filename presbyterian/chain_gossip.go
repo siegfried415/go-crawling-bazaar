@@ -46,7 +46,7 @@ func (c *Chain) nonblockingBroadcastBlock(block *types.BPBlock) {
 		func(remote *blockProducerInfo) {
 			c.goFuncWithTimeout(func(ctx context.Context) {
 				var (
-					req = &types.AdviseNewBlockReq{
+					req = types.AdviseNewBlockReq{
 						Envelope: proto.Envelope{
 							// TODO(lambda): Add fields.
 						},
@@ -60,7 +60,7 @@ func (c *Chain) nonblockingBroadcastBlock(block *types.BPBlock) {
 				)
 
 				//wyong, 20201018
-				s, err := c.host.NewStreamExt(ctx, remote.nodeID, protocol.ID("ProtocolMCCAdviseNewBlock"))
+				s, err := c.host.NewStreamExt(ctx, remote.nodeID, protocol.ID("MCC.AdviseNewBlock"))
 				if err != nil {
 					log.WithError(err).Error("error opening block advise stream")
 					return
@@ -87,7 +87,7 @@ func (c *Chain) nonblockingBroadcastTx(ttl uint32, tx pi.Transaction) {
 		func(remote *blockProducerInfo) {
 			c.goFuncWithTimeout(func(ctx context.Context) {
 				var (
-					req = &types.AddTxReq{
+					req = types.AddTxReq{
 						Envelope: proto.Envelope{
 							// TODO(lambda): Add fields.
 						},
@@ -100,7 +100,7 @@ func (c *Chain) nonblockingBroadcastTx(ttl uint32, tx pi.Transaction) {
 
 				)
 				//wyong, 20201015 
-				s, err := c.host.NewStreamExt(ctx, remote.nodeID, protocol.ID("ProtocolMCCAddTx"))
+				s, err := c.host.NewStreamExt(ctx, remote.nodeID, protocol.ID("MCC.AddTx"))
 				if err != nil {
 					log.WithError(err).Error("error opening addtx stream")
 					return
@@ -138,13 +138,13 @@ func (c *Chain) blockingFetchBlock(ctx context.Context, h uint32) (unreachable u
 			defer wg.Done()
 			var (
 				err error
-				req = &types.FetchBlockReq{
+				req = types.FetchBlockReq{
 					Envelope: proto.Envelope{
 						// TODO(lambda): Add fields.
 					},
 					Height: h,
 				}
-				resp = &types.FetchBlockResp{}
+				resp = types.FetchBlockResp{}
 			)
 			var le = log.WithFields(log.Fields{
 				"local":  c.getLocalBPInfo(),
@@ -162,19 +162,19 @@ func (c *Chain) blockingFetchBlock(ctx context.Context, h uint32) (unreachable u
 			//}
 
 			//wyong, 20201015 
-			s, err := c.host.NewStreamExt(ctx, remote.nodeID, protocol.ID("ProtocolMCCFetchBlock"))
+			s, err := c.host.NewStreamExt(cld, remote.nodeID, protocol.ID("MCC.FetchBlock"))
 			if err != nil {
 				le.WithError(err).Error("error opening block-fetching stream")
 				return
 			}
 
-			if _, err := s.SendMsg(ctx, &req ) ; err != nil {
+			if _, err := s.SendMsg(cld, &req ) ; err != nil {
 				le.WithError(err).Error("failed to fetch block")
 			}
 
 			//wyong, 20201018
 			//resp, err = ioutil.ReadAll(s)
-			err = s.RecvMsg(ctx, resp) 
+			err = s.RecvMsg(cld, &resp) 
                         if err != nil {
                                 le.WithError(err).Error("failed to get response")
                                 return

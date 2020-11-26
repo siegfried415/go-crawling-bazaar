@@ -108,13 +108,14 @@ type DNSSeed struct {
 	BPCount        int      `yaml:"BPCount"`
 }
 
+//wyong, 20201125 
 // APIConfig holds all configuration options related to the api.
-type APIConfig struct {
-	Address                       string   `yaml:"address"`
-	AccessControlAllowOrigin      []string `yaml:"accessControlAllowOrigin"`
-	AccessControlAllowCredentials bool     `yaml:"accessControlAllowCredentials"`
-	AccessControlAllowMethods     []string `yaml:"accessControlAllowMethods"`
-}
+//type APIConfig struct {
+//	Address                       string   `yaml:"address"`
+//	AccessControlAllowOrigin      []string `yaml:"accessControlAllowOrigin"`
+//	AccessControlAllowCredentials bool     `yaml:"accessControlAllowCredentials"`
+//	AccessControlAllowMethods     []string `yaml:"accessControlAllowMethods"`
+//}
 
 // SwarmConfig holds all configuration options related to the swarm.
 type SwarmConfig struct {
@@ -133,8 +134,9 @@ type DatastoreConfig struct {
 
 // Config holds all the config read from yaml config file.
 type Config struct {
+	//wyong, 20201125 
 	//wyong, 20201003 
-	API		*APIConfig	`yaml:"API"`	
+	//API		*APIConfig	`yaml:"API"`	
 
 	UseTestMasterKey bool `yaml:"UseTestMasterKey,omitempty"` // when UseTestMasterKey use default empty masterKey
 	// StartupSyncHoles indicates synchronizing hole blocks from other peers on BP
@@ -152,9 +154,9 @@ type Config struct {
 	//wyong, 20201028 	
 	PublicRelayAddress	string            `yaml:"PublicRelayAddress"`
 
-	
+	//wyong, 20201125 
 	//wyong, 20200903
-	//AdapterAddr	   string	     `yaml:"AdapterAddr"` 
+	AdapterAddr	   string	     `yaml:"AdapterAddr"` 
 
 	//wyong, 20201028
 	//wyong, 20200908

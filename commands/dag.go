@@ -18,6 +18,9 @@ import (
 	"github.com/mfonda/simhash"
 
 	env "github.com/siegfried415/gdf-rebuild/env" 
+
+	//wyong, 20201126 
+	"github.com/siegfried415/gdf-rebuild/proto" 
 )
 
 var dagCmd = &cmds.Command{
@@ -39,6 +42,7 @@ var dagGetCmd = &cmds.Command{
 		cmdkit.StringArg("ref", true, false, "CID of object to get"),
 	},
 	Run: func(req *cmds.Request, re cmds.ResponseEmitter, cmdenv cmds.Environment) error {
+		fmt.Printf("commands/dag.go, DagGetCmd(10) \n") 
 		//out, err := GetPorcelainAPI(env).DAGGetNode(req.Context, req.Arguments[0])
 		e := cmdenv.(*env.Env)
 		out, err := e.DAG().GetNode(req.Context, req.Arguments[0]) 
@@ -65,12 +69,16 @@ format was provided with the data initially.
 `,
 	},
 	Arguments: []cmdkit.Argument{
-                cmdkit.StringArg("parent", true, false, "the parent url to be get from url store"),
-                cmdkit.StringArg("url", true, false, "the url to be get from url store"),
+		//todo, wyong, 20201126 
+                //cmdkit.StringArg("parent", true, false, "the parent url to be get from url store"),
+                //cmdkit.StringArg("url", true, false, "the url to be get from url store"),
 
 		cmdkit.StringArg("cid", true, false, "CID of page content"),
 	},
 	Run: func(req *cmds.Request, re cmds.ResponseEmitter, cmdenv cmds.Environment) error {
+		fmt.Printf("commands/dag.go, DagCatCmd(10) \n") 
+
+		/* todo, wyong, 20201126
 		parenturl := req.Arguments[0]
 		fmt.Printf("commands/dag.go, DagCatCmd(10), parenturl=%s\n", parenturl)
 
@@ -82,28 +90,38 @@ format was provided with the data initially.
 		if err != nil {
 			return err 
 		}
+		*/
 
-		c, err := cid.Decode(req.Arguments[2])
+		c, err := cid.Decode(req.Arguments[0])
 		if err != nil {
 			return err
 		}
 
 
+		fmt.Printf("commands/dag.go, DagCatCmd(20), cid=%s \n", c.String()) 
+
+		//bugfix, wyong, 20201126 
 		//wyong, 20201007 
-		role := req.Options["role"] 
-		if role == "Client" { 	
+		//role := req.Options["role"] 
+		//role, _ := req.Options[OptionRole].(string)
+		e := cmdenv.(*env.Env)
+		role := e.Role() 
+		fmt.Printf("commands/dag.go, DagCatCmd(30), role =%s \n", role.String()) 
+
+		switch role {
+		//if role == "Client" { 	
+		case proto.Client : 
+			fmt.Printf("commands/dag.go, DagCatCmd(40) \n") 
 			//get host from env, wyong, 20201008
-			e := cmdenv.(*env.Env)
 			host := e.Host()
 
-			conn, err := getConn(host, "ProtocolDAGCatRequest", domain)
+			//todo, wyong, 20201126 
+			conn, err := getConn(host, "DAG.CatRequest", /* domain */ "" )
 			if err != nil {
-				fmt.Printf("commands/urlrequest.go(55), err=%s\n", err.Error()) 
+				fmt.Printf("commands/urlrequest.go(45), err=%s\n", err.Error()) 
 				return nil 
 			}
 			defer conn.Close()
-
-			fmt.Printf("commands/urlrequest.go(60)\n") 
 
 			//todo, wyong, 20201022 
 			//var result sql.Result
@@ -113,22 +131,32 @@ format was provided with the data initially.
 			//	return err  
 			//}
 
-		}else if role == "Miner" {	
-			fmt.Printf("commands/dag.go, DagCatCmd(30), cid=%s\n", c.String() ) 
+		//}else if role == "Miner" {	
+		case proto.Leader:
+			fallthrough 
+		case proto.Follower: 
+			fmt.Printf("commands/dag.go, DagCatCmd(50)\n") 
+			return nil 
+
+		case proto.Miner: 
+			fmt.Printf("commands/dag.go, DagCatCmd(60)\n") 
 			//dr, err := GetPorcelainAPI(env).DAGCat(req.Context, c)
-			e := cmdenv.(*env.Env)
+			//e := cmdenv.(*env.Env)
 			dr, err := e.DAG().Cat(req.Context, c) 
 			if err != nil {
-				fmt.Printf("commands/dag.go, DagCatCmd(35) \n") 
+				fmt.Printf("commands/dag.go, DagCatCmd(65) \n") 
 				return err
 			}
+			fmt.Printf("commands/dag.go, DagCatCmd(70)\n") 
 			return re.Emit(dr)
 
-		} else { 	
+		//} else { 	
+		case proto.Unknown: 
+			fmt.Printf("commands/dag.go, DagCatCmd(80)\n") 
 			return nil 
 		}
 
-		fmt.Printf("commands/dag.go, DagCatCmd(40) \n") 
+		fmt.Printf("commands/dag.go, DagCatCmd(90) \n") 
 		//get url from dr , wyong, 20191115 
 		//var p Page 
 		//err := json.Unmarshal(dr, &p)
@@ -151,7 +179,7 @@ format was provided with the data initially.
                 //      return err
                 //}
 
-		fmt.Printf("commands/dag.go, DagCatCmd(60) \n") 
+		//fmt.Printf("commands/dag.go, DagCatCmd(90) \n") 
 
 		//return re.Emit(dr)
 		return nil 
@@ -178,6 +206,8 @@ See the go-filecoin client cat command for more details.
 		cmdkit.FileArg("file", true, false, "Path to file to import").EnableStdin(),
 	},
 	Run: func(req *cmds.Request, re cmds.ResponseEmitter, cmdenv cmds.Environment) error {
+		fmt.Printf("commands/dag.go, DagImportCmd(10) \n") 
+
 		//wyong, 20191115 
 		//url := req.Arguments[0]
 
