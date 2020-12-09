@@ -57,7 +57,7 @@ import (
 	"github.com/siegfried415/gdf-rebuild/kms"
 
 	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/route"
+	//"github.com/siegfried415/gdf-rebuild/route"
 	"github.com/siegfried415/gdf-rebuild/urlchain"
 	"github.com/siegfried415/gdf-rebuild/types"
 	"github.com/siegfried415/gdf-rebuild/utils"
@@ -266,7 +266,7 @@ func NewFrontera( cfg *FronteraConfig, peerHost net.RoutedHost  ) (f *Frontera, 
 
 	log.Infof("NewFrontera(40)") 
 	// init sql-chain rpc mux
-	if f.chainMux, err = sqlchain.NewMuxService(route.SQLChainRPCName, peerHost ); err != nil {
+	if f.chainMux, err = sqlchain.NewMuxService(/* route.SQLChainRPCName , wyong, 20201205 */ "URLC" , peerHost ); err != nil {
 		err = errors.Wrap(err, "register sqlchain mux service failed")
 		return
 	}
@@ -308,7 +308,7 @@ func NewFrontera( cfg *FronteraConfig, peerHost net.RoutedHost  ) (f *Frontera, 
 
 	//wyong, DBRPCName -> FronteraRPCName 
 	// init service
-	f.rpc = NewFronteraRPCService(route.FronteraRPCName, peerHost,  f)
+	f.rpc = NewFronteraRPCService(/* route.FronteraRPCName wyong, 20201209 */ "FRT", peerHost,  f)
 
 
 	//log.Infof("NewFrontera(100)") 
@@ -867,10 +867,13 @@ func (f *Frontera) getMeta(domainID proto.DomainID) (domain *Domain, exists bool
 }
 
 func (f *Frontera) addMeta(domainID proto.DomainID, domain *Domain) (err error) {
+	log.Debugf("Frontera/addMeta(10), domainID =%s", domainID) 
 	if _, alreadyExists := f.domainMap.LoadOrStore(domainID, domain); alreadyExists {
+		log.Debugf("Frontera/addMeta(15)") 
 		return ErrAlreadyExists
 	}
 
+	log.Debugf("Frontera/addMeta(20)") 
 	return f.writeMeta()
 }
 

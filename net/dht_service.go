@@ -26,7 +26,7 @@ import (
         network "github.com/libp2p/go-libp2p-core/network"
 
 	//"github.com/siegfried415/gdf-rebuild/conf"
-	"github.com/siegfried415/gdf-rebuild/consistent"
+	"github.com/siegfried415/gdf-rebuild/net/consistent"
 	//"github.com/siegfried415/gdf-rebuild/kms"
 	"github.com/siegfried415/gdf-rebuild/proto"
 	"github.com/siegfried415/gdf-rebuild/utils/log"

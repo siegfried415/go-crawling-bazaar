@@ -168,7 +168,7 @@ will be returned as a space separated table with url.
 
 		//todo, check cid verfied by two crawlers. wyong, 20191031
 		//var conn *client.Conn
-		conn, err := getConn(host, "ProtocolGetUrlCidRequest", domain )
+		conn, err := getConn(host, "FRT.UrlCidRequest", domain )
 		if err != nil {
 			return err 
 		}

@@ -29,6 +29,10 @@ import (
 	pi "github.com/siegfried415/gdf-rebuild/presbyterian/interfaces"
 	"github.com/siegfried415/gdf-rebuild/types"
 	net "github.com/siegfried415/gdf-rebuild/net"
+
+	//wyong, 20201202
+	"github.com/siegfried415/gdf-rebuild/utils/log"
+
 )
 
 // ChainRPCService defines a main chain RPC server.
@@ -217,7 +221,19 @@ func (cs *ChainRPCService) AddTxHandler(s network.Stream) {
 		return 
 	}
 
+	//wyong, 20201202 
+	log.WithFields(log.Fields{
+		"tx_type":  req.Tx.GetTransactionType().String(),
+		"tx_account_addr": req.Tx.GetAccountAddress().String(),
+	}).Debugf("ChainRPCService/AddTxHandler")
+
 	cs.chain.addTx(&req)
+
+	//wyong, 20201202 
+	var resp = types.AddTxResp {
+	}	
+
+	ns.SendMsg(ctx, &resp) 
 	//return
 }
 
@@ -288,11 +304,17 @@ func (cs *ChainRPCService) QueryTxStateHandler(
 	ctx := context.Background()
 	var req types.QueryTxStateReq 
 
+
 	//wyong, 20201119 
         ns := net.Stream{ Stream: s }
 	if err := ns.RecvMsg(ctx, &req); err != nil {
 		return 
 	}
+
+	//wyong, 20201202 
+	log.WithFields(log.Fields{
+		"hash":  req.Hash,
+	}).Debugf("ChainRPCService/QueryTxStateHandler(10)")
 
 	var state pi.TransactionState
 	state, err := cs.chain.queryTxState(req.Hash)
@@ -304,6 +326,11 @@ func (cs *ChainRPCService) QueryTxStateHandler(
 		Hash: req.Hash, 
 		State: state , 
 	}	
+
+	//wyong, 20201202 
+	log.WithFields(log.Fields{
+		"state":  state,
+	}).Debugf("ChainRPCService/QueryTxStateHandler(20)")
 
 	ns.SendMsg(ctx, &resp) 
 	//return

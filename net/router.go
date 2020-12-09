@@ -259,7 +259,7 @@ func (r *PBRouter) FindNodeInPB(id *proto.NodeID) (*proto.Node, error) {
 			continue 	
 		}
 
-		err = s.RecvMsg(ctx, resp)
+		err = s.RecvMsg(ctx, &resp)
 		if err!= nil {
 			log.WithFields(log.Fields{
 				"method": method,

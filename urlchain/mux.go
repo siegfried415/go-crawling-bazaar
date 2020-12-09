@@ -23,7 +23,7 @@ import (
 	//wyong, 20201020
 	"github.com/libp2p/go-libp2p-core/protocol" 
 	"github.com/libp2p/go-libp2p-core/network" 
-	"github.com/libp2p/go-libp2p-core/host" 
+	//"github.com/libp2p/go-libp2p-core/host" 
 
 	"github.com/siegfried415/gdf-rebuild/proto"
 	"github.com/siegfried415/gdf-rebuild/net"
@@ -43,15 +43,15 @@ type MuxService struct {
 }
 
 // NewMuxService creates a new multiplexing service and registers it to rpc server.
-func NewMuxService(serviceName string, /* server *rpc.Server */ h host.Host ) (service *MuxService, err error) {
+func NewMuxService(serviceName string, /* server *rpc.Server */ h net.RoutedHost ) (service *MuxService, err error) {
 	service = &MuxService{
 		ServiceName: serviceName,
 	}
 
 	//wyong, 20200925 
 	//err = server.RegisterService(serviceName, service)
-        h.SetStreamHandler(protocol.ID("ProtocolUrlChainAdviseNewBlock"), service.AdviseNewBlockHandler)
-        h.SetStreamHandler(protocol.ID("ProtocolUrlChainFetchBlock"), service.FetchBlockHandler)
+        h.SetStreamHandler(protocol.ID("URLC.AdviseNewBlock"), service.AdviseNewBlockHandler)
+        h.SetStreamHandler(protocol.ID("URLC.FetchBlock"), service.FetchBlockHandler)
 
 	return
 }
@@ -104,7 +104,10 @@ func (ms *MuxService) AdviseNewBlockHandler(s network.Stream ) {
         //}
         ctx := context.Background()
         var req MuxAdviseNewBlockReq 
-        err := s.(net.Stream).RecvMsg(ctx, &req)
+
+	//wyong, 20201203 
+	ns := net.Stream{ Stream: s }
+        err := ns.RecvMsg(ctx, &req)
         if err != nil {
                 return
         }
@@ -121,7 +124,9 @@ func (ms *MuxService) AdviseNewBlockHandler(s network.Stream ) {
         }
 
 	v.(*ChainRPCService).AdviseNewBlock(&req.AdviseNewBlockReq, &resp.AdviseNewBlockResp)
-        //_, err = net.SendMsg(ctx, s, &resp)
+
+	//wyong, 20201203 
+        _, err = ns.SendMsg(ctx, &resp)
 
 }
 
@@ -138,22 +143,30 @@ func (ms *MuxService) FetchBlockHandler(s network.Stream) {
 
         ctx := context.Background()
         var req MuxFetchBlockReq 
-        err := s.(net.Stream).RecvMsg(ctx, &req)
+
+	//wyong, 20201203 
+	ns := net.Stream{ Stream: s }
+        err := ns.RecvMsg(ctx, &req)
         if err != nil {
                 return
         }
 
-	v, ok := ms.serviceMap.Load(req.DomainID)
-	if ! ok {
-		//return ErrUnknownMuxRequest
-		return 
-	}
-
+	//bugfix, wyong, 20201206 
 	var resp = MuxFetchBlockResp { 
 		Envelope : req.Envelope,
 		DomainID : req.DomainID,
 	}
 
+	v, ok := ms.serviceMap.Load(req.DomainID)
+	if ! ok {
+		//return ErrUnknownMuxRequest
+		//bugfix, wyong, 20201206 
+        	_, err = ns.SendMsg(ctx, &resp)
+		return 
+	}
+
 	v.(*ChainRPCService).FetchBlock(&req.FetchBlockReq, &resp.FetchBlockResp)
 
+	//wyong, 20201203 
+        _, err = ns.SendMsg(ctx, &resp)
 }

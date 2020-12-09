@@ -1080,9 +1080,29 @@ func (s *metaState) updateBilling(tx *types.UpdateBilling) (err error) {
 }
 
 func (s *metaState) loadROSQLChains(addr proto.AccountAddress) (dbs []*types.SQLChainProfile) {
+	//wyong, 20201204 
+	log.WithFields(log.Fields{
+		"addr":   addr,
+	}).Debugf("metaState/loadROSQLChains(10)")
+
 	for _, db := range s.readonly.domains {
+
+		//wyong, 20201204 
+		log.WithFields(log.Fields{
+			"domain_id":   db.ID,
+		}).Debugf("metaState/loadROSQLChains(20)")
+
 		for _, miner := range db.Miners {
+
+			//wyong, 20201204 
+			log.WithFields(log.Fields{
+				"miner_addr":   miner.Address,
+			}).Debugf("metaState/loadROSQLChains(30)")
+
 			if miner.Address == addr {
+				//wyong, 20201204 
+				log.Debugf("metaState/loadROSQLChains(40)")
+
 				var dst = deepcopy.Copy(db).(*types.SQLChainProfile)
 				dbs = append(dbs, dst)
 			}

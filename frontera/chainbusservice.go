@@ -24,12 +24,12 @@ import (
 	"time"
 
 	//wyong, 20201008
-	host "github.com/libp2p/go-libp2p-core/host"
+	//host "github.com/libp2p/go-libp2p-core/host"
 
 	"github.com/siegfried415/gdf-rebuild/presbyterian/interfaces"
-	"github.com/siegfried415/gdf-rebuild/chainbus"
+	"github.com/siegfried415/gdf-rebuild/frontera/chainbus"
 	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/route"
+	//"github.com/siegfried415/gdf-rebuild/route"
 
 	//wyong, 20201008 
 	//rpc "github.com/siegfried415/gdf-rebuild/rpc/mux"
@@ -43,7 +43,7 @@ import (
 type BusService struct {
 	chainbus.Bus
 
-	host host.Host 	
+	host net.RoutedHost 	
 	//caller *rpc.Caller
 
 	wg     sync.WaitGroup
@@ -61,7 +61,7 @@ type BusService struct {
 
 // NewBusService creates a new chain bus instance.
 func NewBusService(
-	ctx context.Context, host host.Host, addr proto.AccountAddress, checkInterval time.Duration) (_ *BusService,
+	ctx context.Context, host net.RoutedHost, addr proto.AccountAddress, checkInterval time.Duration) (_ *BusService,
 ) {
 	ctd, ccl := context.WithCancel(ctx)
 	bs := &BusService{
@@ -170,12 +170,13 @@ func (bs *BusService) subscribeBlock(ctx context.Context) {
 
 func (bs *BusService) fetchBlockByCount(count uint32) (block *types.BPBlock, err error) {
 	var (
-		req = &types.FetchBlockByCountReq{
+		//wyong, 20201204 
+		req = types.FetchBlockByCountReq{
 			Count: count,
 		}
-		resp = &types.FetchBlockResp{}
+		resp = types.FetchBlockResp{}
 	)
-	if err = bs.host.(net.RoutedHost).RequestPB(route.MCCFetchBlockByCount.String(), req, resp); err != nil {
+	if err = bs.host.RequestPB("MCC.FetchBlockByCount", &req, &resp); err != nil {
 		return
 	}
 	block = resp.Block
@@ -185,12 +186,12 @@ func (bs *BusService) fetchBlockByCount(count uint32) (block *types.BPBlock, err
 func (bs *BusService) requestLastBlock() (
 	block *types.BPBlock, profiles []*types.SQLChainProfile, count uint32,
 ) {
-	req := &types.FetchLastIrreversibleBlockReq{
+	req := types.FetchLastIrreversibleBlockReq{
 		Address: bs.localAddress,
 	}
-	resp := &types.FetchLastIrreversibleBlockResp{}
+	resp := types.FetchLastIrreversibleBlockResp{}
 
-	if err := bs.host.(net.RoutedHost).RequestPB(route.MCCFetchLastIrreversibleBlock.String(), req, resp); err != nil {
+	if err := bs.host.RequestPB("MCC.FetchLastIrreversibleBlock", &req, &resp); err != nil {
 		log.WithError(err).Warning("fetch last block failed")
 		return
 	}
@@ -198,6 +199,14 @@ func (bs *BusService) requestLastBlock() (
 	block = resp.Block
 	profiles = resp.SQLChains
 	count = resp.Count
+	
+	//just for debug, wyong, 20201204
+	for _ , prof := range profiles {  
+		log.WithFields(log.Fields{
+			"profile_domain_id":  prof.ID,
+		}).Debugf("BusService/requestLastBlock")
+	}
+
 	return
 }
 

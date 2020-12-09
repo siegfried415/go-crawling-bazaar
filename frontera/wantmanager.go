@@ -17,7 +17,7 @@ import (
 	cid "github.com/ipfs/go-cid"
 
 	//wyong, 20200925
-        pstore "github.com/libp2p/go-libp2p-peerstore"
+        //pstore "github.com/libp2p/go-libp2p-peerstore"
         //host "github.com/libp2p/go-libp2p-core/host"
 
 	//go-libp2p-net -> go-libp2p-core/network,
@@ -26,7 +26,7 @@ import (
 	libp2phelpers "github.com/libp2p/go-libp2p-core/helpers"
 
 	protocol "github.com/libp2p/go-libp2p-core/protocol" 
-	peer "github.com/libp2p/go-libp2p-core/peer" 
+	//peer "github.com/libp2p/go-libp2p-core/peer" 
 
 
 	//peer "github.com/libp2p/go-libp2p-peer"
@@ -268,14 +268,18 @@ func (pm *WantManager) SendBids(ctx context.Context, msg *types.UrlBidMessage ) 
 
 	//wyong, 20200827 
 	target := msg.Header.UrlBidHeader.Target 
-	if target.IsEmpty() {
+	fmt.Printf("WantManager/SendBids(12), target =%s\n", target )
+
+	//bugfix, wyong, 20201208 
+	//if target.IsEmpty() {
+	if string(target) == "" { 
 		fmt.Printf("WantManager/SendBids(15), target is empty\n")
 		return
 	}
 
 	fmt.Printf("WantManager/SendBids(20), target=%s\n", target )
 	//caller = mux.NewPersistentCaller(target) 
-	s, err := pm.host.NewStreamExt(ctx, target, protocol.ID("ProtocolFronteraBid"))
+	s, err := pm.host.NewStreamExt(ctx, target, protocol.ID("FRT.Bid"))
 	if err != nil {
                 return 
         }
@@ -497,21 +501,28 @@ func (mq *msgQueue) openSender(ctx context.Context ) error {
 	//defer cancel()
 
 	//log.Debugf("openSender(10)")
+	fmt.Printf("openSender(10)\n")
 	//err := mq.network.ConnectTo(conctx, mq.p )
-	err := mq.host.Connect(ctx, pstore.PeerInfo{ID: peer.ID(mq.p)})
-	if err != nil {
-		return err
-	}
+
+	//wyong, 20201008 
+	//err := mq.host.Connect(ctx, pstore.PeerInfo{ID: peer.ID(mq.p)})
+	//if err != nil {
+	//	fmt.Printf("openSender(15)\n")
+	//	return err
+	//}
 
 	//log.Debugf("openSender(20)")
+	fmt.Printf("openSender(20)\n")
 	//todo, "gdf/frontera/bidding",  wyong, 20200924 
 	//nsender, err := mq.network.NewMessageSender(ctx, mq.p)
-	s, err := mq.host.NewStreamExt(ctx, mq.p, protocol.ID("ProtocolFronteraBidding"))
+	s, err := mq.host.NewStreamExt(ctx, mq.p, protocol.ID("FRT.Bidding"))
 	if err != nil {
+		fmt.Printf("openSender(25)\n")
 		return err
 	}
 
 	//log.Debugf("openSender(30)")
+	fmt.Printf("openSender(30)\n")
 	mq.sender = &s 
 
 	//if cfg.UseDirectRPC {

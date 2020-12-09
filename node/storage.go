@@ -25,7 +25,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/siegfried415/gdf-rebuild/consistent"
+	"github.com/siegfried415/gdf-rebuild/net/consistent"
 	"github.com/siegfried415/gdf-rebuild/kms"
 	"github.com/siegfried415/gdf-rebuild/proto"
 	//"github.com/siegfried415/gdf-rebuild/route"

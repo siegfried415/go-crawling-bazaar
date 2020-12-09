@@ -24,7 +24,7 @@ import (
 	metrics "github.com/rcrowley/go-metrics"
 
 	//wyong, 20201020
-	host "github.com/libp2p/go-libp2p-core/host"
+	//host "github.com/libp2p/go-libp2p-core/host"
 	protocol "github.com/libp2p/go-libp2p-core/protocol"
 	network "github.com/libp2p/go-libp2p-core/network"
 
@@ -67,7 +67,7 @@ type FronteraRPCService struct {
 }
 
 // NewFronteraRPCService returns new frontera rpc service endpoint.
-func NewFronteraRPCService( serviceName string, /* server *mux.Server, direct *rpc.Server, wyong, 20200925 */ h host.Host,  f *Frontera) ( service *FronteraRPCService) {
+func NewFronteraRPCService( serviceName string, /* server *mux.Server, direct *rpc.Server, wyong, 20200925 */ h net.RoutedHost,  f *Frontera) ( service *FronteraRPCService) {
 	service = &FronteraRPCService{
 		frontera: f,
 	}
@@ -79,10 +79,10 @@ func NewFronteraRPCService( serviceName string, /* server *mux.Server, direct *r
 	}
 	*/
 
-	h.SetStreamHandler( protocol.ID("ProtocolFronteraUrlRequest"), service.UrlRequestHandler)
-	h.SetStreamHandler( protocol.ID("ProtocolFronteraUrlCidRequest"), service.UrlCidRequestHandler) 
-	h.SetStreamHandler( protocol.ID("ProtocolFronteraBidding"), service.BiddingMessageHandler) 
-	h.SetStreamHandler( protocol.ID("ProtocolFronteraBid"), service.BidMessageHandler) 
+	h.SetStreamHandler( protocol.ID("FRT.UrlRequest"), service.UrlRequestHandler)
+	h.SetStreamHandler( protocol.ID("FRT.UrlCidRequest"), service.UrlCidRequestHandler) 
+	h.SetStreamHandler( protocol.ID("FRT.Bidding"), service.BiddingMessageHandler) 
+	h.SetStreamHandler( protocol.ID("FRT.Bid"), service.BidMessageHandler) 
 	
 	dbQuerySuccCounter = metrics.NewMeter()
 	metrics.Register("db-query-succ", dbQuerySuccCounter)
@@ -110,7 +110,11 @@ func (rpc *FronteraRPCService) UrlRequestHandler (
 
         ctx := context.Background()
         var req types.UrlRequestMessage 
-        err := s.(net.Stream).RecvMsg(ctx, &req)
+
+	//wyong, 20201203
+	ns := net.Stream{ Stream: s }
+
+        err := ns.RecvMsg(ctx, &req)
         if err != nil {
                 return
         }
@@ -124,7 +128,7 @@ func (rpc *FronteraRPCService) UrlRequestHandler (
 	}
 
 	//*res = *r
-        s.(net.Stream).SendMsg(ctx, res)
+        ns.SendMsg(ctx, res)
 
 	//return nil 
 }
@@ -147,7 +151,10 @@ func (rpc *FronteraRPCService) UrlCidRequestHandler (
 
         ctx := context.Background()
         var req types.UrlCidRequestMessage 
-        err := s.(net.Stream).RecvMsg(ctx, &req)
+
+	//wyong, 20201203
+	ns := net.Stream{ Stream: s }
+        err := ns.RecvMsg(ctx, &req)
         if err != nil {
                 return
         }
@@ -160,7 +167,7 @@ func (rpc *FronteraRPCService) UrlCidRequestHandler (
 
 	//*res = *r
 
-        s.(net.Stream).SendMsg(ctx, res)
+        ns.SendMsg(ctx, res)
 	//return
 }
 
@@ -181,7 +188,10 @@ func (rpc *FronteraRPCService) BiddingMessageHandler (
 
         ctx := context.Background()
         var req types.UrlBiddingMessage 
-        err := s.(net.Stream).RecvMsg(ctx, &req)
+
+	//wyong, 20201203
+	ns := net.Stream{ Stream: s }
+        err := ns.RecvMsg(ctx, &req)
         if err != nil {
                 return
         }
@@ -210,7 +220,10 @@ func (rpc *FronteraRPCService) BidMessageHandler (
 
         ctx := context.Background()
         var req types.UrlBidMessage 
-        err := s.(net.Stream).RecvMsg(ctx, &req)
+
+	//wyong, 20201203
+	ns := net.Stream{ Stream: s }
+        err := ns.RecvMsg(ctx, &req)
         if err != nil {
                 return
         }

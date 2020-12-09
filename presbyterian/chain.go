@@ -674,6 +674,14 @@ func (c *Chain) syncCurrentHead(ctx context.Context, requiredReachable uint32) (
 	switch c.mode {
 	case BPMode:
 		ok = unreachable+requiredReachable <= serversNum
+
+		//wyong, 20201202 
+		log.WithFields(log.Fields{
+			"serversNum":              serversNum,
+			"unreachable":  unreachable,
+			"requiredReachable":  requiredReachable ,
+		}).Infof("Chain/syncCurrentHead, ok=%s\n", ok )
+
 	case APINodeMode:
 		ok = unreachable < serversNum
 	default:

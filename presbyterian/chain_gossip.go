@@ -19,7 +19,7 @@ package presbyterian
 import (
 	"context"
 	"sync"
-	//"sync/atomic"
+	"sync/atomic"
 
 	//wyong, 20201015 
 	//"io/ioutil" 
@@ -165,11 +165,14 @@ func (c *Chain) blockingFetchBlock(ctx context.Context, h uint32) (unreachable u
 			s, err := c.host.NewStreamExt(cld, remote.nodeID, protocol.ID("MCC.FetchBlock"))
 			if err != nil {
 				le.WithError(err).Error("error opening block-fetching stream")
+				atomic.AddUint32(&unreachable, 1)
 				return
 			}
 
 			if _, err := s.SendMsg(cld, &req ) ; err != nil {
 				le.WithError(err).Error("failed to fetch block")
+				atomic.AddUint32(&unreachable, 1)
+				return
 			}
 
 			//wyong, 20201018
@@ -177,6 +180,7 @@ func (c *Chain) blockingFetchBlock(ctx context.Context, h uint32) (unreachable u
 			err = s.RecvMsg(cld, &resp) 
                         if err != nil {
                                 le.WithError(err).Error("failed to get response")
+				atomic.AddUint32(&unreachable, 1)
                                 return
                         }
 			//end 

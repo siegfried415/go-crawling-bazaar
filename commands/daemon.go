@@ -31,6 +31,10 @@ import (
 	"github.com/siegfried415/gdf-rebuild/proto"
 	utils "github.com/siegfried415/gdf-rebuild/utils" 
 	env "github.com/siegfried415/gdf-rebuild/env" 
+
+	//wyong, 20201202 
+        "github.com/siegfried415/gdf-rebuild/utils/log"
+
 )
 
 var daemonCmd = &cmds.Command{
@@ -68,6 +72,11 @@ func daemonRun(req *cmds.Request, re cmds.ResponseEmitter) error {
 		err error
 	)
 
+	//wyong, 20201202
+	logLevel, _ := req.Options["log-level"].(string)
+        log.SetStringLevel(logLevel, log.InfoLevel)
+
+	
 	//wyong, 20201028 
 	roleStr, _ := req.Options[OptionRole].(string)
 	role, err := proto.ParseServerRole (roleStr) 	

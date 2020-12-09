@@ -151,7 +151,7 @@ Put bidding for a url:
 		host := e.Host()
 
 		//todo, define ProtocolUrlRequest, wyong, 20201008 
-		conn, err := getConn(host, "ProtocolPutUrlRequest",  domain)
+		conn, err := getConn(host, "FRT.UrlRequest",  domain)
 		if err != nil {
 			fmt.Printf("commands/urlrequest.go(55), err=%s\n", err.Error()) 
 			return nil 

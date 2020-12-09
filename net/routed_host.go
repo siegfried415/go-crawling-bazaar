@@ -438,6 +438,8 @@ func (rh RoutedHost) SetCurrentPB(bpNodeID proto.NodeID) {
 
 // RequestPB sends request to main chain.
 func (rh RoutedHost)RequestPB(method string, req interface{}, resp interface{}) (err error) {
+	log.Debugf("RoutedHost/RequestPB(10)\n") 
+
 	//wyong, 20201020
 	ctx := context.Background()
 
@@ -446,37 +448,40 @@ func (rh RoutedHost)RequestPB(method string, req interface{}, resp interface{}) 
 		return err
 	}
 
-	fmt.Printf("RoutedHost/RequestPB, current pb is %s\n", bp.String()) 
+	log.Debugf("RoutedHost/RequestPB(20), current pb is %s\n", bp.String()) 
 
 	//todo, method->protocol, wyong, 20201008 
 	//return NewCaller().CallNode(bp, method, req, resp)
         s, err := rh.NewStreamExt(ctx, bp, protocol.ID(method))
         if err != nil {
-                //log.Debugf("error opening push stream to %s: %s", bp, err.Error())
+                log.Debugf("RoutedHost/RequestPB(25), error opening push stream to %s: %s", bp, err.Error())
                 return
         }
         defer s.Close()
 
-	_, err = s.SendMsg(ctx, &req )
-	if err == nil {
+	log.Debugf("RoutedHost/RequestPB(30)\n") 
+	_, err = s.SendMsg(ctx, req )
+	if err != nil {
 		//log.WithFields(log.Fields{
 		//	"index":    i.index,
 		//	"instance": i.r.instanceID,
 		//}).WithError(err).Debug("send fetch request failed")
-		//log.Debugf("send presbyterian request failed") 
+		log.Debugf("RoutedHost/RequestPB(35), send presbyterian request failed") 
 		return err 
 	}
 
-	err = s.RecvMsg(ctx, &resp )
+	log.Debugf("RoutedHost/RequestPB(40)\n") 
+	err = s.RecvMsg(ctx, resp )
 	if err!= nil {
 		//log.WithFields(log.Fields{
 		//	"index":    i.index,
 		//	"instance": i.r.instanceID,
 		//}).WithError(err).Debug("get fetch result failed")
-		//log.Debugf("get result for presbyterian request failed") 
+		log.Debugf("RoutedHost/RequestPB(45), get result for presbyterian request failed") 
 		return err 	
 	} 
 
+	log.Debugf("RoutedHost/RequestPB(50)\n") 
 	return nil 
 
 }

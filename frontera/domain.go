@@ -260,6 +260,9 @@ func NewDomain(cfg *DomainConfig, f *Frontera, peers *proto.Peers, genesis *type
 		Genesis:         genesis,
 		Peers:           peers,
 
+		//bugfix, wyong, 20201203
+		Host: 		cfg.Host, 
+
 		// currently sqlchain package only use Server.ID as node id
 		MuxService: cfg.ChainMux,
 		Server:     domain.nodeID,
@@ -452,6 +455,16 @@ func (domain *Domain) SetCid( url string, c cid.Cid) (err error) {
 	return 
 }
 
+//wyong, 20201208 
+func B2S(bs []uint8) string {
+	ba := []byte{}
+	for _, b := range bs {
+		ba = append(ba, byte(b))
+	}
+	return string(ba)
+}
+
+
 //wyong, 20200817
 func (domain *Domain) GetCid( url string) (c cid.Cid, err error) {
 
@@ -498,14 +511,17 @@ func (domain *Domain) GetCid( url string) (c cid.Cid, err error) {
 		return 
 	}
 
-	fmt.Printf("Domain/GetCid(50)\n") 
+	fmt.Printf("Domain/GetCid(50), first row =%s\n", rows[0]) 
 	fr := rows[0]		//first row
 	if len(fr.Values) <=0 {
 		return 
 	} 
 
-	fmt.Printf("Domain/GetCid(60)\n") 
-	fcfr:= fr.Values[0].(string) 	//first column of first row 
+	fmt.Printf("Domain/GetCid(60), first column of first rows=%s \n", fr.Values[0] ) 
+
+	//bugfix, wyong, 20201208 
+	//fcfr:= fr.Values[0].(string)	//first column of first row 
+	fcfr:= B2S((fr.Values[0]).([]uint8))	//first column of first row 
 
 	fmt.Printf("Domain/GetCid(70), raw cid =%s\n", fcfr ) 
 	c, err  = cid.Decode(fcfr)	//convert it to cid 

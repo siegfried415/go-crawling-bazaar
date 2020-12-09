@@ -50,7 +50,7 @@ import (
 	protocol "github.com/libp2p/go-libp2p-core/protocol" 
 
 	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/route"
+	//"github.com/siegfried415/gdf-rebuild/route"
 	//rpc "github.com/siegfried415/gdf-rebuild/rpc/mux"
 	"github.com/siegfried415/gdf-rebuild/types"
 	"github.com/siegfried415/gdf-rebuild/utils"
@@ -621,7 +621,7 @@ func (c *Chain) produceBlock(now time.Time) (err error) {
 		if s != c.rt.getServer() {
 			func(remote proto.NodeID) { // bind remote node id to closure
 				c.rt.goFuncWithTimeout(func(ctx context.Context) {
-					req := &MuxAdviseNewBlockReq{
+					req := MuxAdviseNewBlockReq{
 						DomainID: c.domainID,
 						AdviseNewBlockReq: AdviseNewBlockReq{
 							Block: block,
@@ -636,7 +636,7 @@ func (c *Chain) produceBlock(now time.Time) (err error) {
 							}(),
 						},
 					}
-					resp := &MuxAdviseNewBlockResp{}
+					resp := MuxAdviseNewBlockResp{}
 
 					//wyong, 20200928 
 					//if err := c.cl.CallNodeWithContext(
@@ -646,7 +646,7 @@ func (c *Chain) produceBlock(now time.Time) (err error) {
 					//}
 
 					//wyong, 20200928
-					s, err := c.host.NewStreamExt(ctx, remote, protocol.ID("ProtocolUrlChainAdviseNewBlock"))
+					s, err := c.host.NewStreamExt(ctx, remote, protocol.ID("URLC.AdviseNewBlock"))
 					if err != nil {
 						le.WithError(err).Error("error opening push stream")
 						return 
@@ -658,7 +658,7 @@ func (c *Chain) produceBlock(now time.Time) (err error) {
 					}
 
 					//wyong, 20201014 
-	                		if err := s.RecvMsg(ctx, resp ) ; err != nil { 
+	                		if err := s.RecvMsg(ctx, &resp ) ; err != nil { 
 						le.WithError(err).Error("failed to receive new block advise response")
 					}
 
@@ -715,13 +715,13 @@ func (c *Chain) syncHead() (err error) {
 			defer wg.Done()
 			var (
 				ile = le.WithFields(log.Fields{"remote": fmt.Sprintf("[%d/%d] %s", i, l, node)})
-				req = &MuxFetchBlockReq{
+				req = MuxFetchBlockReq{
 					DomainID: c.domainID,
 					FetchBlockReq: FetchBlockReq{
 						Height: h,
 					},
 				}
-				resp = &MuxFetchBlockResp{}
+				resp = MuxFetchBlockResp{}
 			)
 
 			atomic.AddUint32(&totalCount, 1)
@@ -736,8 +736,10 @@ func (c *Chain) syncHead() (err error) {
 			//	return
 			//}
 
+			ile.Debugf("UrlChain/syncHead(10)")
+
 			//wyong, 20200928
-			s, err := c.host.NewStreamExt(child, node, protocol.ID("ProtocolUrlChainFetchBlock"))
+			s, err := c.host.NewStreamExt(child, node, protocol.ID("URLC.FetchBlock"))
 			if err != nil {
 				ile.WithError(err).Error("error opening push stream")
 				return 
@@ -752,7 +754,7 @@ func (c *Chain) syncHead() (err error) {
 
 			//wyong, 20201020 
 			//resp, err = ioutil.ReadAll(s)
-			err = s.RecvMsg(child, resp) 
+			err = s.RecvMsg(child, &resp) 
 			if err != nil {
 				ile.WithError(err).Error("failed to get response")
 				return 
@@ -930,7 +932,7 @@ func (c *Chain) processBlocks(ctx context.Context) {
 				nonceResp := &types.NextAccountNonceResp{}
 
 				//nonceReq.Addr = *c.addr
-				if err = c.host.RequestPB(route.MCCNextAccountNonce.String(), nonceReq, nonceResp); err != nil {
+				if err = c.host.RequestPB("MCC.NextAccountNonce", nonceReq, nonceResp); err != nil {
 					// allocate nonce failed
 					le.WithError(err).Warning("allocate nonce for transaction failed")
 				}
@@ -949,7 +951,7 @@ func (c *Chain) processBlocks(ctx context.Context) {
 				//	addTxReq.Tx.GetAccountNonce(), addTxReq.Tx.GetAccountAddress())
 
 				//wyong, 20201014 
-				if err = c.host.RequestPB(route.MCCAddTx.String(), addTxReq, addTxResp); err != nil {
+				if err = c.host.RequestPB("MCC.AddTx", addTxReq, addTxResp); err != nil {
 					le.WithError(err).Warning("send tx failed")
 				}
 			}

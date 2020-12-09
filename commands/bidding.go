@@ -15,6 +15,10 @@ import (
 
 	//wyong, 20200802 
 	env "github.com/siegfried415/gdf-rebuild/env" 
+
+	//wyong, 20201203
+	"github.com/siegfried415/gdf-rebuild/utils/log" 
+	
 )
 
 type BiddingEntry struct {
@@ -123,7 +127,7 @@ Put bidding for a url:
 	//},
 
 	Run: func(req *cmds.Request, res cmds.ResponseEmitter, env cmds.Environment) error {
-		log.Debugf("BiddingPutCmd, Run() called...") 
+		//log.Debugf("BiddingPutCmd, Run() called...") 
 
 		log.Debugf("BiddingPutCmd, Run(10)") 
 		url := req.Arguments[0]
@@ -151,7 +155,7 @@ Put bidding for a url:
 		//	Value: out.Value().String(),
 		//})
 
-		log.Debugf("BiddingPutCmd, Run(40)") 
+		//log.Debugf("BiddingPutCmd, Run(40)") 
 		return cmds.EmitOnce(res, 0)
 	},
 
@@ -305,7 +309,7 @@ Get all biddings :
 	//},
 
 	Run: func(req *cmds.Request, res cmds.ResponseEmitter, cmdenv cmds.Environment) error {
-		log.Debugf("CompletedBiddingGetCmd, Run() called...") 
+		//log.Debugf("CompletedBiddingGetCmd, Run() called...") 
 
 		//TODO,wyong, 20181227
 		//peer, err := peer.IDFromString(req.Arguments[0])
@@ -313,20 +317,20 @@ Get all biddings :
 		//	return err
 		//}
 
-		log.Debugf("CompletedBiddingGetCmd, Run(10)") 
+		//log.Debugf("CompletedBiddingGetCmd, Run(10)") 
 		ce := cmdenv.(*env.Env) 
 		output, err := ce.Frontera().GetCompletedBiddings(req.Context /* , opts... */ )
 		if err != nil {
 			return err
 		}
 
-		log.Debugf("CompletedBiddingGetCmd, Run(20)") 
+		//log.Debugf("CompletedBiddingGetCmd, Run(20)") 
 		for _, v := range output {
 			//if v.Err != nil {
 			//	return err
 			//}
 			//if err := res.Emit(&ResolvedPath{path.FromString(v.Path.String())}); err != nil {
-			log.Debugf("CompletedBiddingGetCmd, Run(30), %s", v.GetUrl()) 
+			//log.Debugf("CompletedBiddingGetCmd, Run(30), %s", v.GetUrl()) 
 
 			//cids := make([]cid.Cid, len(v.Bids()) 
 			//for _, v := range v.Bids() {
@@ -339,7 +343,7 @@ Get all biddings :
 
 		}
 
-		log.Debugf("CompletedBiddingGetCmd, Run(40)") 
+		//log.Debugf("CompletedBiddingGetCmd, Run(40)") 
 		return nil
 	},
 
@@ -391,7 +395,7 @@ Get all biddings :
 	//},
 
 	Run: func(req *cmds.Request, res cmds.ResponseEmitter, cmdenv cmds.Environment) error {
-		log.Debugf("CompletedBiddingGetCmd, Run() called...") 
+		//log.Debugf("CompletedBiddingGetCmd, Run() called...") 
 
 		//TODO,wyong, 20181227
 		//peer, err := peer.IDFromString(req.Arguments[0])
@@ -399,20 +403,20 @@ Get all biddings :
 		//	return err
 		//}
 
-		log.Debugf("UncompletedBiddingGetCmd, Run(10)") 
+		//log.Debugf("UncompletedBiddingGetCmd, Run(10)") 
 		ce := cmdenv.(*env.Env)
 		output, err := ce.Frontera().GetUncompletedBiddings(req.Context /* , opts... */ )
 		if err != nil {
 			return err
 		}
 
-		log.Debugf("UncompletedBiddingGetCmd, Run(20)") 
+		//log.Debugf("UncompletedBiddingGetCmd, Run(20)") 
 		for _, v := range output {
 			//if v.Err != nil {
 			//	return err
 			//}
 			//if err := res.Emit(&ResolvedPath{path.FromString(v.Path.String())}); err != nil {
-			log.Debugf("UncompletedBiddingGetCmd, Run(30), %s", v.GetUrl()) 
+			//log.Debugf("UncompletedBiddingGetCmd, Run(30), %s", v.GetUrl()) 
 
 			//cids := make([]cid.Cid, len(v.Bids()) 
 			//for _, v := range v.Bids() {
@@ -425,7 +429,7 @@ Get all biddings :
 
 		}
 
-		log.Debugf("UncompletedBiddingGetCmd, Run(40)") 
+		//log.Debugf("UncompletedBiddingGetCmd, Run(40)") 
 		return nil
 	},
 
@@ -477,20 +481,20 @@ Put bidding for a url:
 	//},
 
 	Run: func(req *cmds.Request, res cmds.ResponseEmitter, cmdenv cmds.Environment) error {
-		log.Debugf("BiddingDelCmd, Run() called...") 
+		//log.Debugf("BiddingDelCmd, Run() called...") 
 
-		log.Debugf("BiddingDelCmd, Run(10)") 
+		//log.Debugf("BiddingDelCmd, Run(10)") 
 		url := req.Arguments[0]
 		if !IsURL(url){
 			return fmt.Errorf("unsupported url syntax: %s", url)
 		}
 
 
-		log.Debugf("BiddingDelCmd, Run(20)") 
+		//log.Debugf("BiddingDelCmd, Run(20)") 
 		ce := cmdenv.(*env.Env)
 		err := ce.Frontera().DelBidding(req.Context, url )
 		if err != nil {
-			log.Debugf("BiddingDelCmd, Run(30)") 
+			//log.Debugf("BiddingDelCmd, Run(30)") 
 			//if err == iface.ErrOffline {
 			//	err = errAllowOffline
 			//}
@@ -502,7 +506,7 @@ Put bidding for a url:
 		//	Value: out.Value().String(),
 		//})
 
-		log.Debugf("BiddingDelCmd, Run(40)") 
+		//log.Debugf("BiddingDelCmd, Run(40)") 
 		return cmds.EmitOnce(res, 0)
 	},
 

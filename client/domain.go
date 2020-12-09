@@ -29,8 +29,9 @@ import (
 
 	"github.com/pkg/errors"
 
+	//wyong, 20201127 
 	//wyong, 20201008
-	host "github.com/libp2p/go-libp2p-core/host" 
+	//host "github.com/libp2p/go-libp2p-core/host" 
 
 	pb "github.com/siegfried415/gdf-rebuild/presbyterian"
 	"github.com/siegfried415/gdf-rebuild/presbyterian/interfaces"
@@ -40,7 +41,9 @@ import (
 	"github.com/siegfried415/gdf-rebuild/crypto/hash"
 	"github.com/siegfried415/gdf-rebuild/kms"
 	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/route"
+
+	//wyong, 20201127 
+	//"github.com/siegfried415/gdf-rebuild/route"
 
 	//wyong, 20201008 
 	//rpc "github.com/siegfried415/gdf-rebuild/rpc/mux"
@@ -134,7 +137,7 @@ type ResourceMeta struct {
 	AdvancePayment uint64 `json:"advance-payment"` // customized advance payment
 }
 
-func defaultInit(host host.Host) (err error) {
+func defaultInit(host net.RoutedHost) (err error) {
 	configFile := utils.HomeDirExpand(DefaultConfigFile)
 	if configFile == DefaultConfigFile {
 		//System not support ~ dir, need Init manually.
@@ -148,7 +151,7 @@ func defaultInit(host host.Host) (err error) {
 
 //todo, wyong, 20201022 
 // Init defines init process for client.
-func Init(host host.Host, configFile string, masterKey []byte) (err error) {
+func Init(host net.RoutedHost, configFile string, masterKey []byte) (err error) {
 	if !atomic.CompareAndSwapUint32(&driverInitialized, 0, 1) {
 		err = ErrAlreadyInitialized
 		return
@@ -181,7 +184,7 @@ func Init(host host.Host, configFile string, masterKey []byte) (err error) {
 
 //todo, wyong, 20200728 
 // CreateDomain sends create domain operation to presbyterian.
-func CreateDomain(host host.Host, meta ResourceMeta) (txHash hash.Hash, /* dsn string, wyong, 20200816  */  err error) {
+func CreateDomain(host net.RoutedHost, meta ResourceMeta) (txHash hash.Hash, /* dsn string, wyong, 20200816  */  err error) {
 	//if atomic.LoadUint32(&driverInitialized) == 0 {
 	//	err = ErrNotInitialized
 	//	return
@@ -195,24 +198,32 @@ func CreateDomain(host host.Host, meta ResourceMeta) (txHash hash.Hash, /* dsn s
 		privateKey *asymmetric.PrivateKey
 		clientAddr proto.AccountAddress
 	)
+
+	fmt.Printf("client/CreateDomain(10)\n") 
 	if privateKey, err = kms.GetLocalPrivateKey(); err != nil {
 		err = errors.Wrap(err, "get local private key failed")
+		fmt.Printf("client/CreateDomain(15), err=%s\n", err ) 
 		return
 	}
+	fmt.Printf("client/CreateDomain(20)\n") 
 	if clientAddr, err = crypto.PubKeyHash(privateKey.PubKey()); err != nil {
 		err = errors.Wrap(err, "get local account address failed")
+		fmt.Printf("client/CreateDomain(25), err=%s\n", err ) 
 		return
 	}
+	fmt.Printf("client/CreateDomain(30)\n") 
 	// allocate nonce
 	nonceReq.Addr = clientAddr
 
 	//wyong, 20201108 
 	//wyong, 20201021 
-	if err = host.(net.RoutedHost).RequestPB(route.MCCNextAccountNonce.String(), nonceReq, nonceResp); err != nil {
+	if err = host.RequestPB("MCC.NextAccountNonce", &nonceReq, &nonceResp); err != nil {
 		err = errors.Wrap(err, "allocate create database transaction nonce failed")
+		fmt.Printf("client/CreateDomain(35), err=%s\n", err ) 
 		return
 	}
 
+	fmt.Printf("client/CreateDomain(40)\n") 
 	if meta.GasPrice == 0 {
 		meta.GasPrice = DefaultGasPrice
 	}
@@ -220,6 +231,7 @@ func CreateDomain(host host.Host, meta ResourceMeta) (txHash hash.Hash, /* dsn s
 		meta.AdvancePayment = DefaultAdvancePayment
 	}
 
+	fmt.Printf("client/CreateDomain(50)\n") 
 	req.TTL = 1
 	req.Tx = types.NewCreateDomain(&types.CreateDomainHeader{
 		Owner: clientAddr,
@@ -246,29 +258,35 @@ func CreateDomain(host host.Host, meta ResourceMeta) (txHash hash.Hash, /* dsn s
 		Nonce:          nonceResp.Nonce,
 	})
 
+	fmt.Printf("client/CreateDomain(60)\n") 
 	if err = req.Tx.Sign(privateKey); err != nil {
 		err = errors.Wrap(err, "sign request failed")
+		fmt.Printf("client/CreateDomain(65), err=%s\n", err ) 
 		return
 	}
 
+	fmt.Printf("client/CreateDomain(70)\n") 
 	//wyong, 20201108 
 	//wyong, 20201021 
-	if err = host.(net.RoutedHost).RequestPB(route.MCCAddTx.String(), req, resp); err != nil {
+	if err = host.RequestPB("MCC.AddTx", &req, &resp); err != nil {
 		err = errors.Wrap(err, "call create database transaction failed")
+		fmt.Printf("client/CreateDomain(75), err=%s\n", err ) 
 		return
 	}
 
+	fmt.Printf("client/CreateDomain(80)\n") 
 	txHash = req.Tx.Hash()
 
 	//cfg := NewConfig()
 	//cfg.DomainID = string(proto.FromAccountAndNonce(clientAddr, uint32(nonceResp.Nonce)))
 	//dsn = cfg.FormatDSN()
 
+	fmt.Printf("client/CreateDomain(90)\n") 
 	return
 }
 
 // WaitDomainCreation waits for domain creation complete.
-func WaitDomainCreation(ctx context.Context, host host.Host, dsn string) (err error) {
+func WaitDomainCreation(ctx context.Context, host net.RoutedHost, dsn string) (err error) {
 	// wyong, 20200816 
 	//dsnCfg, err := ParseDSN(dsn)
 	//if err != nil {
@@ -290,7 +308,7 @@ func WaitDomainCreation(ctx context.Context, host host.Host, dsn string) (err er
 // WaitPBDomainCreation waits for database creation complete.
 func WaitPBDomainCreation(
 	ctx context.Context,
-	host host.Host, //wyong, 20201008 
+	host net.RoutedHost, //wyong, 20201008 
 	domainID proto.DomainID,
 	//db *sql.DB, wyong, 20200816 
 	period time.Duration,
@@ -316,7 +334,7 @@ func WaitPBDomainCreation(
 			count++
 
 			//wyong, 20201108 
-			if err = host.(net.RoutedHost).RequestPB(route.MCCQuerySQLChainProfile.String(), req, resp,); err != nil {
+			if err = host.RequestPB("MCC.QuerySQLChainProfile", &req, &resp,); err != nil {
 				fmt.Printf("WaitPBDomainCreation(40)\n") 
 				if !strings.Contains(err.Error(), pb.ErrDatabaseNotFound.Error()) {
 					// err != nil && err != ErrDatabaseNotFound (unexpected error)
@@ -397,7 +415,7 @@ func GetTokenBalance(tt types.TokenType) (balance uint64, err error) {
 	}
 	req.TokenType = tt
 
-	if err = net.RequestPB(route.MCCQueryAccountTokenBalance, req, resp); err == nil {
+	if err = net.RequestPB("MCC.QueryAccountTokenBalance", &req, &resp); err == nil {
 		if !resp.OK {
 			err = ErrNoSuchTokenBalance
 			return
@@ -451,7 +469,7 @@ func UpdatePermission(targetUser proto.AccountAddress,
 	addTxReq := new(types.AddTxReq)
 	addTxResp := new(types.AddTxResp)
 	addTxReq.Tx = up
-	err = net.RequestPB(route.MCCAddTx, addTxReq, addTxResp)
+	err = net.RequestPB("MCC.AddTx", &addTxReq, &addTxResp)
 	if err != nil {
 		log.WithError(err).Warning("send tx failed")
 		return
@@ -506,7 +524,7 @@ func TransferToken(targetUser proto.AccountAddress, amount uint64, tokenType typ
 	addTxReq := new(types.AddTxReq)
 	addTxResp := new(types.AddTxResp)
 	addTxReq.Tx = tran
-	err = net.RequestPB(route.MCCAddTx, addTxReq, addTxResp)
+	err = net.RequestPB("MCC.AddTx", &addTxReq, &addTxResp)
 	if err != nil {
 		log.WithError(err).Warning("send tx failed")
 		return
@@ -521,11 +539,11 @@ func TransferToken(targetUser proto.AccountAddress, amount uint64, tokenType typ
 // WaitTxConfirmation waits for the transaction with target hash txHash to be confirmed. It also
 // returns if any error occurs or a final state is returned from BP.
 func WaitTxConfirmation(
-	ctx context.Context, host host.Host, txHash hash.Hash) (state interfaces.TransactionState, err error,
+	ctx context.Context, host net.RoutedHost, txHash hash.Hash) (state interfaces.TransactionState, err error,
 ) {
 	var (
 		ticker = time.NewTicker(1 * time.Second)
-		method = route.MCCQueryTxState
+		//method = route.MCCQueryTxState
 		req    = &types.QueryTxStateReq{Hash: txHash}
 		resp   = &types.QueryTxStateResp{}
 		count  = 0
@@ -534,8 +552,8 @@ func WaitTxConfirmation(
 	defer fmt.Printf("\n")
 	for {
 		//wyong, 20201108 
-		if err = host.(net.RoutedHost).RequestPB(method.String(), req, resp); err != nil {
-			err = errors.Wrapf(err, "failed to call %s", method)
+		if err = host.RequestPB("MCC.QueryTxState", req, resp); err != nil {
+			err = errors.Wrapf(err, "failed to call %s", "MCC.QueryTxState" )
 			return
 		}
 
@@ -574,7 +592,7 @@ func getNonce(addr proto.AccountAddress) (nonce interfaces.AccountNonce, err err
 	nonceReq := new(types.NextAccountNonceReq)
 	nonceResp := new(types.NextAccountNonceResp)
 	nonceReq.Addr = addr
-	err = net.RequestPB(route.MCCNextAccountNonce, nonceReq, nonceResp)
+	err = net.RequestPB(route.MCCNextAccountNonce, &nonceReq, &nonceResp)
 	if err != nil {
 		log.WithError(err).Warning("get nonce failed")
 		return
@@ -596,7 +614,7 @@ func getNonce(addr proto.AccountAddress) (nonce interfaces.AccountNonce, err err
 //}
 
 //wyong, 20201021 
-func registerNode(host host.Host ) (err error) {
+func registerNode(host net.RoutedHost ) (err error) {
 	var nodeID proto.NodeID
 
 	if nodeID, err = kms.GetLocalNodeID(); err != nil {
@@ -610,13 +628,13 @@ func registerNode(host host.Host ) (err error) {
 
 	if nodeInfo.Role != proto.Leader && nodeInfo.Role != proto.Follower {
 		log.Infof("Self register to blockproducer: %v", conf.GConf.BP.NodeID)
-		err = host.(net.RoutedHost).PingPB(nodeInfo, conf.GConf.BP.NodeID)
+		err = host.PingPB(nodeInfo, conf.GConf.BP.NodeID)
 	}
 
 	return
 }
 
-func runPeerListUpdater(host host.Host ) (err error) {
+func runPeerListUpdater(host net.RoutedHost ) (err error) {
 	var privKey *asymmetric.PrivateKey
 	if privKey, err = kms.GetLocalPrivateKey(); err != nil {
 		return
@@ -672,7 +690,7 @@ func stopPeersUpdater() {
 	atomic.StoreUint32(&peersUpdaterRunning, 0)
 }
 
-func cacheGetPeers(host host.Host, domainID proto.DomainID, privKey *asymmetric.PrivateKey) (peers *proto.Peers, err error) {
+func cacheGetPeers(host net.RoutedHost, domainID proto.DomainID, privKey *asymmetric.PrivateKey) (peers *proto.Peers, err error) {
 	var ok bool
 	var rawPeers interface{}
 	var cacheHit bool
@@ -696,7 +714,7 @@ func cacheGetPeers(host host.Host, domainID proto.DomainID, privKey *asymmetric.
 }
 
 //wyong, 20201021 
-func getPeers(host host.Host, domainID proto.DomainID, privKey *asymmetric.PrivateKey) (peers *proto.Peers, err error) {
+func getPeers(host net.RoutedHost, domainID proto.DomainID, privKey *asymmetric.PrivateKey) (peers *proto.Peers, err error) {
 	defer func() {
 		log.WithFields(log.Fields{
 			"domain":    domainID,
@@ -704,12 +722,12 @@ func getPeers(host host.Host, domainID proto.DomainID, privKey *asymmetric.Priva
 		}).WithError(err).Debug("get peers for database")
 	}()
 
-	profileReq := &types.QuerySQLChainProfileReq{}
-	profileResp := &types.QuerySQLChainProfileResp{}
+	profileReq := types.QuerySQLChainProfileReq{}
+	profileResp := types.QuerySQLChainProfileResp{}
 	profileReq.DomainID = domainID
 
 	//wyong, 20201108 
-	err = host.(net.RoutedHost).RequestPB(route.MCCQuerySQLChainProfile.String(), profileReq, profileResp)
+	err = host.RequestPB("MCC.QuerySQLChainProfile", &profileReq, &profileResp)
 	if err != nil {
 		err = errors.Wrap(err, "get sqlchain profile failed in getPeers")
 		return

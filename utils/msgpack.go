@@ -37,6 +37,7 @@ func RegisterInterfaceToMsgPack(intf, impl reflect.Type) (err error) {
 // DecodeMsgPack reverses the encode operation on a byte slice input.
 func DecodeMsgPack(buf []byte, out interface{}) error {
 	dec := codec.NewDecoder(bytes.NewReader(buf), msgPackHandle)
+	//dec := codec.NewDecoderBytes(buf, msgPackHandle) 
 	return dec.Decode(out)
 }
 

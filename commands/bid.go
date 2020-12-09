@@ -13,14 +13,14 @@ import (
 
 	cmds "github.com/ipfs/go-ipfs-cmds"
 	cmdkit "github.com/ipfs/go-ipfs-cmdkit"
-	logging "github.com/ipfs/go-log"
+	//logging "github.com/ipfs/go-log"
 
 	//wyong, 20200802 
 	env "github.com/siegfried415/gdf-rebuild/env" 
 )
 
 
-var log = logging.Logger("core/commands/bidding")
+//var log = logging.Logger("core/commands/bidding")
 
 //type BidEntry struct {
 //	Name  string
@@ -261,7 +261,7 @@ Get all biddings :
 	//},
 
 	Run: func(req *cmds.Request, res cmds.ResponseEmitter, cmdenv cmds.Environment) error {
-		log.Debugf("CompletedBiddingGetCmd, Run() called...") 
+		//log.Debugf("CompletedBiddingGetCmd, Run() called...") 
 		//api, err := cmdenv.GetApi(env)
 		//if err != nil {
 		//	return err
@@ -322,7 +322,7 @@ Get all biddings :
 		//	return cmds.EmitOnce(res, &ResolvedPath{path.FromString(output.String())})
 		//}
 
-		log.Debugf("BidGetCmd, Run(10)") 
+		//log.Debugf("BidGetCmd, Run(10)") 
 		url := req.Arguments[0]
 		//if !IsURL(url){
 		//	return fmt.Errorf("unsupported url syntax: %s", url)
@@ -334,21 +334,21 @@ Get all biddings :
 		//	return err
 		//}
 
-		log.Debugf("BidGetCmd, Run(20)") 
+		//log.Debugf("BidGetCmd, Run(20)") 
 		ce := cmdenv.(*env.Env)
 		bids, err := ce.Frontera().GetBids(req.Context,  /* , opts... */ url )
 		if err != nil {
 			return err
 		}
 
-		log.Debugf("BidGetCmd, Run(20)") 
+		//log.Debugf("BidGetCmd, Run(20)") 
 		//output := make([]cid.Cid, len(bids))
 		for _, b := range bids{
 			//if v.Err != nil {
 			//	return err
 			//}
 			//if err := res.Emit(&ResolvedPath{path.FromString(v.Path.String())}); err != nil {
-			log.Debugf("BidGetCmd, Run(30), %s", b.GetCid()) 
+			//log.Debugf("BidGetCmd, Run(30), %s", b.GetCid()) 
 
 			if err := res.Emit(&BidResult{Cid: b.GetCid()}); err != nil  {
 				return err
@@ -356,7 +356,7 @@ Get all biddings :
 
 		}
 
-		log.Debugf("BidGetCmd, Run(40)") 
+		//log.Debugf("BidGetCmd, Run(40)") 
 		return nil
 	},
 

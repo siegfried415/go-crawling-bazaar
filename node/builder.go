@@ -74,6 +74,9 @@ import (
 
 	//wyong, 20201014 
         //"github.com/siegfried415/gdf-rebuild/wallet"
+
+	//just for test, wyong, 20201130 
+	crypto "github.com/siegfried415/gdf-rebuild/crypto" 
 )
 
 
@@ -219,6 +222,18 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
                 return nil, err 
         }
 
+	//NOTE,NOTE,NOTE, just for test , wyong, 20201130 
+        // Get accountAddress
+        var pubKey *asymmetric.PublicKey
+        if pubKey, err = kms.GetLocalPublicKey(); err != nil {
+                return nil, err 
+        }
+        accountAddr, err := crypto.PubKeyHash(pubKey)
+	if err != nil {
+                return nil, err 
+        }
+
+	fmt.Printf("node/build, accountAddr=%s\n", accountAddr.String()) 
 
 
 	//wyong, 20201027 
@@ -413,6 +428,9 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
 			err = errors.Wrap(err, "create new Frontera failed")
 			return nil, err 
 		}
+
+		//just for test, wyong, 20201206 
+		time.Sleep(time.Second * 3 ) // output correctly
 
 		if err = f.Init(); err != nil {
 			err = errors.Wrap(err, "init Frontera failed")

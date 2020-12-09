@@ -271,7 +271,7 @@ ackWorkerLoop:
 		
 		//wyong, 20201021 
 		var ackRes types.AckResponse
-		err = c.pCaller.RecvMsg(ctx, ackRes) 
+		err = c.pCaller.RecvMsg(ctx, &ackRes) 
 		if err != nil { 
 			log.WithError(err).Debug("receice ack response failed")
 			continue
@@ -376,7 +376,7 @@ func (c *pconn) close() error {
 
 	//wyong, 20201021 
 	var response types.Response
-	err = uc.pCaller.RecvMsg(ctx, response) 
+	err = uc.pCaller.RecvMsg(ctx, &response) 
 	if err != nil {
 		fmt.Printf("Client/Conn/sendUrlRequest(47), err=%s\n", err.Error()) 
 		return
@@ -522,7 +522,7 @@ func (c *Conn) PutUrlRequest(ctx context.Context, parent types.UrlRequest, reque
 
 	//wyong, 20201021 
 	var response types.UrlCidResponse
-	uc.pCaller.RecvMsg(ctx, response) 
+	uc.pCaller.RecvMsg(ctx, &response) 
 	if err != nil {
 		fmt.Printf("Client/Conn/sendUrlRequest(47), err=%s\n", err.Error()) 
 		return
@@ -866,7 +866,7 @@ func (c *Conn) sendQuery(ctx context.Context, queryType types.QueryType, queries
 
 	//wyong, 20201021 
 	var response types.Response
-	err = uc.pCaller.RecvMsg(ctx, response) 
+	err = uc.pCaller.RecvMsg(ctx, &response) 
 	if err != nil {
 		fmt.Printf("Client/Conn/sendUrlRequest(47), err=%s\n", err.Error()) 
 		return

@@ -33,7 +33,7 @@ import (
 	//"github.com/siegfried415/gdf-rebuild/consistent"
 	//"github.com/siegfried415/gdf-rebuild/kms"
 	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/route"
+	//"github.com/siegfried415/gdf-rebuild/route"
 
 	//wyong, 20201021 
 	//rpc "github.com/siegfried415/gdf-rebuild/rpc/mux"
@@ -210,7 +210,7 @@ func (s *KVServer) nonBlockingSync(node *proto.Node, origin proto.NodeID, ttl ui
 
 				//wyong, 20201021 
 				//_ = rpc.NewCaller().CallNodeWithContext(c, node, route.DHTGSetNode.String(), req, nil)
-				s, err := s.host.NewStreamExt(c, node, protocol.ID(route.DHTGSetNode.String()))
+				s, err := s.host.NewStreamExt(c, node, protocol.ID("DHTG.SetNode"))
 				if err != nil {
 					return
 				}
