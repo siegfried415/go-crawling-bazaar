@@ -22,7 +22,7 @@ import (
 
 	//wyong, 20201020
 	"github.com/libp2p/go-libp2p-core/protocol" 
-	"github.com/libp2p/go-libp2p-core/network" 
+	//"github.com/libp2p/go-libp2p-core/network" 
 	//"github.com/libp2p/go-libp2p-core/host" 
 
 	"github.com/siegfried415/gdf-rebuild/proto"
@@ -50,8 +50,8 @@ func NewMuxService(serviceName string, /* server *rpc.Server */ h net.RoutedHost
 
 	//wyong, 20200925 
 	//err = server.RegisterService(serviceName, service)
-        h.SetStreamHandler(protocol.ID("URLC.AdviseNewBlock"), service.AdviseNewBlockHandler)
-        h.SetStreamHandler(protocol.ID("URLC.FetchBlock"), service.FetchBlockHandler)
+        h.SetStreamHandlerExt(protocol.ID("URLC.AdviseNewBlock"), service.AdviseNewBlockHandler)
+        h.SetStreamHandlerExt(protocol.ID("URLC.FetchBlock"), service.FetchBlockHandler)
 
 	return
 }
@@ -95,7 +95,7 @@ type MuxFetchBlockResp struct {
 //wyong, 20201020
 // AdviseNewBlock is the RPC method to advise a new produced block to the target server.
 //func (ms *MuxService) AdviseNewBlockHandler(req *MuxAdviseNewBlockReq, resp *MuxAdviseNewBlockResp) error {
-func (ms *MuxService) AdviseNewBlockHandler(s network.Stream ) {
+func (ms *MuxService) AdviseNewBlockHandler(s net.Stream ) {
         //decode req with Messagepack, wyong, 20200928
         //var decReq MuxAdviseNewBlockReq 
         //dec := codec.NewDecoderBytes(req, new(codec.MsgpackHandle))
@@ -106,8 +106,8 @@ func (ms *MuxService) AdviseNewBlockHandler(s network.Stream ) {
         var req MuxAdviseNewBlockReq 
 
 	//wyong, 20201203 
-	ns := net.Stream{ Stream: s }
-        err := ns.RecvMsg(ctx, &req)
+	//ns := net.Stream{ Stream: s }
+        err := s.RecvMsg(ctx, &req)
         if err != nil {
                 return
         }
@@ -126,14 +126,14 @@ func (ms *MuxService) AdviseNewBlockHandler(s network.Stream ) {
 	v.(*ChainRPCService).AdviseNewBlock(&req.AdviseNewBlockReq, &resp.AdviseNewBlockResp)
 
 	//wyong, 20201203 
-        _, err = ns.SendMsg(ctx, &resp)
+        _, err = s.SendMsg(ctx, &resp)
 
 }
 
 //wyong, 20201020
 // FetchBlock is the RPC method to fetch a known block from the target server.
 //func (s *MuxService) FetchBlockHandler(req *MuxFetchBlockReq, resp *MuxFetchBlockResp) (err error) {
-func (ms *MuxService) FetchBlockHandler(s network.Stream) {
+func (ms *MuxService) FetchBlockHandler(s net.Stream) {
         //decode req with Messagepack, wyong, 20200928
         //var decReq MuxFetchBlockReq 
         //dec := codec.NewDecoderBytes(req, new(codec.MsgpackHandle))
@@ -145,8 +145,8 @@ func (ms *MuxService) FetchBlockHandler(s network.Stream) {
         var req MuxFetchBlockReq 
 
 	//wyong, 20201203 
-	ns := net.Stream{ Stream: s }
-        err := ns.RecvMsg(ctx, &req)
+	//ns := net.Stream{ Stream: s }
+        err := s.RecvMsg(ctx, &req)
         if err != nil {
                 return
         }
@@ -161,12 +161,12 @@ func (ms *MuxService) FetchBlockHandler(s network.Stream) {
 	if ! ok {
 		//return ErrUnknownMuxRequest
 		//bugfix, wyong, 20201206 
-        	_, err = ns.SendMsg(ctx, &resp)
+        	_, err = s.SendMsg(ctx, &resp)
 		return 
 	}
 
 	v.(*ChainRPCService).FetchBlock(&req.FetchBlockReq, &resp.FetchBlockResp)
 
 	//wyong, 20201203 
-        _, err = ns.SendMsg(ctx, &resp)
+        _, err = s.SendMsg(ctx, &resp)
 }

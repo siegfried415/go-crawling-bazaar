@@ -25,8 +25,8 @@ import (
 
 	//wyong, 20201020
 	//host "github.com/libp2p/go-libp2p-core/host"
+	//network "github.com/libp2p/go-libp2p-core/network"
 	protocol "github.com/libp2p/go-libp2p-core/protocol"
-	network "github.com/libp2p/go-libp2p-core/network"
 
 	"github.com/siegfried415/gdf-rebuild/proto"
 	//"github.com/siegfried415/gdf-rebuild/route"
@@ -79,10 +79,10 @@ func NewFronteraRPCService( serviceName string, /* server *mux.Server, direct *r
 	}
 	*/
 
-	h.SetStreamHandler( protocol.ID("FRT.UrlRequest"), service.UrlRequestHandler)
-	h.SetStreamHandler( protocol.ID("FRT.UrlCidRequest"), service.UrlCidRequestHandler) 
-	h.SetStreamHandler( protocol.ID("FRT.Bidding"), service.BiddingMessageHandler) 
-	h.SetStreamHandler( protocol.ID("FRT.Bid"), service.BidMessageHandler) 
+	h.SetStreamHandlerExt( protocol.ID("FRT.UrlRequest"), service.UrlRequestHandler)
+	h.SetStreamHandlerExt( protocol.ID("FRT.UrlCidRequest"), service.UrlCidRequestHandler) 
+	h.SetStreamHandlerExt( protocol.ID("FRT.Bidding"), service.BiddingMessageHandler) 
+	h.SetStreamHandlerExt( protocol.ID("FRT.Bid"), service.BidMessageHandler) 
 	
 	dbQuerySuccCounter = metrics.NewMeter()
 	metrics.Register("db-query-succ", dbQuerySuccCounter)
@@ -96,7 +96,7 @@ func NewFronteraRPCService( serviceName string, /* server *mux.Server, direct *r
 //wyong, 20201020 
 func (rpc *FronteraRPCService) UrlRequestHandler (
 	//req *types.UrlRequestMessage , res *types.UrlResponse) (err error
-	s network.Stream, 
+	s net.Stream, 
 ) {
 	//todo, turn urlrequest from client to bidding whose target are random selected crawlers. 
 	fmt.Printf("FronteraRPCService/ReceiveUrlRequest called\n") 
@@ -112,9 +112,9 @@ func (rpc *FronteraRPCService) UrlRequestHandler (
         var req types.UrlRequestMessage 
 
 	//wyong, 20201203
-	ns := net.Stream{ Stream: s }
+	//ns := net.Stream{ Stream: s }
 
-        err := ns.RecvMsg(ctx, &req)
+        err := s.RecvMsg(ctx, &req)
         if err != nil {
                 return
         }
@@ -128,7 +128,7 @@ func (rpc *FronteraRPCService) UrlRequestHandler (
 	}
 
 	//*res = *r
-        ns.SendMsg(ctx, res)
+        s.SendMsg(ctx, res)
 
 	//return nil 
 }
@@ -136,7 +136,7 @@ func (rpc *FronteraRPCService) UrlRequestHandler (
 //wyong, 20201020 
 func (rpc *FronteraRPCService) UrlCidRequestHandler ( 
 	//req *types.UrlCidRequestMessage, res *types.UrlCidResponse) (err error
-	s network.Stream, 
+	s net.Stream, 
 ) {
 
 	//todo, turn urlrequest from client to bidding whose target are random selected crawlers. 
@@ -153,8 +153,9 @@ func (rpc *FronteraRPCService) UrlCidRequestHandler (
         var req types.UrlCidRequestMessage 
 
 	//wyong, 20201203
-	ns := net.Stream{ Stream: s }
-        err := ns.RecvMsg(ctx, &req)
+	//ns := net.Stream{ Stream: s }
+
+        err := s.RecvMsg(ctx, &req)
         if err != nil {
                 return
         }
@@ -167,14 +168,14 @@ func (rpc *FronteraRPCService) UrlCidRequestHandler (
 
 	//*res = *r
 
-        ns.SendMsg(ctx, res)
+        s.SendMsg(ctx, res)
 	//return
 }
 
 //wyong, 20201020 
 func (rpc *FronteraRPCService) BiddingMessageHandler (
 	//req *types.UrlBiddingMessage, res *types.Response) (err error
-	s network.Stream, 
+	s net.Stream, 
 ) {
         fmt.Printf("FronteraRPCService/ReceiveBiddingMessage called\n")
         //atomic.AddUint64(&bs.counters.messagesRecvd, 1)
@@ -190,8 +191,9 @@ func (rpc *FronteraRPCService) BiddingMessageHandler (
         var req types.UrlBiddingMessage 
 
 	//wyong, 20201203
-	ns := net.Stream{ Stream: s }
-        err := ns.RecvMsg(ctx, &req)
+	//ns := net.Stream{ Stream: s }
+
+        err := s.RecvMsg(ctx, &req)
         if err != nil {
                 return
         }
@@ -207,7 +209,7 @@ func (rpc *FronteraRPCService) BiddingMessageHandler (
 //wyong, 20201020 
 func (rpc *FronteraRPCService) BidMessageHandler ( 
 	//req *types.UrlBidMessage, res *types.Response) (err error
-	s network.Stream, 
+	s net.Stream, 
 ) {
         fmt.Printf("FronteraRPCService/ReceiveBidMessage called\n")
 
@@ -222,8 +224,9 @@ func (rpc *FronteraRPCService) BidMessageHandler (
         var req types.UrlBidMessage 
 
 	//wyong, 20201203
-	ns := net.Stream{ Stream: s }
-        err := ns.RecvMsg(ctx, &req)
+	//ns := net.Stream{ Stream: s }
+
+        err := s.RecvMsg(ctx, &req)
         if err != nil {
                 return
         }

@@ -251,6 +251,21 @@ func (rh RoutedHost) EventBus() event.Bus {
 	return rh.host.EventBus()
 }
 
+//wyong, 20201210 
+// StreamHandler is the type of function used to listen for
+// streams opened by the remote side.
+type StreamHandler func(Stream)
+
+//wyong, 20201210 
+func (rh RoutedHost) SetStreamHandlerExt(pid protocol.ID, handler StreamHandler) {
+	sh := func(s network.Stream) {
+		ns := Stream{Stream: s }
+		handler(ns)
+	}
+
+	rh.host.SetStreamHandler(pid, sh )
+}
+
 func (rh RoutedHost) SetStreamHandler(pid protocol.ID, handler network.StreamHandler) {
 	rh.host.SetStreamHandler(pid, handler)
 }

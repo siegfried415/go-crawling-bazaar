@@ -23,7 +23,7 @@ import (
 	//wyong, 20201102 
         //host "github.com/libp2p/go-libp2p-core/host"
         protocol "github.com/libp2p/go-libp2p-core/protocol"
-        network "github.com/libp2p/go-libp2p-core/network"
+        //network "github.com/libp2p/go-libp2p-core/network"
 
 	//"github.com/siegfried415/gdf-rebuild/conf"
 	"github.com/siegfried415/gdf-rebuild/net/consistent"
@@ -58,10 +58,10 @@ func NewDHTService(h RoutedHost, DHTStorePath string, persistImpl consistent.Per
 	s, err = NewDHTServiceWithRing(c)
 
 	//wyong, 20201102 
-	h.SetStreamHandler( protocol.ID("DHT.Nil"), s.NilHandler)
-	h.SetStreamHandler( protocol.ID("DHT.FindNode"), s.FindNodeHandler)
-	h.SetStreamHandler( protocol.ID("DHT.FindNeighbor"), s.FindNeighborHandler)
-	h.SetStreamHandler( protocol.ID("DHT.Ping"), s.PingHandler)
+	h.SetStreamHandlerExt( protocol.ID("DHT.Nil"), s.NilHandler)
+	h.SetStreamHandlerExt( protocol.ID("DHT.FindNode"), s.FindNodeHandler)
+	h.SetStreamHandlerExt( protocol.ID("DHT.FindNeighbor"), s.FindNeighborHandler)
+	h.SetStreamHandlerExt( protocol.ID("DHT.Ping"), s.PingHandler)
 	
 	return 
 }
@@ -69,7 +69,7 @@ func NewDHTService(h RoutedHost, DHTStorePath string, persistImpl consistent.Per
 // Nil RPC does nothing just for probe.
 func (DHT *DHTService) NilHandler(
 	//req *interface{}, resp *interface{}) (err error
-	s network.Stream, 
+	s Stream, 
 ) {
 	return
 }
@@ -80,15 +80,15 @@ func (DHT *DHTService) NilHandler(
 // FindNode RPC returns node with requested node id from DHT.
 func (DHT *DHTService) FindNodeHandler(
 	//req *proto.FindNodeReq, resp *proto.FindNodeResp) (err error
-	s network.Stream ,
+	s Stream ,
 ) {
 
         ctx := context.Background()
         var req proto.FindNodeReq 
 
 	//wyong, 20201118 
-	ns := Stream{ Stream: s } 
-        err := ns.RecvMsg(ctx, &req)
+	//ns := Stream{ Stream: s } 
+        err := s.RecvMsg(ctx, &req)
         if err != nil {
                 return
         }
@@ -112,21 +112,21 @@ func (DHT *DHTService) FindNodeHandler(
 		Node : node ,
 	}
 
-        ns.SendMsg(ctx, &resp)
+        s.SendMsg(ctx, &resp)
 	return
 }
 
 // FindNeighbor RPC returns FindNeighborReq.Count closest node from DHT.
 func (DHT *DHTService) FindNeighborHandler(
 	//req *proto.FindNeighborReq, resp *proto.FindNeighborResp) (err error
-	s network.Stream,
+	s Stream,
 ) {
         ctx := context.Background()
         var req proto.FindNeighborReq 
 
 	//wyong, 20201118 
-	ns := Stream{ Stream: s } 
-        err := ns.RecvMsg(ctx, &req)
+	//ns := Stream{ Stream: s } 
+        err := s.RecvMsg(ctx, &req)
         if err != nil {
                 return
         }
@@ -155,14 +155,14 @@ func (DHT *DHTService) FindNeighborHandler(
 		"req":        req,
 	}).Debug("found nodes for find neighbor request")
 
-        ns.SendMsg(ctx, &resp)
+        s.SendMsg(ctx, &resp)
 	return
 }
 
 // Ping RPC adds PingReq.Node to DHT.
 func (DHT *DHTService) PingHandler(
 	//req *proto.PingReq, resp *proto.PingResp) (err error
-	s network.Stream,
+	s Stream,
 ) {
 	//log.Debugf("got ping req, Yeah!")
 	fmt.Printf("DHTService/PingHandler(10),got ping req, Yeah!\n")
@@ -171,8 +171,8 @@ func (DHT *DHTService) PingHandler(
         var req proto.PingReq 
 
 	//wyong, 20201118 
-	ns := Stream{ Stream: s } 
-        err := ns.RecvMsg(ctx, &req)
+	//ns := Stream{ Stream: s } 
+        err := s.RecvMsg(ctx, &req)
         //if err != nil {
 	//	fmt.Printf("DHTService/PingHandler(15), err=%s\n", err )
         //      return
@@ -222,7 +222,7 @@ func (DHT *DHTService) PingHandler(
 		resp := proto.PingResp {
 			Msg: "Pong",
 		}
-        	ns.SendMsg(ctx, &resp)
+        	s.SendMsg(ctx, &resp)
 	}
 
 	fmt.Printf("DHTService/PingHandler(50)\n")

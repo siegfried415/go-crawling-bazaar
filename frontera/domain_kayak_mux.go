@@ -29,8 +29,8 @@ import (
 	net "github.com/siegfried415/gdf-rebuild/net"
 
 	//wyong, 20201020
-	"github.com/libp2p/go-libp2p-core/network"
-	"github.com/libp2p/go-libp2p-core/host"
+	//"github.com/libp2p/go-libp2p-core/network"
+	//"github.com/libp2p/go-libp2p-core/host"
 
 	//wyong, 20200928 
 	//"github.com/ugorji/go/codec"
@@ -54,15 +54,15 @@ type DomainKayakMuxService struct {
 }
 
 // NewDomainKayakMuxService returns a new kayak mux service.
-func NewDomainKayakMuxService(serviceName string, /* server *rpc.Server */ h host.Host ) (s *DomainKayakMuxService, err error) {
+func NewDomainKayakMuxService(serviceName string, /* server *rpc.Server */ h net.RoutedHost ) (s *DomainKayakMuxService, err error) {
 	s = &DomainKayakMuxService{
 		serviceName: serviceName,
 	}
 
 	//wyong, 20200925 
 	//err = server.RegisterService(serviceName, s)
-	h.SetStreamHandler(ProtocolKayakApply, s.ApplyHandler)
-	h.SetStreamHandler(ProtocolKayakFetch, s.FetchHandler) 
+	h.SetStreamHandlerExt(ProtocolKayakApply, s.ApplyHandler)
+	h.SetStreamHandlerExt(ProtocolKayakFetch, s.FetchHandler) 
 
 	return
 }
@@ -79,7 +79,7 @@ func (s *DomainKayakMuxService) unregister(id proto.DomainID) {
 //wyong, 20201020 
 // Apply handles kayak apply call.
 //func (s *DomainKayakMuxService) ApplyHandler(req *kt.ApplyRequest,  _ *interface{}) (err error) {
-func (ks *DomainKayakMuxService) ApplyHandler(s network.Stream ) {
+func (ks *DomainKayakMuxService) ApplyHandler(s net.Stream ) {
 	//decode req with Messagepack, wyong, 20200928 
 	//var decReq kt.ApplyRequest 
         //dec := codec.NewDecoderBytes(req, new(codec.MsgpackHandle))
@@ -88,7 +88,8 @@ func (ks *DomainKayakMuxService) ApplyHandler(s network.Stream ) {
         //}
         ctx := context.Background()
         var req kt.ApplyRequest  
-        err := s.(net.Stream).RecvMsg(ctx, &req)
+
+        err := s.RecvMsg(ctx, &req)
         if err != nil {
                 return
         }
@@ -108,10 +109,11 @@ func (ks *DomainKayakMuxService) ApplyHandler(s network.Stream ) {
 
 // Fetch handles kayak fetch call.
 //func (s *DomainKayakMuxService) FetchHandler(req *kt.FetchRequest, resp *kt.FetchResponse) (err error) {
-func (ks *DomainKayakMuxService) FetchHandler(s network.Stream) {
+func (ks *DomainKayakMuxService) FetchHandler(s net.Stream) {
         ctx := context.Background()
         var req kt.FetchRequest  
-        err := s.(net.Stream).RecvMsg(ctx, &req)
+
+        err := s.RecvMsg(ctx, &req)
         if err != nil {
                 return
         }
@@ -134,7 +136,7 @@ func (ks *DomainKayakMuxService) FetchHandler(s network.Stream) {
 		Instance : req.Instance ,
 	}
 
-        s.(net.Stream).SendMsg(ctx, &resp)
+        s.SendMsg(ctx, &resp)
 	//return
 
 }
