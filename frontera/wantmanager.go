@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 	"time"
-	"fmt"
+	//"fmt"
 
 	//engine "github.com/siegfried415/gdf-rebuild/frontera/decision"
 
@@ -42,6 +42,9 @@ import (
 
 	//wyong, 20200928
 	//"github.com/ugorji/go/codec"
+
+	//wyong, 20201215 
+	log "github.com/siegfried415/gdf-rebuild/utils/log" 
 )
 
 type WantManager struct {
@@ -136,11 +139,11 @@ func (pm *WantManager) waitBidResult(ctx context.Context, dc chan bool ) bool {
 	var result bool = false 
 	select {
 	case result = <-dc :
-		fmt.Printf("WantManager/waitBidResult, result = <- dc\n")
+		log.Debugf("WantManager/waitBidResult, result = <- dc\n")
 	case <-pm.ctx.Done():
-		fmt.Printf("WantManager/waitBidResult, <-pm.ctx.Done()\n")
+		log.Debugf("WantManager/waitBidResult, <-pm.ctx.Done()\n")
 	case <-ctx.Done():
-		fmt.Printf("WantManager/waitBidResult, <-ctx.Done()\n")
+		log.Debugf("WantManager/waitBidResult, <-ctx.Done()\n")
 	}
 	return result 
 }
@@ -157,12 +160,12 @@ func (pm *WantManager) ReceiveBidForWants(ctx context.Context, url string, /* bi
 					from : from, 
 					domain: domain, 
 				}:
-		fmt.Printf("WantManager/receiveBidForWant, pm.bidIncoming <- &bidSet\n")
+		log.Debugf("WantManager/receiveBidForWant, pm.bidIncoming <- &bidSet\n")
 	case <-pm.ctx.Done():
-		fmt.Printf("WantManager/receiveBidForWant, <-pm.ctx.Done()\n")
+		log.Debugf("WantManager/receiveBidForWant, <-pm.ctx.Done()\n")
 		return false 
 	case <-ctx.Done():
-		fmt.Printf("WantManager/receiveBidForWant, <-ctx.Done()\n")
+		log.Debugf("WantManager/receiveBidForWant, <-ctx.Done()\n")
 		return false 
 	}
 
@@ -184,7 +187,7 @@ type bidSet struct {
 
 // WantBlocks adds the given cids to the wantlist, tracked by the given domain 
 func (pm *WantManager) WantUrls(ctx context.Context, urls []string, peers []proto.NodeID, domain proto.DomainID) {
-	fmt.Printf("WantManager/WantUrls(10), want blocks: %s\n", urls)
+	log.Debugf("WantManager/WantUrls(10), want blocks: %s\n", urls)
 	pm.addEntries(ctx, urls, peers, false, domain)
 }
 
@@ -201,11 +204,11 @@ type wantSet struct {
 }
 
 func (pm *WantManager) addEntries(ctx context.Context, urls []string, targets []proto.NodeID, cancel bool, domain proto.DomainID) {
-	fmt.Printf("WantManager/addEntries(0)\n")
+	log.Debugf("WantManager/addEntries(0)\n")
 
 	entries := make( /* []*bsmsg.BiddingEntry wyong, 20200827 */ []types.UrlBidding , 0, len(urls))
 	for _, url := range urls {
-		fmt.Printf("WantManager/addEntries(10), process url=%s\n", url )
+		log.Debugf("WantManager/addEntries(10), process url=%s\n", url )
 		entries = append(entries,  /* &bsmsg.BiddingEntry */ types.UrlBidding {
 			//wyong, 20200827 	
 			//Cancel: cancel,
@@ -216,16 +219,16 @@ func (pm *WantManager) addEntries(ctx context.Context, urls []string, targets []
 	}
 	select {
 	case pm.incoming <- &wantSet{entries: entries, targets: targets, domain: domain }:
-		fmt.Printf("WantManager/addEntries(20), pm.incoming <- &wantSet\n")
+		log.Debugf("WantManager/addEntries(20), pm.incoming <- &wantSet\n")
 	case <-pm.ctx.Done():
-		fmt.Printf("WantManager/addEntries(30), <-pm.ctx.Done()\n")
+		log.Debugf("WantManager/addEntries(30), <-pm.ctx.Done()\n")
 	case <-ctx.Done():
-		fmt.Printf("WantManager/addEntries(40), <-ctx.Done()")
+		log.Debugf("WantManager/addEntries(40), <-ctx.Done()")
 	}
 }
 
 func (pm *WantManager) ConnectedPeers() []proto.NodeID {
-	fmt.Printf("WantManager/ConnectedPeers (10)\n")
+	log.Debugf("WantManager/ConnectedPeers (10)\n")
 	resp := make(chan []proto.NodeID)
 	pm.peerReqs <- resp
 	return <-resp
@@ -233,7 +236,7 @@ func (pm *WantManager) ConnectedPeers() []proto.NodeID {
 
 
 func (pm *WantManager) SendBids(ctx context.Context, msg *types.UrlBidMessage ) {
-	fmt.Printf("WantManager/SendBids(10)\n")
+	log.Debugf("WantManager/SendBids(10)\n")
 	// Blocks need to be sent synchronously to maintain proper backpressure
 	// throughout the network stack
 	//defer env.Sent()
@@ -268,16 +271,16 @@ func (pm *WantManager) SendBids(ctx context.Context, msg *types.UrlBidMessage ) 
 
 	//wyong, 20200827 
 	target := msg.Header.UrlBidHeader.Target 
-	fmt.Printf("WantManager/SendBids(12), target =%s\n", target )
+	log.Debugf("WantManager/SendBids(12), target =%s\n", target )
 
 	//bugfix, wyong, 20201208 
 	//if target.IsEmpty() {
 	if string(target) == "" { 
-		fmt.Printf("WantManager/SendBids(15), target is empty\n")
+		log.Debugf("WantManager/SendBids(15), target is empty\n")
 		return
 	}
 
-	fmt.Printf("WantManager/SendBids(20), target=%s\n", target )
+	log.Debugf("WantManager/SendBids(20), target=%s\n", target )
 	//caller = mux.NewPersistentCaller(target) 
 	s, err := pm.host.NewStreamExt(ctx, target, protocol.ID("FRT.Bid"))
 	if err != nil {
@@ -287,7 +290,7 @@ func (pm *WantManager) SendBids(ctx context.Context, msg *types.UrlBidMessage ) 
         //var response types.Response
 	//err := caller.Call(route.FronteraBid.String(), msg, &response ) 
 	//if err == nil {
-	//	fmt.Printf("WantManager/SendBids(25), err=%s\n", err.Error())
+	//	log.Debugf("WantManager/SendBids(25), err=%s\n", err.Error())
 	//	return
 	//}
 
@@ -296,7 +299,7 @@ func (pm *WantManager) SendBids(ctx context.Context, msg *types.UrlBidMessage ) 
                 return 
         }
 
-	fmt.Printf("WantManager/SendBids(30)\n")
+	log.Debugf("WantManager/SendBids(30)\n")
 
 	//todo, wyong, 20200925 
 
@@ -310,7 +313,7 @@ func (pm *WantManager) SendBids(ctx context.Context, msg *types.UrlBidMessage ) 
 
 
 func (pm *WantManager) startPeerHandler(p proto.NodeID) *msgQueue {
-	fmt.Printf("WantManager/startPeerHandler(10)\n")
+	log.Debugf("WantManager/startPeerHandler(10)\n")
 
 	mq, ok := pm.peers[p]
 	if ok {
@@ -364,7 +367,7 @@ func (pm *WantManager) startPeerHandler(p proto.NodeID) *msgQueue {
 }
 
 func (pm *WantManager) stopPeerHandler(p proto.NodeID) {
-	fmt.Printf("WantManager/stopPeerHandler(10)\n")
+	log.Debugf("WantManager/stopPeerHandler(10)\n")
 	pq, ok := pm.peers[p]
 	if !ok {
 		// TODO: log error?
@@ -408,7 +411,7 @@ func (mq *msgQueue) runQueue(ctx context.Context) {
 }
 
 func (mq *msgQueue) doWork(ctx context.Context) {
-	fmt.Printf("msgQueue/doWork(10)\n")
+	log.Debugf("msgQueue/doWork(10)\n")
 	// grab outgoing message
 	mq.outlk.Lock()
 	wlm := mq.out
@@ -419,25 +422,25 @@ func (mq *msgQueue) doWork(ctx context.Context) {
 	mq.out = types.UrlBiddingMessage{} //nil, wyong, 20200827 
 	mq.outlk.Unlock()
 
-	fmt.Printf("msgQueue/doWork(20)\n")
+	log.Debugf("msgQueue/doWork(20)\n")
 
 	// NB: only open a stream if we actually have data to send
 	if mq.sender == nil {
-		fmt.Printf("msgQueue/doWork(30)\n")
+		log.Debugf("msgQueue/doWork(30)\n")
 		err := mq.openSender(ctx)
 		if err != nil {
-			fmt.Printf("msgQueue/doWork(35)\n")
-			fmt.Printf("cant open message sender to peer %s: %s", mq.p, err)
+			log.Debugf("msgQueue/doWork(35)\n")
+			log.Debugf("cant open message sender to peer %s: %s", mq.p, err)
 			// TODO: cant connect, what now?
 			return
 		}
-		fmt.Printf("msgQueue/doWork(40)\n")
+		log.Debugf("msgQueue/doWork(40)\n")
 	}
 	
-	fmt.Printf("msgQueue/doWork(50)\n")
+	log.Debugf("msgQueue/doWork(50)\n")
 	// send wantlist updates
 	for { // try to send this message until we fail.
-		fmt.Printf("msgQueue/doWork(60)\n")
+		log.Debugf("msgQueue/doWork(60)\n")
 		
 		//wyong, 20200924 
 		//err := mq.sender.SendMsg(ctx, wlm)
@@ -445,7 +448,7 @@ func (mq *msgQueue) doWork(ctx context.Context) {
 		//err := mq.caller.Call(route.FronteraBidding.String(), wlm, &response ) 
 		_, err := (mq.sender).SendMsg(ctx, wlm)
 		if err == nil {
-			fmt.Printf("msgQueue/doWork(70)\n")
+			log.Debugf("msgQueue/doWork(70)\n")
 			return
 		}
 
@@ -454,27 +457,27 @@ func (mq *msgQueue) doWork(ctx context.Context) {
 		mq.sender.Reset()
 		mq.sender = nil
 
-		fmt.Printf("msgQueue/doWork(80)\n")
+		log.Debugf("msgQueue/doWork(80)\n")
 
 		select {
 		case <-mq.done:
-			fmt.Printf("msgQueue/doWork(90)\n")
+			log.Debugf("msgQueue/doWork(90)\n")
 			return
 		case <-ctx.Done():
-			fmt.Printf("msgQueue/doWork(100)\n")
+			log.Debugf("msgQueue/doWork(100)\n")
 			return
 		case <-time.After(time.Millisecond * 100):
-			fmt.Printf("msgQueue/doWork(110)\n")
+			log.Debugf("msgQueue/doWork(110)\n")
 			// wait 100ms in case disconnect notifications are still propogating
 			//log.Warning("SendMsg errored but neither 'done' nor context.Done() were set")
 		}
 
-		fmt.Printf("msgQueue/doWork(120)\n")
+		log.Debugf("msgQueue/doWork(120)\n")
 
 		err = mq.openSender(ctx)
 		if err != nil {
-			fmt.Printf("msgQueue/doWork(125)")
-			fmt.Printf("couldnt open sender again after SendMsg(%s) failed: %s\n", mq.p, err)
+			log.Debugf("msgQueue/doWork(125)")
+			log.Debugf("couldnt open sender again after SendMsg(%s) failed: %s\n", mq.p, err)
 			// TODO(why): what do we do now?
 			// I think the *right* answer is to probably put the message we're
 			// trying to send back, and then return to waiting for new work or
@@ -482,7 +485,7 @@ func (mq *msgQueue) doWork(ctx context.Context) {
 			return
 		}
 
-		fmt.Printf("msgQueue/doWork(130)\n")
+		log.Debugf("msgQueue/doWork(130)\n")
 
 		// TODO: Is this the same instance for the remote peer?
 		// If its not, we should resend our entire wantlist to them
@@ -501,28 +504,28 @@ func (mq *msgQueue) openSender(ctx context.Context ) error {
 	//defer cancel()
 
 	//log.Debugf("openSender(10)")
-	fmt.Printf("openSender(10)\n")
+	log.Debugf("openSender(10)\n")
 	//err := mq.network.ConnectTo(conctx, mq.p )
 
 	//wyong, 20201008 
 	//err := mq.host.Connect(ctx, pstore.PeerInfo{ID: peer.ID(mq.p)})
 	//if err != nil {
-	//	fmt.Printf("openSender(15)\n")
+	//	log.Debugf("openSender(15)\n")
 	//	return err
 	//}
 
 	//log.Debugf("openSender(20)")
-	fmt.Printf("openSender(20)\n")
+	log.Debugf("openSender(20)\n")
 	//todo, "gdf/frontera/bidding",  wyong, 20200924 
 	//nsender, err := mq.network.NewMessageSender(ctx, mq.p)
 	s, err := mq.host.NewStreamExt(ctx, mq.p, protocol.ID("FRT.Bidding"))
 	if err != nil {
-		fmt.Printf("openSender(25)\n")
+		log.Debugf("openSender(25)\n")
 		return err
 	}
 
 	//log.Debugf("openSender(30)")
-	fmt.Printf("openSender(30)\n")
+	log.Debugf("openSender(30)\n")
 	mq.sender = &s 
 
 	//if cfg.UseDirectRPC {
@@ -540,9 +543,9 @@ func (mq *msgQueue) openSender(ctx context.Context ) error {
 func (pm *WantManager) Connected(p proto.NodeID) {
 	select {
 	case pm.connectEvent <- peerStatus{peer: p, connect: true}:
-		fmt.Printf("WantManager/Connected, pm.connectEvent <- peerStatus\n")
+		log.Debugf("WantManager/Connected, pm.connectEvent <- peerStatus\n")
 	case <-pm.ctx.Done():
-		fmt.Printf("WantManager/Connected, <-pm.ctx.Done()\n")
+		log.Debugf("WantManager/Connected, <-pm.ctx.Done()\n")
 	}
 }
 
@@ -574,13 +577,13 @@ func (pm *WantManager) GetUncompletedBiddings() ([]*wantlist.BiddingEntry, error
 
 // TODO: use goprocess here once i trust it
 func (pm *WantManager) Run() {
-	fmt.Printf("WantManager/Run(10)\n")
+	log.Debugf("WantManager/Run(10)\n")
 	// NOTE: Do not open any streams or connections from anywhere in this
 	// event loop. Really, just don't do anything likely to block.
 	for {
 		select {
 		case bs := <-pm.bidIncoming:	//wyong, 20190119 
-			fmt.Printf("WantManager/Run(20), bs : <- pm.bidIncoming\n")
+			log.Debugf("WantManager/Run(20), bs : <- pm.bidIncoming\n")
 
 			url := bs.url 
 			bidding, _ := pm.wl.Contains(url)
@@ -628,7 +631,7 @@ func (pm *WantManager) Run() {
 			
 
 		case ws := <-pm.incoming:
-			fmt.Printf("WantManager/Run(30), ws : <- pm.incoming\n")
+			log.Debugf("WantManager/Run(30), ws : <- pm.incoming\n")
 			// is this a broadcast or not?
 			brdc := len(ws.targets) == 0
 
@@ -653,52 +656,52 @@ func (pm *WantManager) Run() {
 				}
 			}
 
-			fmt.Printf("WantManager/Run(40)\n")
+			log.Debugf("WantManager/Run(40)\n")
 			// broadcast those wantlist changes
 			if len(ws.targets) == 0 {
-				fmt.Printf("WantManager/Run(50) ")
+				log.Debugf("WantManager/Run(50) ")
 				for id, p := range pm.peers {
-					fmt.Printf("WantManager/Run(60), peer=%s\n", id )
+					log.Debugf("WantManager/Run(60), peer=%s\n", id )
 					p.addMessage(ws.entries, ws.domain , pm.nodeID )
 				}
 			} else {
-				fmt.Printf("WantManager/Run(70)\n")
+				log.Debugf("WantManager/Run(70)\n")
 				for _, t := range ws.targets {
-					fmt.Printf("WantManager/Run(80), target_node_id=%s\n", t)
+					log.Debugf("WantManager/Run(80), target_node_id=%s\n", t)
 					p, ok := pm.peers[t]
 					if !ok {
 						//todo, wyong, 20200825 
-						fmt.Printf("WantManager/Run(90)\n")
-						//fmt.Printf("tried sending wantlist change to non-partner peer: %s\n", t)
+						log.Debugf("WantManager/Run(90)\n")
+						//log.Debugf("tried sending wantlist change to non-partner peer: %s\n", t)
 						//continue
 						p = pm.startPeerHandler(t)
 					}
 
-					fmt.Printf("WantManager/Run(100)\n")
+					log.Debugf("WantManager/Run(100)\n")
 					p.addMessage(ws.entries, ws.domain, pm.nodeID )
 				}
-				fmt.Printf("WantManager/Run(110)\n")
+				log.Debugf("WantManager/Run(110)\n")
 			}
 
 		case p := <-pm.connectEvent:
-			fmt.Printf("WantManager/Run(120), P := <-pm.connectEvent\n")
+			log.Debugf("WantManager/Run(120), P := <-pm.connectEvent\n")
 			if p.connect {
-				fmt.Printf("WantManager/Run(130)\n")
+				log.Debugf("WantManager/Run(130)\n")
 				pm.startPeerHandler(p.peer)
 			} else {
-				fmt.Printf("WantManager/Run(140)\n")
+				log.Debugf("WantManager/Run(140)\n")
 				pm.stopPeerHandler(p.peer)
 			}
 		case req := <-pm.peerReqs:
-			fmt.Printf("WantManager/Run(150), req := <-pm.peerReqs\n")
+			log.Debugf("WantManager/Run(150), req := <-pm.peerReqs\n")
 			peers := make([]proto.NodeID, 0, len(pm.peers))
 			for p := range pm.peers {
-				fmt.Printf("WantManager/Run(160)\n")
+				log.Debugf("WantManager/Run(160)\n")
 				peers = append(peers, p)
 			}
 			req <- peers
 		case <-pm.ctx.Done():
-			fmt.Printf("WantManager/Run(170), <-pm.ctx.Done()\n")
+			log.Debugf("WantManager/Run(170), <-pm.ctx.Done()\n")
 			return
 		}
 	}
@@ -724,7 +727,7 @@ func (wm *WantManager) newMsgQueue(p proto.NodeID) *msgQueue {
 }
 
 func (mq *msgQueue) addMessage( entries /* []*bsmsg.BiddingEntry, */ []types.UrlBidding,  domain proto.DomainID, from proto.NodeID  ) {
-	fmt.Printf("msgQueue/addMessage(10)\n")
+	log.Debugf("msgQueue/addMessage(10)\n")
 	var work bool
 	mq.outlk.Lock()
 	defer func() {
@@ -738,7 +741,7 @@ func (mq *msgQueue) addMessage( entries /* []*bsmsg.BiddingEntry, */ []types.Url
 		}
 	}()
 
-	fmt.Printf("msgQueue/addMessage (20)\n")
+	log.Debugf("msgQueue/addMessage (20)\n")
 	// if we have no message held allocate a new one
 	//if mq.out == nil {
 	//	//wyong, 20200827 
@@ -765,25 +768,25 @@ func (mq *msgQueue) addMessage( entries /* []*bsmsg.BiddingEntry, */ []types.Url
 	}
 
 
-	fmt.Printf("msgQueue/addMessage (30)\n")
+	log.Debugf("msgQueue/addMessage (30)\n")
 
 	/* 
 	// TODO: add a msg.Combine(...) method
 	// otherwise, combine the one we are holding with the
 	// one passed in
 	for _, e := range entries {
-		fmt.Printf("msgQueue/addMessage (40)\n")
+		log.Debugf("msgQueue/addMessage (40)\n")
 		if e.Cancel {
-			fmt.Printf("msgQueue/addMessage(50)\n")
+			log.Debugf("msgQueue/addMessage(50)\n")
 			if mq.wl.Remove(e.Url, domain ) {
-				fmt.Printf("msgQueue/addMessage(60)")
+				log.Debugf("msgQueue/addMessage(60)")
 				work = true
 				mq.out.Cancel(e.Url)
 			}
 		} else {
-			fmt.Printf("msgQueue/addMessage (70)\n")
+			log.Debugf("msgQueue/addMessage (70)\n")
 			if mq.wl.Add(e.Url, e.Priority, domain ) {
-				fmt.Printf("msgQueue/addMessage (80)\n")
+				log.Debugf("msgQueue/addMessage (80)\n")
 				work = true
 
 				//TODO, review if necessary send cids , wyong, 20190119 

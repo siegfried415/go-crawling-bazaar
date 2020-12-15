@@ -8,6 +8,9 @@ import (
 	cmds "github.com/ipfs/go-ipfs-cmds"
 
 	"github.com/siegfried415/gdf-rebuild/flags"
+
+	//wyong, 20201215 
+	log "github.com/siegfried415/gdf-rebuild/utils/log"
 )
 
 type versionInfo struct {
@@ -20,7 +23,7 @@ var versionCmd = &cmds.Command{
 		Tagline: "Show go-filecoin version information",
 	},
 	Run: func(req *cmds.Request, re cmds.ResponseEmitter, env cmds.Environment) error {
-		fmt.Printf("versionCmd/Run(10)\n") 
+		log.Debugf("versionCmd/Run(10)\n") 
 		return re.Emit(&versionInfo{
 			Commit: flags.Commit,
 		})

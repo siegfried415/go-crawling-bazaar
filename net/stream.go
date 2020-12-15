@@ -42,8 +42,7 @@ type Stream struct {
 
 //wyong, 20200925 
 func (s Stream)SendMsg(ctx context.Context, msg interface{} ) (*bufio.Writer,  error) {
-	log.Debugf("Stream/SendMsg called...")
-	//fmt.Printf("Stream/SendMsg(10)\n") 
+	//log.Debugf("Stream/SendMsg called...")
 	
 	//deadline := time.Now().Add(sendMessageTimeout)
 	//if dl, ok := ctx.Deadline(); ok {
@@ -55,59 +54,49 @@ func (s Stream)SendMsg(ctx context.Context, msg interface{} ) (*bufio.Writer,  e
 	//	log.Warningf("error setting deadline: %s", err)
 	//}
 
-	log.Debugf("Stream/SendMsg(30), input msg=%s\n", msg ) 
+	//log.Debugf("Stream/SendMsg(30), input msg=%s\n", msg ) 
 	w := bufio.NewWriter(s.Stream)
 
 	//wyong, 20201119 
 	encMsg, err := utils.EncodeMsgPack(msg)
 	if err != nil {
-		//fmt.Printf("Stream/SendMsg(35), err=%s\n", err ) 
 		log.Debugf("Stream/SendMsg(35), err=%s\n", err ) 
 		return nil, err
 	}
 
-	log.Debugf("Stream/SendMsg(40), encMsg=%s\n", encMsg ) 
+	//log.Debugf("Stream/SendMsg(40), encMsg=%s\n", encMsg ) 
 
 
 	if _, err := w.Write(encMsg.Bytes()); err != nil { 
 		log.Debugf("Stream/SendMsg(45), error: %s", err)
-		//fmt.Printf("Stream/SendMsg(45), err=%s\n", err ) 
 		return nil, err
 	}
 
 
-	log.Debugf("Stream/SendMsg(50)\n") 
+	//log.Debugf("Stream/SendMsg(50)\n") 
 	if err := w.Flush(); err != nil {
 		log.Debugf("Stream/SendMsg(55), error: %s", err)
-		//fmt.Printf("Stream/SendMsg(55), err=%s\n", err ) 
 		return nil, err
 	}
 
-	//fmt.Printf("Stream/SendMsg(60)\n") 
+	//log.Debugf("Stream/SendMsg(60)\n") 
 	//if err := s.Stream.SetWriteDeadline(time.Time{}); err != nil {
 	//	log.Warningf("Stream/SendMsg(65), error resetting deadline: %s", err)
-	//	//fmt.Printf("Stream/SendMsg(65), err=%s\n", err ) 
+	//	//log.Debugf("Stream/SendMsg(65), err=%s\n", err ) 
 	//}
 
-	log.Debugf("Stream/SendMsg(70)\n") 
+	//log.Debugf("Stream/SendMsg(70)\n") 
 	return w, nil
 }
 
 //wyong, 20201018 
 func (s Stream)RecvMsg(ctx context.Context, resp interface{} ) error {
-	log.Debugf("Stream/RecvMsg(10)\n") 
-
+	//log.Debugf("Stream/RecvMsg(10)\n") 
 	reader := bufio.NewReader(s.Stream) 
 
 	//todo, is 1024 large enough?  wyong, 20201202 
 	var buf[8192]byte
 	n, err := reader.Read(buf[:]) //reader.ReadBytes()	
-	//if n <= 0  {
-	//	log.Debugf("Stream/RecvMsg(15), err=%s \n", err) 
-	//	return err 	
-	//} 
-
-	//buf, err := reader.ReadBytes('\n')
 	if err == io.EOF {
 		log.Debugf("Stream/RecvMsg(15), err=%s \n", err) 
 		return err 	
@@ -118,18 +107,15 @@ func (s Stream)RecvMsg(ctx context.Context, resp interface{} ) error {
 	}
 
 	//todo, what shoud we do if n == 8192, wyong, 20201202 
-
-	log.Debugf("Stream/RecvMsg(20), buf[:%d]=%s\n", n, buf[:n] ) 
-	//log.Debugf("Stream/RecvMsg(20), buf=%s\n", string(buf)) 
+	//log.Debugf("Stream/RecvMsg(20), buf[:%d]=%s\n", n, buf[:n] ) 
 
 	//todo, wyong, 20201202
 	err = utils.DecodeMsgPack(buf[:n], resp)
-	//err = utils.DecodeMsgPack(buf, &resp)
 	if err != nil {
 		log.Debugf("Stream/RecvMsg(25), err=%s \n", err) 
 		return err 	
 	} 
 
-	log.Debugf("Stream/RecvMsg(30), resp=%s\n", resp ) 
+	//log.Debugf("Stream/RecvMsg(30), resp=%s\n", resp ) 
 	return err 
 }

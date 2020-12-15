@@ -20,7 +20,7 @@ import (
 	"context"
 	//"database/sql"
 	//"database/sql/driver"
-	"fmt"
+	//"fmt"
 	"math/rand"
 	"strings"
 	"sync"
@@ -199,19 +199,19 @@ func CreateDomain(host net.RoutedHost, meta ResourceMeta) (txHash hash.Hash, /* 
 		clientAddr proto.AccountAddress
 	)
 
-	fmt.Printf("client/CreateDomain(10)\n") 
+	log.Debugf("client/CreateDomain(10)\n") 
 	if privateKey, err = kms.GetLocalPrivateKey(); err != nil {
 		err = errors.Wrap(err, "get local private key failed")
-		fmt.Printf("client/CreateDomain(15), err=%s\n", err ) 
+		log.Debugf("client/CreateDomain(15), err=%s\n", err ) 
 		return
 	}
-	fmt.Printf("client/CreateDomain(20)\n") 
+	log.Debugf("client/CreateDomain(20)\n") 
 	if clientAddr, err = crypto.PubKeyHash(privateKey.PubKey()); err != nil {
 		err = errors.Wrap(err, "get local account address failed")
-		fmt.Printf("client/CreateDomain(25), err=%s\n", err ) 
+		log.Debugf("client/CreateDomain(25), err=%s\n", err ) 
 		return
 	}
-	fmt.Printf("client/CreateDomain(30)\n") 
+	log.Debugf("client/CreateDomain(30)\n") 
 	// allocate nonce
 	nonceReq.Addr = clientAddr
 
@@ -219,11 +219,11 @@ func CreateDomain(host net.RoutedHost, meta ResourceMeta) (txHash hash.Hash, /* 
 	//wyong, 20201021 
 	if err = host.RequestPB("MCC.NextAccountNonce", &nonceReq, &nonceResp); err != nil {
 		err = errors.Wrap(err, "allocate create database transaction nonce failed")
-		fmt.Printf("client/CreateDomain(35), err=%s\n", err ) 
+		log.Debugf("client/CreateDomain(35), err=%s\n", err ) 
 		return
 	}
 
-	fmt.Printf("client/CreateDomain(40)\n") 
+	log.Debugf("client/CreateDomain(40)\n") 
 	if meta.GasPrice == 0 {
 		meta.GasPrice = DefaultGasPrice
 	}
@@ -231,7 +231,7 @@ func CreateDomain(host net.RoutedHost, meta ResourceMeta) (txHash hash.Hash, /* 
 		meta.AdvancePayment = DefaultAdvancePayment
 	}
 
-	fmt.Printf("client/CreateDomain(50)\n") 
+	log.Debugf("client/CreateDomain(50)\n") 
 	req.TTL = 1
 	req.Tx = types.NewCreateDomain(&types.CreateDomainHeader{
 		Owner: clientAddr,
@@ -258,30 +258,30 @@ func CreateDomain(host net.RoutedHost, meta ResourceMeta) (txHash hash.Hash, /* 
 		Nonce:          nonceResp.Nonce,
 	})
 
-	fmt.Printf("client/CreateDomain(60)\n") 
+	log.Debugf("client/CreateDomain(60)\n") 
 	if err = req.Tx.Sign(privateKey); err != nil {
 		err = errors.Wrap(err, "sign request failed")
-		fmt.Printf("client/CreateDomain(65), err=%s\n", err ) 
+		log.Debugf("client/CreateDomain(65), err=%s\n", err ) 
 		return
 	}
 
-	fmt.Printf("client/CreateDomain(70)\n") 
+	log.Debugf("client/CreateDomain(70)\n") 
 	//wyong, 20201108 
 	//wyong, 20201021 
 	if err = host.RequestPB("MCC.AddTx", &req, &resp); err != nil {
 		err = errors.Wrap(err, "call create database transaction failed")
-		fmt.Printf("client/CreateDomain(75), err=%s\n", err ) 
+		log.Debugf("client/CreateDomain(75), err=%s\n", err ) 
 		return
 	}
 
-	fmt.Printf("client/CreateDomain(80)\n") 
+	log.Debugf("client/CreateDomain(80)\n") 
 	txHash = req.Tx.Hash()
 
 	//cfg := NewConfig()
 	//cfg.DomainID = string(proto.FromAccountAndNonce(clientAddr, uint32(nonceResp.Nonce)))
 	//dsn = cfg.FormatDSN()
 
-	fmt.Printf("client/CreateDomain(90)\n") 
+	log.Debugf("client/CreateDomain(90)\n") 
 	return
 }
 
@@ -323,52 +323,52 @@ func WaitPBDomainCreation(
 		count = 0
 	)
 	defer ticker.Stop()
-	defer fmt.Printf("\n")
+	defer log.Debugf("\n")
 
-	fmt.Printf("WaitPBDomainCreation(10), query domainID(%s)\n", domainID ) 
+	log.Debugf("WaitPBDomainCreation(10), query domainID(%s)\n", domainID ) 
 	for {
-		fmt.Printf("WaitPBDomainCreation(20)\n") 
+		log.Debugf("WaitPBDomainCreation(20)\n") 
 		select {
 		case <-ticker.C:
-			fmt.Printf("WaitPBDomainCreation(30)\n") 
+			log.Debugf("WaitPBDomainCreation(30)\n") 
 			count++
 
 			//wyong, 20201108 
 			if err = host.RequestPB("MCC.QuerySQLChainProfile", &req, &resp,); err != nil {
-				fmt.Printf("WaitPBDomainCreation(40)\n") 
+				log.Debugf("WaitPBDomainCreation(40)\n") 
 				if !strings.Contains(err.Error(), pb.ErrDatabaseNotFound.Error()) {
 					// err != nil && err != ErrDatabaseNotFound (unexpected error)
-					fmt.Printf("WaitPBDomainCreation(50)\n") 
+					log.Debugf("WaitPBDomainCreation(50)\n") 
 					return
 				}
 			} else {
 				/* wyong, 20200816 
-				fmt.Printf("WaitPBDomainCreation(60), resp.Profile.ID=%s\n", resp.Profile.ID ) 
+				log.Debugf("WaitPBDomainCreation(60), resp.Profile.ID=%s\n", resp.Profile.ID ) 
 				// err == nil (creation done on BP): try to use database connection
 				if db == nil {
-					fmt.Printf("WaitPBDomainCreation(70)\n") 
+					log.Debugf("WaitPBDomainCreation(70)\n") 
 					return
 				}
-				fmt.Printf("WaitPBDomainCreation(80)\n") 
+				log.Debugf("WaitPBDomainCreation(80)\n") 
 				if _, err = db.ExecContext(ctx, "SHOW TABLES"); err == nil {
-					fmt.Printf("WaitPBDomainCreation(90)\n") 
+					log.Debugf("WaitPBDomainCreation(90)\n") 
 					// err == nil (connect to Miner OK)
 					return
 				}
 				*/ 
-				fmt.Printf("WaitPBDomainCreation(90)\n") 
+				log.Debugf("WaitPBDomainCreation(90)\n") 
 				return 
 			}
 
-			fmt.Printf("\rQuerying SQLChain Profile %vs", count*int(period.Seconds()))
+			log.Debugf("\rQuerying SQLChain Profile %vs", count*int(period.Seconds()))
 
 		case <-ctx.Done():
-			fmt.Printf("WaitPBDomainCreation(100)\n") 
+			log.Debugf("WaitPBDomainCreation(100)\n") 
 			if err != nil {
-				fmt.Printf("WaitPBDomainCreation(110)\n") 
+				log.Debugf("WaitPBDomainCreation(110)\n") 
 				return errors.Wrapf(ctx.Err(), "last error: %s", err.Error())
 			}
-			fmt.Printf("WaitPBDomainCreation(120)\n") 
+			log.Debugf("WaitPBDomainCreation(120)\n") 
 			return ctx.Err()
 		}
 	}
@@ -549,7 +549,7 @@ func WaitTxConfirmation(
 		count  = 0
 	)
 	defer ticker.Stop()
-	defer fmt.Printf("\n")
+	defer log.Debugf("\n")
 	for {
 		//wyong, 20201108 
 		if err = host.RequestPB("MCC.QueryTxState", req, resp); err != nil {
@@ -560,7 +560,7 @@ func WaitTxConfirmation(
 		state = resp.State
 
 		count++
-		fmt.Printf("\rWaiting blockproducers confirmation %vs, state: %v\033[0K", count, state)
+		log.Debugf("\rWaiting blockproducers confirmation %vs, state: %v\033[0K", count, state)
 		log.WithFields(log.Fields{
 			"tx_hash":  txHash,
 			"tx_state": state,

@@ -25,6 +25,9 @@ import (
 
 	//wyong, 20201126 
 	"github.com/siegfried415/gdf-rebuild/proto" 
+
+	//wyong, 20201215 
+	log "github.com/siegfried415/gdf-rebuild/utils/log" 
 )
 
 const (
@@ -260,23 +263,23 @@ func init() {
 
 // Run processes the arguments and stdin
 func Run(ctx context.Context, args []string, stdin, stdout, stderr *os.File) (int, error) {
-	fmt.Printf("Run(10)\n") 
+	log.Debugf("Run(10)\n") 
 	err := cli.Run(ctx, rootCmd, args, stdin, stdout, stderr, buildEnv, makeExecutor)
 	if err == nil {
-		fmt.Printf("Run(15)\n") 
+		log.Debugf("Run(15)\n") 
 		return 0, nil
 	}
-	fmt.Printf("Run(20)\n") 
+	log.Debugf("Run(20)\n") 
 	if exerr, ok := err.(cli.ExitError); ok {
-		fmt.Printf("Run(25)\n") 
+		log.Debugf("Run(25)\n") 
 		return int(exerr), nil
 	}
-	fmt.Printf("Run(30)\n") 
+	log.Debugf("Run(30)\n") 
 	return 1, err
 }
 
 func buildEnv(ctx context.Context, _ *cmds.Request) (cmds.Environment, error) {
-	fmt.Printf("buildEnv(10)\n") 
+	log.Debugf("buildEnv(10)\n") 
 	return env.NewClientEnv(ctx, proto.Unknown, gdfnet.RoutedHost{}, nil, nil ), nil
 }
 
@@ -286,65 +289,65 @@ type executor struct {
 }
 
 func (e *executor) Execute(req *cmds.Request, re cmds.ResponseEmitter, env cmds.Environment) error {
-	fmt.Printf("executor/Execute(10)\n") 
+	log.Debugf("executor/Execute(10)\n") 
 	if e.api == "" {
-		fmt.Printf("executor/Execute(15)\n") 
+		log.Debugf("executor/Execute(15)\n") 
 		return e.exec.Execute(req, re, env)
 	}
 
-	fmt.Printf("executor/Execute(20)\n") 
+	log.Debugf("executor/Execute(20)\n") 
 	client := cmdhttp.NewClient(e.api, cmdhttp.ClientWithAPIPrefix(APIPrefix))
 
-	fmt.Printf("executor/Execute(30)\n") 
+	log.Debugf("executor/Execute(30)\n") 
 	res, err := client.Send(req)
 	if err != nil {
-		fmt.Printf("executor/Execute(35)\n") 
+		log.Debugf("executor/Execute(35)\n") 
 		if isConnectionRefused(err) {
-			fmt.Printf("executor/Execute(37)\n") 
+			log.Debugf("executor/Execute(37)\n") 
 			return cmdkit.Errorf(cmdkit.ErrFatal, "Connection Refused. Is the daemon running?")
 		}
-		fmt.Printf("executor/Execute(39)\n") 
+		log.Debugf("executor/Execute(39)\n") 
 		return cmdkit.Errorf(cmdkit.ErrFatal, err.Error())
 	}
 
-	fmt.Printf("executor/Execute(40)\n") 
+	log.Debugf("executor/Execute(40)\n") 
 	// copy received result into cli emitter
 	err = cmds.Copy(re, res)
 	if err != nil {
-		fmt.Printf("executor/Execute(45)\n") 
+		log.Debugf("executor/Execute(45)\n") 
 		return cmdkit.Errorf(cmdkit.ErrFatal|cmdkit.ErrNormal, err.Error())
 	}
-	fmt.Printf("executor/Execute(50)\n") 
+	log.Debugf("executor/Execute(50)\n") 
 	return nil
 }
 
 func makeExecutor(req *cmds.Request, env interface{}) (cmds.Executor, error) {
-	fmt.Printf("makeExecutor(10)\n") 
+	log.Debugf("makeExecutor(10)\n") 
 	var api string
 	isDaemonRequired := requiresDaemon(req)
 	if isDaemonRequired {
-		fmt.Printf("makeExecutor(20)\n") 
+		log.Debugf("makeExecutor(20)\n") 
 		var err error
 		maddr, err := getAPIAddress(req)
 		if err != nil {
-			fmt.Printf("makeExecutor(25)\n") 
+			log.Debugf("makeExecutor(25)\n") 
 			return nil, err
 		}
 
 		_, api, err = manet.DialArgs(maddr)
 		if err != nil {
-			fmt.Printf("getAPIAddress(75)\n") 
+			log.Debugf("getAPIAddress(75)\n") 
 			return nil, errors.Wrap(err, fmt.Sprintf("unable to dial API endpoint address %s", maddr))
 		}
 
-		fmt.Printf("makeExecutor(30)\n") 
+		log.Debugf("makeExecutor(30)\n") 
 		if api == "" {
-			fmt.Printf("makeExecutor(35)\n") 
+			log.Debugf("makeExecutor(35)\n") 
 			return nil, ErrMissingDaemon
 		}
 	}
 
-	fmt.Printf("makeExecutor(40)\n") 
+	log.Debugf("makeExecutor(40)\n") 
 	return &executor{
 		api:  api,
 		exec: cmds.NewExecutor(rootCmd),
@@ -353,57 +356,57 @@ func makeExecutor(req *cmds.Request, env interface{}) (cmds.Executor, error) {
 }
 
 func getAPIAddress(req *cmds.Request) (ma.Multiaddr, error) {
-	fmt.Printf("getAPIAddress(10)\n") 
+	log.Debugf("getAPIAddress(10)\n") 
 	var rawAddr string
 	var err error
 	// second highest precedence is env vars.
 	if envapi := os.Getenv("FIL_API"); envapi != "" {
-		fmt.Printf("getAPIAddress(15)\n") 
+		log.Debugf("getAPIAddress(15)\n") 
 		rawAddr = envapi
 	}
 
-	fmt.Printf("getAPIAddress(20)\n") 
+	log.Debugf("getAPIAddress(20)\n") 
 	// first highest precedence is cmd flag.
 	if apiAddress, ok := req.Options[OptionAPI].(string); ok && apiAddress != "" {
-		fmt.Printf("getAPIAddress(25)\n") 
+		log.Debugf("getAPIAddress(25)\n") 
 		rawAddr = apiAddress
 	}
 
-	fmt.Printf("getAPIAddress(30)\n") 
+	log.Debugf("getAPIAddress(30)\n") 
 
 	// we will read the api file if no other option is given.
 	if len(rawAddr) == 0 {
-		fmt.Printf("getAPIAddress(40)\n") 
+		log.Debugf("getAPIAddress(40)\n") 
 		repoDir, _ := req.Options[OptionRepoDir].(string)
 		repoDir, err = paths.GetRepoPath(repoDir)
 		if err != nil {
-			fmt.Printf("getAPIAddress(45)\n") 
+			log.Debugf("getAPIAddress(45)\n") 
 			return nil, err
 		}
 
-		fmt.Printf("getAPIAddress(50), repoDir=%s\n", repoDir ) 
+		log.Debugf("getAPIAddress(50), repoDir=%s\n", repoDir ) 
 		rawAddr, err = conf.APIAddrFromRepoPath(repoDir)
 		if err != nil {
-			fmt.Printf("getAPIAddress(55)\n") 
+			log.Debugf("getAPIAddress(55)\n") 
 			return nil, errors.Wrap(err, "can't find API endpoint address in environment, command-line, or local repo (is the daemon running?)")
 		}
 	}
 
-	fmt.Printf("getAPIAddress(60), rawAddr=%s\n", rawAddr ) 
+	log.Debugf("getAPIAddress(60), rawAddr=%s\n", rawAddr ) 
 	maddr, err := ma.NewMultiaddr(rawAddr)
 	if err != nil {
-		fmt.Printf("getAPIAddress(65)\n") 
+		log.Debugf("getAPIAddress(65)\n") 
 		return nil, errors.Wrap(err, fmt.Sprintf("unable to convert API endpoint address %s to a multiaddr", rawAddr))
 	}
 
-	//fmt.Printf("getAPIAddress(70)\n") 
+	//log.Debugf("getAPIAddress(70)\n") 
 	//_, host, err := manet.DialArgs(maddr)
 	//if err != nil {
-	//	fmt.Printf("getAPIAddress(75)\n") 
+	//	log.Debugf("getAPIAddress(75)\n") 
 	//	return "", errors.Wrap(err, fmt.Sprintf("unable to dial API endpoint address %s", maddr))
 	//}
 
-	fmt.Printf("getAPIAddress(80)\n") 
+	log.Debugf("getAPIAddress(80)\n") 
 	return maddr, nil
 }
 

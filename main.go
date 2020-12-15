@@ -4,17 +4,21 @@ import (
 	"context"
 	"os"
 	//"strconv"
-	"fmt"
+	//"fmt"
 
 	//logging "github.com/ipfs/go-log"
 	//oldlogging "github.com/whyrusleeping/go-logging"
 
 	"github.com/siegfried415/gdf-rebuild/commands"
 	//"github.com/siegfried415/gdf-rebuild/metrics"
+
+	//wyong, 20201215
+	log "github.com/siegfried415/gdf-rebuild/utils/log"
+
 )
 
 func main() {
-	fmt.Printf("gdf-minerd/main(10)\n")
+	log.Debugf("gdf-minerd/main(10)\n")
 
 	//wyong, 20200922 
 	// TODO: make configurable - this should be done via a command like go-ipfs

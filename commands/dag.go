@@ -2,12 +2,11 @@
 package commands
 
 import (
-	cmdkit "github.com/ipfs/go-ipfs-cmdkit"
-	cmds "github.com/ipfs/go-ipfs-cmds"
-
 	"fmt" 
         "io"
 
+	cmdkit "github.com/ipfs/go-ipfs-cmdkit"
+	cmds "github.com/ipfs/go-ipfs-cmds"
         "github.com/ipfs/go-cid"
 	"github.com/ipfs/go-ipfs-files"
 
@@ -21,6 +20,9 @@ import (
 
 	//wyong, 20201126 
 	"github.com/siegfried415/gdf-rebuild/proto" 
+
+	//wyong, 20201215 
+	log "github.com/siegfried415/gdf-rebuild/utils/log" 
 )
 
 var dagCmd = &cmds.Command{
@@ -42,7 +44,7 @@ var dagGetCmd = &cmds.Command{
 		cmdkit.StringArg("ref", true, false, "CID of object to get"),
 	},
 	Run: func(req *cmds.Request, re cmds.ResponseEmitter, cmdenv cmds.Environment) error {
-		fmt.Printf("commands/dag.go, DagGetCmd(10) \n") 
+		log.Debugf("commands/dag.go, DagGetCmd(10) \n") 
 		//out, err := GetPorcelainAPI(env).DAGGetNode(req.Context, req.Arguments[0])
 		e := cmdenv.(*env.Env)
 		out, err := e.DAG().GetNode(req.Context, req.Arguments[0]) 
@@ -76,14 +78,14 @@ format was provided with the data initially.
 		cmdkit.StringArg("cid", true, false, "CID of page content"),
 	},
 	Run: func(req *cmds.Request, re cmds.ResponseEmitter, cmdenv cmds.Environment) error {
-		fmt.Printf("commands/dag.go, DagCatCmd(10) \n") 
+		log.Debugf("commands/dag.go, DagCatCmd(10) \n") 
 
 		/* todo, wyong, 20201126
 		parenturl := req.Arguments[0]
-		fmt.Printf("commands/dag.go, DagCatCmd(10), parenturl=%s\n", parenturl)
+		log.Debugf("commands/dag.go, DagCatCmd(10), parenturl=%s\n", parenturl)
 
 		url := req.Arguments[1]
-		fmt.Printf("commands/dag.go, DagCatCmd(20), url=%s\n", url ) 
+		log.Debugf("commands/dag.go, DagCatCmd(20), url=%s\n", url ) 
 
 		//todo, wyong, 20200824 
 		domain, err := domainForUrl(url) 
@@ -98,7 +100,7 @@ format was provided with the data initially.
 		}
 
 
-		fmt.Printf("commands/dag.go, DagCatCmd(20), cid=%s \n", c.String()) 
+		log.Debugf("commands/dag.go, DagCatCmd(20), cid=%s \n", c.String()) 
 
 		//bugfix, wyong, 20201126 
 		//wyong, 20201007 
@@ -106,19 +108,19 @@ format was provided with the data initially.
 		//role, _ := req.Options[OptionRole].(string)
 		e := cmdenv.(*env.Env)
 		role := e.Role() 
-		fmt.Printf("commands/dag.go, DagCatCmd(30), role =%s \n", role.String()) 
+		log.Debugf("commands/dag.go, DagCatCmd(30), role =%s \n", role.String()) 
 
 		switch role {
 		//if role == "Client" { 	
 		case proto.Client : 
-			fmt.Printf("commands/dag.go, DagCatCmd(40) \n") 
+			log.Debugf("commands/dag.go, DagCatCmd(40) \n") 
 			//get host from env, wyong, 20201008
 			host := e.Host()
 
 			//todo, wyong, 20201126 
 			conn, err := getConn(host, "DAG.CatRequest", /* domain */ "" )
 			if err != nil {
-				fmt.Printf("commands/urlrequest.go(45), err=%s\n", err.Error()) 
+				log.Debugf("commands/urlrequest.go(45), err=%s\n", err.Error()) 
 				return nil 
 			}
 			defer conn.Close()
@@ -127,7 +129,7 @@ format was provided with the data initially.
 			//var result sql.Result
 			//err = conn.DagCat(req.Context, c) 
 			//if err != nil {
-			//	fmt.Printf("commands/urlrequest.go(65), err=%s\n", err.Error()) 
+			//	log.Debugf("commands/urlrequest.go(65), err=%s\n", err.Error()) 
 			//	return err  
 			//}
 
@@ -135,28 +137,28 @@ format was provided with the data initially.
 		case proto.Leader:
 			fallthrough 
 		case proto.Follower: 
-			fmt.Printf("commands/dag.go, DagCatCmd(50)\n") 
+			log.Debugf("commands/dag.go, DagCatCmd(50)\n") 
 			return nil 
 
 		case proto.Miner: 
-			fmt.Printf("commands/dag.go, DagCatCmd(60)\n") 
+			log.Debugf("commands/dag.go, DagCatCmd(60)\n") 
 			//dr, err := GetPorcelainAPI(env).DAGCat(req.Context, c)
 			//e := cmdenv.(*env.Env)
 			dr, err := e.DAG().Cat(req.Context, c) 
 			if err != nil {
-				fmt.Printf("commands/dag.go, DagCatCmd(65) \n") 
+				log.Debugf("commands/dag.go, DagCatCmd(65) \n") 
 				return err
 			}
-			fmt.Printf("commands/dag.go, DagCatCmd(70)\n") 
+			log.Debugf("commands/dag.go, DagCatCmd(70)\n") 
 			return re.Emit(dr)
 
 		//} else { 	
 		case proto.Unknown: 
-			fmt.Printf("commands/dag.go, DagCatCmd(80)\n") 
+			log.Debugf("commands/dag.go, DagCatCmd(80)\n") 
 			return nil 
 		}
 
-		fmt.Printf("commands/dag.go, DagCatCmd(90) \n") 
+		log.Debugf("commands/dag.go, DagCatCmd(90) \n") 
 		//get url from dr , wyong, 20191115 
 		//var p Page 
 		//err := json.Unmarshal(dr, &p)
@@ -168,18 +170,18 @@ format was provided with the data initially.
 		//wyong, 20191025
                 //fromAddr, err := fromAddrOrDefault(req, cmdenv)
                 //if err != nil {
-		//	fmt.Printf("commands/dag.go, DagCatCmd(45) \n") 
+		//	log.Debugf("commands/dag.go, DagCatCmd(45) \n") 
                 //      return err
                 //}
 
-		//fmt.Printf("commands/dag.go, DagCatCmd(50) \n") 
+		//log.Debugf("commands/dag.go, DagCatCmd(50) \n") 
                 //_, err = GetPorcelainAPI(env).UrlGraphPageRetrived(req.Context, fromAddr, parenturl, url )
                 //if err != nil {
-		//	fmt.Printf("commands/dag.go, DagCatCmd(55) \n") 
+		//	log.Debugf("commands/dag.go, DagCatCmd(55) \n") 
                 //      return err
                 //}
 
-		//fmt.Printf("commands/dag.go, DagCatCmd(90) \n") 
+		//log.Debugf("commands/dag.go, DagCatCmd(90) \n") 
 
 		//return re.Emit(dr)
 		return nil 
@@ -206,7 +208,7 @@ See the go-filecoin client cat command for more details.
 		cmdkit.FileArg("file", true, false, "Path to file to import").EnableStdin(),
 	},
 	Run: func(req *cmds.Request, re cmds.ResponseEmitter, cmdenv cmds.Environment) error {
-		fmt.Printf("commands/dag.go, DagImportCmd(10) \n") 
+		log.Debugf("commands/dag.go, DagImportCmd(10) \n") 
 
 		//wyong, 20191115 
 		//url := req.Arguments[0]

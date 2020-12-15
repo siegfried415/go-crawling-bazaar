@@ -206,6 +206,10 @@ func daemonRun(req *cmds.Request, re cmds.ResponseEmitter) error {
 
 	fmt.Println("daemonRun(100), before call n.Start()")
 
+	//FIXME: if start all miners at same time, miners will fail to start
+	//wyong, 20201206 
+	time.Sleep(time.Second * 3 ) 
+
 	// Start the node.
 	if err := n.Start(req.Context); err != nil {
 		return err

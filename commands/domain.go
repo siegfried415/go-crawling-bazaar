@@ -22,6 +22,9 @@ import (
 	//wyong, 20201022 
 	env "github.com/siegfried415/gdf-rebuild/env"  
 
+	//wyong, 20201215 
+	log "github.com/siegfried415/gdf-rebuild/utils/log"  
+
 )
 
 const(
@@ -107,11 +110,11 @@ Put bidding for a url:
 	},
 
 	Run: func(req *cmds.Request, res cmds.ResponseEmitter, cmdenv cmds.Environment) error {
-		fmt.Printf("DomainCreateCmd, called...\n") 
+		log.Debugf("DomainCreateCmd, called...\n") 
 
 		//log.Debugf("BiddingPutCmd, Run(10)") 
 		domain_name := req.Arguments[0]
-		fmt.Printf("DomainCreateCmd, domain_name =%s\n", domain_name ) 
+		log.Debugf("DomainCreateCmd, domain_name =%s\n", domain_name ) 
 
 		nodeCnt, err := strconv.ParseInt(req.Arguments[1], 10, 32) 
 		if err != nil {
@@ -119,7 +122,7 @@ Put bidding for a url:
 		}
 
 
-		fmt.Printf("DomainCreateCmd, nodeCnt=%d\n", nodeCnt ) 
+		log.Debugf("DomainCreateCmd, nodeCnt=%d\n", nodeCnt ) 
 
 		//todo, send bidding request with client to random peers , wyong, 20200723 
 		//err := env.GetFrontera().PutBidding(req.Context, url )
@@ -158,7 +161,7 @@ Put bidding for a url:
 				//SetExitStatus(1)
 				return err 
 			}
-			fmt.Printf("\nThe domain is accecpted by presbyterian\n")
+			log.Debugf("\nThe domain is accecpted by presbyterian\n")
 
 			var ctx, cancel = context.WithTimeout(context.Background(), waitTxConfirmationMaxDuration)
 			defer cancel()

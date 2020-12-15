@@ -211,7 +211,7 @@ Get all biddings :
 	//},
 
 	Run: func(req *cmds.Request, res cmds.ResponseEmitter, cmdenv cmds.Environment) error {
-		fmt.Printf("BiddingGetCmd/Run(10)\n") 
+		log.Debugf("BiddingGetCmd/Run(10)\n") 
 
 		//TODO,wyong, 20181227
 		//peer, err := peer.IDFromString(req.Arguments[0])
@@ -219,18 +219,18 @@ Get all biddings :
 		//	return err
 		//}
 
-		fmt.Printf("BiddingGetCmd/Run(20)\n") 
+		log.Debugf("BiddingGetCmd/Run(20)\n") 
 		ce := cmdenv.(*env.Env) 
 
 		output, err := ce.Frontera().GetBidding(req.Context /* , opts... */ )
 		if err != nil {
-			fmt.Printf("BiddingGetCmd/Run(25), err=%s\n", err.Error()) 
+			log.Debugf("BiddingGetCmd/Run(25), err=%s\n", err.Error()) 
 			return err
 		}
 
-		fmt.Printf("BiddingGetCmd/Run(30)\n") 
+		log.Debugf("BiddingGetCmd/Run(30)\n") 
 		if len(output) ==  0 {
-			fmt.Printf("BiddingGetCmd/Run(40)\n") 
+			log.Debugf("BiddingGetCmd/Run(40)\n") 
 			if err := res.Emit(&BiddingUrl{Url:""}); err != nil  {
 				return err
 			}
@@ -240,7 +240,7 @@ Get all biddings :
 				//	return err
 				//}
 				//if err := res.Emit(&ResolvedPath{path.FromString(v.Path.String())}); err != nil {
-				fmt.Printf("BiddingGetCmd/Run(50), %s\n", v.GetUrl()) 
+				log.Debugf("BiddingGetCmd/Run(50), %s\n", v.GetUrl()) 
 
 				if err := res.Emit(&BiddingUrl{v.GetUrl()}); err != nil  {
 					return err
@@ -249,7 +249,7 @@ Get all biddings :
 			}
 		}
 
-		fmt.Printf("BiddingGetCmd/Run(60)\n") 
+		log.Debugf("BiddingGetCmd/Run(60)\n") 
 		return nil
 	},
 

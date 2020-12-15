@@ -77,6 +77,10 @@ import (
 
 	//just for test, wyong, 20201130 
 	crypto "github.com/siegfried415/gdf-rebuild/crypto" 
+
+	//wyong, 20201214 
+        "github.com/siegfried415/gdf-rebuild/utils/log"
+
 )
 
 
@@ -182,6 +186,8 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
         //        nc.Clock = clock.NewSystemClock()
         //}
 
+	log.Debugf("Node/build(10)")
+
 	var (
 		masterKey []byte
 
@@ -203,16 +209,18 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
 		fmt.Print("Type in Master key to continue: ")
 		masterKey, err = terminal.ReadPassword(syscall.Stdin)
 		if err != nil {
-			fmt.Printf("Failed to read Master Key: %v", err)
+			log.Debugf("Failed to read Master Key: %v", err)
 		}
 		fmt.Println("")
 	}
 
+	log.Debugf("Node/build(20)")
 	if err = kms.InitLocalKeyPair(conf.GConf.PrivateKeyFile, masterKey); err != nil {
 		//log.WithError(err).Error("init local key pair failed")
 		return nil, err 
 	}
 
+	log.Debugf("Node/build(30)")
 
         //wyong, 20201112,	init nodes
         //log.WithField("node", nodeID).Info("init peers")
@@ -222,18 +230,20 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
                 return nil, err 
         }
 
+	log.Debugf("Node/build(40)")
 	//NOTE,NOTE,NOTE, just for test , wyong, 20201130 
         // Get accountAddress
         var pubKey *asymmetric.PublicKey
         if pubKey, err = kms.GetLocalPublicKey(); err != nil {
                 return nil, err 
         }
+	log.Debugf("Node/build(50)")
         accountAddr, err := crypto.PubKeyHash(pubKey)
 	if err != nil {
                 return nil, err 
         }
 
-	fmt.Printf("node/build, accountAddr=%s\n", accountAddr.String()) 
+	log.Debugf("node/build(60), accountAddr=%s\n", accountAddr.String()) 
 
 
 	//wyong, 20201027 
@@ -246,17 +256,17 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
         //var router net.Router
         var peerHost net.RoutedHost
 
-	//fmt.Printf("dag/BuildDAG(10), swarmAddress=%s\n", swarmAddress )
+	//log.Debugf("dag/BuildDAG(10), swarmAddress=%s\n", swarmAddress )
 	//ds := dss.MutexWrap(datastore.NewMapDatastore())
         //bs := bstore.NewBlockstore(ds)
 
 	//wyong, 20200921 
 	network := "gdf"
 
-	//fmt.Printf("dag/BuildDAG(20)\n") 
+	//log.Debugf("dag/BuildDAG(20)\n") 
         //if !nc.OfflineMode {
 	makeDHT := func(h host.Host) (routing.ContentRouting, error) {
-		//fmt.Printf("dag/makeDGT(10),host=%s\n", h) 
+		//log.Debugf("dag/makeDGT(10),host=%s\n", h) 
 
 		//wyong, 20201108 
 		r, err := dht.New(
@@ -268,27 +278,31 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
 		)
 
 		//if err != nil {
-		//	fmt.Printf("dag/makeDGT(25)\n") 
+		//	log.Debugf("dag/makeDGT(25)\n") 
 		//	return nil, errors.Wrap(err, "failed to setup routing")
 		//}
 
-		//fmt.Printf("dag/makeDGT(30)\n") 
+		//log.Debugf("dag/makeDGT(30)\n") 
 		//router = r
 		return r, err
 	}
 
-	fmt.Printf("dag/BuildDAG(30)\n") 
+	//log.Debugf("dag/BuildDAG(30)\n") 
+	log.Debugf("Node/build(70)")
+
 	//var err error
 	privKey, err := kms.GetLocalPrivateKey()
 	if err != nil {
-		fmt.Printf("dag/BuildDAG(35), err=%s\n", err.Error()) 
+		log.Debugf("dag/BuildDAG(35), err=%s\n", err.Error()) 
 		return nil, err
 	}
 
-	//fmt.Printf("dag/BuildDAG(40)\n") 
+	//log.Debugf("dag/BuildDAG(40)\n") 
+	log.Debugf("Node/build(80)")
+
 	peerHost, err = nc.buildHost(ctx, conf.GConf.ListenAddr, privKey, makeDHT)
 	if err != nil {
-		fmt.Printf("dag/BuildDAG(45), err=%s\n", err.Error()) 
+		log.Debugf("dag/BuildDAG(45), err=%s\n", err.Error()) 
 		return nil, err
 	}
 
@@ -296,6 +310,8 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
         //      router = offroute.NewOfflineRouter(nc.Repo.Datastore(), validator)
         //        peerHost = rhost.Wrap(noopLibP2PHost{}, router)
 	//}
+
+	log.Debugf("Node/build(90)")
 
 	//todo, wyong, 20201015 
         // set up peer tracking
@@ -309,9 +325,12 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
 	switch role  {
 	case proto.Client:
 		//todo, wyong, 20201028
+		log.Debugf("Node/build(100)")
 
-	case proto.Leader: fallthrough 
-	case proto.Follower: 
+	case proto.Leader, 
+	     proto.Follower: 
+
+		log.Debugf("Node/build(110)")
 
 		//wyong, 20201021 
 		genesis, err := loadGenesis()
@@ -320,7 +339,7 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
 		}
 
                	// init storage
-                //log.Info("init storage")
+                log.Info("init storage")
                 var st *LocalStorage
                 if st, err = initStorage(conf.GConf.DHTFileName); err != nil {
                         //log.WithError(err).Error("init storage failed")
@@ -328,7 +347,7 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
                 }
 
                 // init dht node server
-                //log.Info("init consistent runtime")
+                log.Info("init consistent runtime")
                 kvServer := NewKVServer(peerHost, conf.GConf.ThisNodeID, peers, st, dhtGossipTimeout)
                 dht, err := net.NewDHTService(peerHost, conf.GConf.DHTFileName, kvServer, true)
                 if err != nil {
@@ -337,6 +356,7 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
                 }
                 defer kvServer.Stop()
 
+		log.Debugf("Node/build(120)")
                 // register dht service rpc
                 //log.Info("register dht service rpc")
                 //err = server.RegisterService(route.DHTRPCName, dht)
@@ -381,6 +401,7 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
 			return nil, err
 		}
 		
+		log.Debugf("Node/build(130)")
 		//todo, move chain.Start() to node.Start(), wyong, 20201124
 		//chain.Start()
 
@@ -389,23 +410,24 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
 
 
 	case proto.Miner: 
-		//fmt.Printf("dag/BuildDAG(50)\n") 
+		//log.Debugf("dag/BuildDAG(50)\n") 
+		log.Debugf("Node/build(140)")
 		// set up bitswap
 		
 		nwork := bsnet.NewFromIpfsHost(peerHost, peerHost.Router())
-		//fmt.Printf("dag/BuildDAG(60)\n") 
+		//log.Debugf("dag/BuildDAG(60)\n") 
 		bswap = bitswap.New(ctx, nwork, bs)
-		//fmt.Printf("dag/BuildDAG(70)\n") 
+		//log.Debugf("dag/BuildDAG(70)\n") 
 		bservice := bserv.New(bs, bswap)
 
-		//fmt.Printf("dag/BuildDAG(80)\n") 
+		//log.Debugf("dag/BuildDAG(80)\n") 
 		s := merkledag.NewDAGService(bservice) 
-		//fmt.Printf("dag/BuildDAG(90)\n") 
+		//log.Debugf("dag/BuildDAG(90)\n") 
 		g = dag.NewDAG(s)
 
 
 		//wyong, 20201107 
-		//fmt.Printf("dag/BuildDAG(100)\n") 
+		//log.Debugf("dag/BuildDAG(100)\n") 
 		//n = net.New(peerHost, net.NewRouter(router))
 
 		//wyong, 20200929 
@@ -423,6 +445,7 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
 			//OnCreateDatabase: onCreateDB,
 		}
 
+		log.Debugf("Node/build(150)")
 		f, err = frontera.NewFrontera(fcfg, peerHost )
 		if err != nil {
 			err = errors.Wrap(err, "create new Frontera failed")
@@ -430,17 +453,21 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
 		}
 
 		//just for test, wyong, 20201206 
-		time.Sleep(time.Second * 3 ) // output correctly
+		//time.Sleep(time.Second * 3 ) // output correctly
 
-		if err = f.Init(); err != nil {
-			err = errors.Wrap(err, "init Frontera failed")
-			return nil, err 
-		}
+		//if err = f.Init(); err != nil {
+		//	err = errors.Wrap(err, "init Frontera failed")
+		//	return nil, err 
+		//}
+
+		log.Debugf("Node/build(160)")
 
 	case proto.Unknown:
+		log.Debugf("Node/build(170)")
                 return nil, err
 	}	
 
+	log.Debugf("Node/build(180)")
 	//wyong, 20201014 
 	//create wallet 
         //backend, err := wallet.NewDSBackend(nc.Repo.WalletDatastore())
@@ -516,6 +543,7 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
 		Frontera : f , 
         }
 
+	log.Debugf("Node/build(190)")
 	//todo, wyong, 20200921 
         //nd.PorcelainAPI = porcelain.New(plumbing.New(&plumbing.APIDeps{
         //        Bitswap:       bswap,
@@ -550,8 +578,10 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
                 return nil, err 
         }
 
+	log.Debugf("Node/build(200)")
+
 	/*todo, wyong, 20201021 
-	//fmt.Printf("dag/BuildDAG(110)\n") 
+	//log.Debugf("dag/BuildDAG(110)\n") 
         // Bootstrapping network peers.
         periodStr := nd.Repo.Config().Bootstrap.Period
         period, err := time.ParseDuration(periodStr)
@@ -580,7 +610,7 @@ func (nc *Builder) buildHost(ctx context.Context,
 	makeDHT func(host host.Host) (routing.ContentRouting, error),
 ) (net.RoutedHost, error) {
 
-	//fmt.Printf("dag/buildHost(10), swarmAddress=%s\n", swarmAddress) 
+	//log.Debugf("dag/buildHost(10), swarmAddress=%s\n", swarmAddress) 
         // Node must build a host acting as a libp2p relay.  Additionally it
         // runs the autoNAT service which allows other nodes to check for their
         // own dialability by having this node attempt to dial them.
@@ -590,14 +620,14 @@ func (nc *Builder) buildHost(ctx context.Context,
                 //return makeDHT(h)
 		dht, err := makeDHT(h) 
 		if err != nil {
-			fmt.Printf("dag/makeDGT(15)\n") 
+			log.Debugf("dag/makeDGT(15)\n") 
 			return nil, errors.Wrap(err, "failed to setup dht routing")
 		}		
 
 		//wyong, 20201111
 		r, err := net.NewPBRouter(h, dht )
 		if err != nil {
-			fmt.Printf("dag/makeDGT(25)\n") 
+			log.Debugf("dag/makeDGT(25)\n") 
 			return nil, errors.Wrap(err, "failed to setup routing")
 		}
 
@@ -605,7 +635,7 @@ func (nc *Builder) buildHost(ctx context.Context,
         }
 
 
-	fmt.Printf("dag/buildHost(20)\n") 
+	log.Debugf("dag/buildHost(20)\n") 
         if nc.IsRelay {
                 //cfg := nc.Repo.Config()
                 publicAddr, err := ma.NewMultiaddr(conf.GConf.PublicRelayAddress)
@@ -661,7 +691,7 @@ func (nc *Builder) buildHost(ctx context.Context,
 					//libp2p.Identity(privkey.(*libp2pcrypto.PrivKey)), 
 					libp2p.Identity(libp2pPrivKey), 
 				      }
-	fmt.Printf("dag/buildHost(30)\n") 
+	log.Debugf("dag/buildHost(30)\n") 
         host, err := libp2p.New(ctx,
 					//libp2p.EnableAutoRelay(),
 					//libp2p.Routing(makeDHTRightType),

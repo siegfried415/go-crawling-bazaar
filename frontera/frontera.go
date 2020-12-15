@@ -26,7 +26,7 @@ import (
 	"sync"
 	"time"
 	"math"
-	"fmt"
+	//"fmt"
 
 	//wyong, 20200831 
         url "net/url"
@@ -343,6 +343,12 @@ func( f *Frontera) Start(ctx context.Context ) error {
 		return nil
 	})
 
+	//move the following code from builder to here, wyong, 20201215
+	if err := f.Init(); err != nil {
+		err = errors.Wrap(err, "init Frontera failed")
+		return err 
+	}
+
 	log.Infof("NewFrontera(100)") 
 	//wyong, 20200721 
 	go f.wm.Run()
@@ -415,6 +421,9 @@ func (f *Frontera) writeMeta() (err error) {
 
 // Init defines frontera init logic.
 func (f *Frontera) Init() (err error) {
+
+	log.Debugf("Frontera/Init(10)")
+
 	// read meta
 	var localMeta *FronteraMeta
 	if localMeta, err = f.readMeta(); err != nil {
@@ -632,6 +641,8 @@ func (f *Frontera) UpdatePermission(domainID proto.DomainID, user proto.AccountA
 
 func (f *Frontera) initDomains ( meta *FronteraMeta, profiles map[proto.DomainID]*types.SQLChainProfile) (err error,
 ) {
+	log.Debugf("Frontera/initDomains(10)")
+
 	currentInstance := make(map[proto.DomainID]bool)
 	wg := &sync.WaitGroup{}
 
@@ -644,14 +655,19 @@ func (f *Frontera) initDomains ( meta *FronteraMeta, profiles map[proto.DomainID
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
+
+			log.Debugf("Frontera/initDomains(20)")
 			if err := f.Create(instance, false); err != nil {
 				log.WithFields(log.Fields{
 					"id": instance.DomainID,
 				}).WithError(err).Error("failed to create domain instance")
 			}
+			log.Debugf("Frontera/initDomains(30)")
 		}()
 	}
 	wg.Wait()
+
+	log.Debugf("Frontera/initDomains(40)")
 
 	// calculate to drop domains 
 	toDropInstance := make(map[proto.DomainID]bool)
@@ -669,6 +685,7 @@ func (f *Frontera) initDomains ( meta *FronteraMeta, profiles map[proto.DomainID
 		}
 	}
 
+	log.Debugf("Frontera/initDomains(50)")
 	return
 }
 
@@ -782,16 +799,16 @@ func (f *Frontera) Update(instance *types.ServiceInstance) (err error) {
 	var domain *Domain
 	var exists bool
 
-	fmt.Printf("Frontera/Update(10)\n") 
+	log.Debugf("Frontera/Update(10)\n") 
 	//update frontera 's peer info which hold by wm and engine, wyong,20200825 
 	f.PeersConnected(instance.Peers )
 
-	fmt.Printf("Frontera/Update(20)\n") 
+	log.Debugf("Frontera/Update(20)\n") 
 	if domain, exists = f.getMeta(instance.DomainID); !exists {
 		return ErrNotExists
 	}
 
-	fmt.Printf("Frontera/Update(30)\n") 
+	log.Debugf("Frontera/Update(30)\n") 
 	// update peers
 	return domain.UpdatePeers(instance.Peers)
 }
@@ -974,7 +991,7 @@ type biddingRequest struct {
 // GetBlock attempts to retrieve a particular block from peers within the
 // deadline enforced by the context.
 func (f *Frontera) PutBidding(ctx context.Context, req *types.UrlRequestMessage ) (res *types.UrlResponse, err error) {
-	fmt.Printf("Frontera/PutBidding(10)\n")
+	log.Debugf("Frontera/PutBidding(10)\n")
        	
 	//wyong, 20200820 
 	domain, exist := f.DomainForID(req.Header.DomainID) 
@@ -983,18 +1000,18 @@ func (f *Frontera) PutBidding(ctx context.Context, req *types.UrlRequestMessage 
 		return 
 	}
 
-	fmt.Printf("Frontera/PutBidding(20), domain=%s\n", domain.domainID )
+	log.Debugf("Frontera/PutBidding(20), domain=%s\n", domain.domainID )
 	for _, r := range req.Payload.Requests {
-		fmt.Printf("Frontera/PutBidding(30)\n")
+		log.Debugf("Frontera/PutBidding(30)\n")
 		err = domain.PutBidding(ctx, r.Url, r.Probability )
 		if err != nil {
-			fmt.Printf("Frontera/PutBidding(35), err=%s\n", err.Error())
+			log.Debugf("Frontera/PutBidding(35), err=%s\n", err.Error())
 			return 
 		}
-		fmt.Printf("Frontera/PutBidding(40)\n")
+		log.Debugf("Frontera/PutBidding(40)\n")
 	}
 
-	fmt.Printf("Frontera/PutBidding(50)\n")
+	log.Debugf("Frontera/PutBidding(50)\n")
 	res = &types.UrlResponse{
                 Header: types.UrlSignedResponseHeader{
                         UrlResponseHeader: types.UrlResponseHeader{
@@ -1008,7 +1025,7 @@ func (f *Frontera) PutBidding(ctx context.Context, req *types.UrlRequestMessage 
                 },
         }
 
-	fmt.Printf("Frontera/PutBidding(60)\n")
+	log.Debugf("Frontera/PutBidding(60)\n")
 	return 
 }
 
@@ -1045,28 +1062,28 @@ func (f *Frontera) CancelWants(urls []string,  domainID proto.DomainID ) bool {
 
 
 func(f *Frontera) GetBidding(ctx context.Context) ([]*wantlist.BiddingEntry,  error) {
-	fmt.Printf("Frontera/GetBidding(10)\n ")
+	log.Debugf("Frontera/GetBidding(10)\n ")
 	//return bs.engine.GetBidding(/* wyong, 20181227 p */ )
 
 	//wyong, 20190131
 	biddinglist, _ := f.engine.GetBidding()
 	if biddinglist == nil {
-		fmt.Printf("Frontera/GetBidding(15)\n ")
+		log.Debugf("Frontera/GetBidding(15)\n ")
 		return []*wantlist.BiddingEntry{}, nil
 	}
 
-	fmt.Printf("Frontera/GetBidding(20)\n ")
+	log.Debugf("Frontera/GetBidding(20)\n ")
 	biddings := biddinglist.BiddingEntries()
         out := make([]*wantlist.BiddingEntry, 0, len(biddings))
         for _, bidding := range biddings {
-                fmt.Printf("Frontera/GetBidding(30), %s\n", bidding.Url )
+                log.Debugf("Frontera/GetBidding(30), %s\n", bidding.Url )
 		if (bidding.Seen == false ) {
                 	out = append(out,bidding)
 			bidding.Seen = true 
 		}
         }
 
-	fmt.Printf("Frontera/GetBidding(40)\n")
+	log.Debugf("Frontera/GetBidding(40)\n")
 	return out, nil
 }
 
@@ -1133,7 +1150,7 @@ func (f *Frontera) UrlBidMessageReceived(ctx context.Context, req *types.UrlBidM
                         //TODO,wyong, 20181220
                         //bs.updateReceiveCounters(cid)
 
-                        fmt.Printf("Frontera/UrlBidMessageReceived(10), got cid(%s) for url(%s) from %s", c, u, p)
+                        log.Debugf("Frontera/UrlBidMessageReceived(10), got cid(%s) for url(%s) from %s", c, u, p)
 			c1, err  := cid.Decode(c) 
 			if err!= nil {
 				//todo, wyong, 20200907 
@@ -1188,19 +1205,19 @@ func (f *Frontera) receiveBidFrom(ctx context.Context,  from proto.NodeID, url s
 	//get bids from message, wyong, 20190115
 	//bids := bidding.Bids
 	
-	fmt.Printf("Frontera/receiveBidFrom(10)\n")
+	log.Debugf("Frontera/receiveBidFrom(10)\n")
 	d, exist := f.DomainForUrl(url) 
 	if exist == true {
-		fmt.Printf("Frontera/receiveBidFrom(20)\n")
+		log.Debugf("Frontera/receiveBidFrom(20)\n")
 		if (f.wm.ReceiveBidForWants(ctx, url, c, from, d.domainID)) {
 			//wait until wm have processed the incoming bid. 
 			//if we have received two bids, remove bidding from domain.
 			//wyong, 20200831
-			fmt.Printf("Frontera/receiveBidFrom(30)\n")
+			log.Debugf("Frontera/receiveBidFrom(30)\n")
 			d.receiveBidFrom(from, url)
-			fmt.Printf("Frontera/receiveBidFrom(40)\n")
+			log.Debugf("Frontera/receiveBidFrom(40)\n")
 		}
-		fmt.Printf("Frontera/receiveBidFrom(50)\n")
+		log.Debugf("Frontera/receiveBidFrom(50)\n")
 
 	}
 
@@ -1213,31 +1230,31 @@ func (f *Frontera) receiveBidFrom(ctx context.Context,  from proto.NodeID, url s
 	//	return bs.process.Close()
 	//}
 
-	fmt.Printf("Frontera/receiveBidFrom(60)\n")
+	log.Debugf("Frontera/receiveBidFrom(60)\n")
 	return nil
 }
 
 //wyong, 20200820 
 func (f *Frontera) DomainForID(id proto.DomainID ) (domain *Domain, exists bool )  {
 
-	fmt.Printf("Frontera/DomainForID(10), id =%s\n", id) 
+	log.Debugf("Frontera/DomainForID(10), id =%s\n", id) 
 
 	//just for debug, wyong, 20200820 
 	f.domainMap.Range(func(_, rawDomain interface{}) bool {
 		domain := rawDomain.(*Domain)
-		fmt.Printf("Frontera/DomainForID(20), domainMap, domain.domainID=%s\n", domain.domainID) 
+		log.Debugf("Frontera/DomainForID(20), domainMap, domain.domainID=%s\n", domain.domainID) 
 		return true 
 	})
 
-	fmt.Printf("Frontera/DomainForID(30)\n") 
+	log.Debugf("Frontera/DomainForID(30)\n") 
 	var rawDomain interface{}
 	if rawDomain, exists = f.domainMap.Load(id); !exists {
-		fmt.Printf("Frontera/DomainForID(35)\n") 
+		log.Debugf("Frontera/DomainForID(35)\n") 
 		return
 	}
 
 	domain = rawDomain.(*Domain)
-	fmt.Printf("Frontera/DomainForID(45), found domain=%s\n", domain.domainID ) 
+	log.Debugf("Frontera/DomainForID(45), found domain=%s\n", domain.domainID ) 
 	return
 }
 
@@ -1255,14 +1272,14 @@ func (f *Frontera) DomainForUrl(urlstring string) (domain *Domain, exists bool )
 	}
 	*/
 
-	fmt.Printf("Frontera/DomainForUrl(10), urlstring=%s\n", urlstring) 
+	log.Debugf("Frontera/DomainForUrl(10), urlstring=%s\n", urlstring) 
         u, err := url.Parse(urlstring)
         if err != nil {
                 return 
         }
 
         domainname := u.Scheme + "://" + u.Host
-	fmt.Printf("Frontera/DomainForUrl(20), domainname=%s\n", domainname ) 
+	log.Debugf("Frontera/DomainForUrl(20), domainname=%s\n", domainname ) 
 
 	var rawDomain interface{}
 	if rawDomain, exists = f.domainMap.Load(proto.DomainID(domainname)); !exists {
@@ -1270,7 +1287,7 @@ func (f *Frontera) DomainForUrl(urlstring string) (domain *Domain, exists bool )
 	}
 
 	domain = rawDomain.(*Domain)
-	fmt.Printf("Frontera/DomainForUrl(30), domain=%s\n", domain) 
+	log.Debugf("Frontera/DomainForUrl(30), domain=%s\n", domain) 
 
 	return
 }
@@ -1320,14 +1337,14 @@ func (f *Frontera) ReceiveMessage(ctx context.Context, p proto.NodeID, incoming 
 
 //wyong, 20181221
 func(f *Frontera) PutBid(ctx context.Context, url string, cid cid.Cid) error {
-	fmt.Printf("Frontera/PutBid(10), url = %s, cid = %s\n", url, cid)
+	log.Debugf("Frontera/PutBid(10), url = %s, cid = %s\n", url, cid)
 	f.engine.CreateBid(ctx, url, cid )
 	return nil 
 }
 
 //wyong, 20200817
 func(f *Frontera) GetCid(ctx context.Context, req *types.UrlCidRequestMessage ) (res *types.UrlCidResponse, err error) {
-	fmt.Printf("Frontera/GetCid(10), domainID =%s\n", req.Header.DomainID ) 
+	log.Debugf("Frontera/GetCid(10), domainID =%s\n", req.Header.DomainID ) 
 
 	//wyong, 20200820 
 	domain, exist := f.DomainForID(req.Header.DomainID) 
@@ -1336,22 +1353,22 @@ func(f *Frontera) GetCid(ctx context.Context, req *types.UrlCidRequestMessage ) 
 		return 
 	}
 
-	fmt.Printf("Frontera/GetCid(20), domain.domainID =%s\n", string(domain.domainID)) 
+	log.Debugf("Frontera/GetCid(20), domain.domainID =%s\n", string(domain.domainID)) 
 	var cids []string
 	for _, r := range req.Payload.Requests {
 		var c cid.Cid 
 		c, err = domain.GetCid(r.Url) 
-		fmt.Printf("Frontera/GetCid(30), r.Url=%s\n", r.Url ) 
+		log.Debugf("Frontera/GetCid(30), r.Url=%s\n", r.Url ) 
 		if err != nil {
 			break 	
 		}
-		fmt.Printf("Frontera/GetCid(40), cid=%s\n", c.String()) 
+		log.Debugf("Frontera/GetCid(40), cid=%s\n", c.String()) 
 
 		//apend this cid to cids, wyong, 20200820
 		cids = append(cids, c.String()) 
 	}
 
-	fmt.Printf("Frontera/GetCid(50)\n") 
+	log.Debugf("Frontera/GetCid(50)\n") 
 	res = &types.UrlCidResponse{
                 Header: types.UrlCidSignedResponseHeader{
                         UrlCidResponseHeader: types.UrlCidResponseHeader{
@@ -1371,16 +1388,16 @@ func(f *Frontera) GetCid(ctx context.Context, req *types.UrlCidRequestMessage ) 
                 },
         }
 
-	fmt.Printf("Frontera/GetCid(60)\n") 
+	log.Debugf("Frontera/GetCid(60)\n") 
 	return 
 }
 
 //wyong, 20200825 
 // Connected/Disconnected warns biddingsys about peer connections
 func (f *Frontera) PeersConnected(peers *proto.Peers ) {
-	fmt.Printf("Frontera/PeersConnected(10)\n")
+	log.Debugf("Frontera/PeersConnected(10)\n")
 	for _, p := range peers.Servers {
-		fmt.Printf("Frontera/PeerConnected(20), p=%s\n", p )
+		log.Debugf("Frontera/PeerConnected(20), p=%s\n", p )
 		f.wm.Connected(p)
 		f.engine.PeerConnected(p)
 	}
@@ -1388,9 +1405,9 @@ func (f *Frontera) PeersConnected(peers *proto.Peers ) {
 
 // Connected/Disconnected warns biddingsys about peer connections
 func (f *Frontera) PeersDisconnected(peers *proto.Peers ) {
-	fmt.Printf("Frontera/PeerDisconnected(10)\n")
+	log.Debugf("Frontera/PeerDisconnected(10)\n")
 	for _, p := range peers.Servers {
-		fmt.Printf("Frontera/PeerDisconnected(20), p=%s\n", p )
+		log.Debugf("Frontera/PeerDisconnected(20), p=%s\n", p )
 		f.wm.Disconnected(p)
 		f.engine.PeerDisconnected(p)
 	}

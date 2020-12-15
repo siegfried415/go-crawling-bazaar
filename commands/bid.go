@@ -17,6 +17,9 @@ import (
 
 	//wyong, 20200802 
 	env "github.com/siegfried415/gdf-rebuild/env" 
+
+	//wyong, 20201215
+	log "github.com/siegfried415/gdf-rebuild/utils/log" 
 )
 
 
@@ -166,25 +169,25 @@ Put bid for a url bidding:
 		//	}
 		//}
 
-		fmt.Printf("BidPutCmd/Run(10)\n") 
+		log.Debugf("BidPutCmd/Run(10)\n") 
 		url := req.Arguments[0]
 		if !IsURL(url){
-			fmt.Printf("BidPutCmd/Run(15)\n") 
+			log.Debugf("BidPutCmd/Run(15)\n") 
 			return fmt.Errorf("unsupported url syntax: %s", url)
 		}
 
-		fmt.Printf("BidPutCmd/Run(20), url=%s\n", url ) 
+		log.Debugf("BidPutCmd/Run(20), url=%s\n", url ) 
 		//wyong, 20190123
 		cid, err := cid.Decode(req.Arguments[1])
 		if err != nil {
 			return fmt.Errorf("cid syntax error: %s", cid )
 		}
 
-		fmt.Printf("BidPutCmd/Run(30), cid=%s\n", cid.String()) 
+		log.Debugf("BidPutCmd/Run(30), cid=%s\n", cid.String()) 
 		ce := cmdenv.(*env.Env)
 		err = ce.Frontera().PutBid(req.Context, url, cid )
 		if err != nil {
-			fmt.Printf("BidPutCmd/Run(35), err=%s\n", err.Error()) 
+			log.Debugf("BidPutCmd/Run(35), err=%s\n", err.Error()) 
 			//if err == ErrNodeOffline {
 			//	err = errAllowOffline
 			//}
@@ -196,7 +199,7 @@ Put bid for a url bidding:
 		//	Value: out.Value().String(),
 		//})
 
-		fmt.Printf("BidPutCmd/Run(40)\n") 
+		log.Debugf("BidPutCmd/Run(40)\n") 
 		return cmds.EmitOnce(res, 0)
 	},
 

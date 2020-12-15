@@ -17,7 +17,7 @@
 package net
 
 import (
-	"fmt"
+	//"fmt"
 	//"github.com/prometheus/client_golang/prometheus"
 	//dto "github.com/prometheus/client_model/go"
 
@@ -36,7 +36,7 @@ import (
 	//net "github.com/siegfried415/gdf-rebuild/net"
 
 	"github.com/siegfried415/gdf-rebuild/types"
-	//"github.com/siegfried415/gdf-rebuild/utils/log"
+	"github.com/siegfried415/gdf-rebuild/utils/log"
 )
 
 const (
@@ -65,26 +65,26 @@ func (rh RoutedHost) SendProvideService( /* reg *prometheus.Registry */ ) {
 		minerAddr   proto.AccountAddress
 	)
 
-	fmt.Printf("sendProvideService(10)\n")
+	log.Debug("sendProvideService(10)\n")
 	if nodeID, err = kms.GetLocalNodeID(); err != nil {
-		//log.WithError(err).Error("get local node id failed")
+		log.WithError(err).Error("get local node id failed")
 		return
 	}
 
-	fmt.Printf("sendProvideService(20),nodeID=%s\n", nodeID )
+	log.Debugf("sendProvideService(20),nodeID=%s\n", nodeID )
 	if privateKey, err = kms.GetLocalPrivateKey(); err != nil {
-		//log.WithError(err).Error("get local private key failed")
+		log.WithError(err).Error("get local private key failed")
 		return
 	}
 
-	fmt.Printf("sendProvideService(30)\n")
+	log.Debugf("sendProvideService(30)\n")
 	if minerAddr, err = crypto.PubKeyHash(privateKey.PubKey()); err != nil {
-		//log.WithError(err).Error("get miner account address failed")
+		log.WithError(err).Error("get miner account address failed")
 		return
 	}
 
 	
-	fmt.Printf("sendProvideService(40)\n")
+	log.Debugf("sendProvideService(40)\n")
 
 	/* todo, wyong, 20200812 
 	if mf, err = reg.Gather(); err != nil {
@@ -92,7 +92,7 @@ func (rh RoutedHost) SendProvideService( /* reg *prometheus.Registry */ ) {
 		return
 	}
 
-	fmt.Printf("sendProvideService(50)\n")
+	log.Debugf("sendProvideService(50)\n")
 	for _, m := range mf {
 		switch m.GetName() {
 		case metricKeyMemory, metricKeyCPUCount, metricKeyLoadAvg, metricKeySpace:
@@ -134,7 +134,7 @@ func (rh RoutedHost) SendProvideService( /* reg *prometheus.Registry */ ) {
 		}
 	}
 
-	fmt.Printf("sendProvideService(60)\n")
+	log.Debugf("sendProvideService(60)\n")
 	if cpuCount > 0 {
 		loadAvg = loadAvg / cpuCount
 	}
@@ -155,15 +155,15 @@ func (rh RoutedHost) SendProvideService( /* reg *prometheus.Registry */ ) {
 
 	nonceReq.Addr = minerAddr
 
-	fmt.Printf("sendProvideService(70)\n")
+	log.Debugf("sendProvideService(70)\n")
 	if err = rh.RequestPB("MCC.NextAccountNonce", &nonceReq, &nonceResp); err != nil {
 		// allocate nonce failed
 		//log.WithError(err).Error("allocate nonce for transaction failed")
-		fmt.Printf("sendProvideService(75), err=%s\n", err )
+		log.Debugf("sendProvideService(75), err=%s\n", err )
 		return
 	}
 
-	fmt.Printf("sendProvideService(80)\n")
+	log.Debugf("sendProvideService(80)\n")
 	tx := types.NewProvideService(
 		&types.ProvideServiceHeader{
 			//todo, wyong, 20200812 
@@ -176,27 +176,27 @@ func (rh RoutedHost) SendProvideService( /* reg *prometheus.Registry */ ) {
 		},
 	)
 
-	fmt.Printf("sendProvideService(90)\n")
+	log.Debugf("sendProvideService(90)\n")
 	if conf.GConf.Miner != nil && len(conf.GConf.Miner.TargetUsers) > 0 {
 		tx.ProvideServiceHeader.TargetUser = conf.GConf.Miner.TargetUsers
 	}
 
-	fmt.Printf("sendProvideService(100)\n")
+	log.Debugf("sendProvideService(100)\n")
 	tx.Nonce = nonceResp.Nonce
 
 	if err = tx.Sign(privateKey); err != nil {
-		//log.WithError(err).Error("sign provide service transaction failed")
+		log.WithError(err).Error("sign provide service transaction failed")
 		return
 	}
 
-	fmt.Printf("sendProvideService(110)\n")
+	log.Debugf("sendProvideService(110)\n")
 	req.TTL = 1
 	req.Tx = tx
 
 	if err = rh.RequestPB("MCC.AddTx", &req, &resp); err != nil {
 		// add transaction failed
-		//log.WithError(err).Error("send provide service transaction failed")
+		log.WithError(err).Error("send provide service transaction failed")
 		return
 	}
-	fmt.Printf("sendProvideService(120)\n")
+	log.Debugf("sendProvideService(120)\n")
 }

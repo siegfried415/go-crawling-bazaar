@@ -60,7 +60,7 @@ func InitKMS(host RoutedHost, PubKeyStoreFile string) {
 			if err := enc.Encode(testNode); err != nil {
 				return
 			}
-			fmt.Printf("encode test node : %s\n", string(encNodeInfo)) 
+			log.Debugf("encode test node : %s\n", string(encNodeInfo)) 
 			*/
 
 			node := &proto.Node{

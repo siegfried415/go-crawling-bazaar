@@ -19,6 +19,9 @@ import (
 	//wyong, 20201022 	
 	env "github.com/siegfried415/gdf-rebuild/env" 
 
+	//wyong, 20201215
+	log "github.com/siegfried415/gdf-rebuild/utils/log" 
+
 )
 
 var urlGraphCmd = &cmds.Command{
@@ -63,7 +66,7 @@ This command waits for the url 's content to be mined.`,
         Run: func(req *cmds.Request, re cmds.ResponseEmitter, env cmds.Environment) error {
 		url := req.Arguments[0]
 
-		fmt.Printf("commands/urlgraph.go, UrlGraphPageCrawledCmd, input url=%s\n", url ) 
+		log.Debugf("commands/urlgraph.go, UrlGraphPageCrawledCmd, input url=%s\n", url ) 
 
                 //out, err := GetPorcelainAPI(env).DAGImportData(req.Context, strings.NewReader(req.Arguments[1]))
 
@@ -80,7 +83,7 @@ This command waits for the url 's content to be mined.`,
 
 
                 //cid := out.Cid()
-		//fmt.Printf("commands/urlgraph.go, UrlGraphPageCrawledCmd, cid of content(%s) is %s\n", req.Arguments[1], cid.String()) 
+		//log.Debugf("commands/urlgraph.go, UrlGraphPageCrawledCmd, cid of content(%s) is %s\n", req.Arguments[1], cid.String()) 
                 fromAddr, err := fromAddrOrDefault(req, env)
                 if err != nil {
                         return err
@@ -89,23 +92,23 @@ This command waits for the url 's content to be mined.`,
 		//wyong, 20191227 
                 ret, err := GetPorcelainAPI(env).ConfigGet("mining.minerAddress")
                 if err != nil {
-			fmt.Printf("commands/urlgraph.go, UrlGraphPageCrawledCmd, problem getting minner address \n") 
+			log.Debugf("commands/urlgraph.go, UrlGraphPageCrawledCmd, problem getting minner address \n") 
                         return errors.Wrap(err, "problem getting miner address")
                 }
                 minerAddr, ok := ret.(address.Address)
                 if !ok {
-			fmt.Printf("commands/urlgraph.go, UrlGraphPageCrawledCmd, problem converting minner address \n") 
+			log.Debugf("commands/urlgraph.go, UrlGraphPageCrawledCmd, problem converting minner address \n") 
                         return errors.New("problem converting miner address")
                 }
 
 		//add parameter pageHash, wyong, 20200218 
                 res, err := GetPorcelainAPI(env).UrlGraphUrlCrawled(req.Context, fromAddr ,  url, contentCid , pageHash, minerAddr )
                 if err != nil {
-			fmt.Printf("commands/urlgraph.go, UrlGraphPageCrawledCmd, PorcelainAPI/UrlGraphUrlCrawled completed, got error\n")
+			log.Debugf("commands/urlgraph.go, UrlGraphPageCrawledCmd, PorcelainAPI/UrlGraphUrlCrawled completed, got error\n")
                         return err
                 }
 
-		fmt.Printf("commands/urlgraph.go, UrlGraphPageCrawledCmd, PorcelainAPI/UrlGraphUrlCrawled completed\n" ) 
+		log.Debugf("commands/urlgraph.go, UrlGraphPageCrawledCmd, PorcelainAPI/UrlGraphUrlCrawled completed\n" ) 
                 return re.Emit(&UrlGraphPageCrawledResult{
                         GasUsed:               types.NewGasUnits(0),
                         UrlGraphAddPageCrawledResponse: res,
@@ -160,7 +163,7 @@ will be returned as a space separated table with url.
 			return err 
 		}
 		
-		fmt.Printf("UrlGraphGetCidOfUrl(10), domain=%s\n", domain ) 
+		log.Debugf("UrlGraphGetCidOfUrl(10), domain=%s\n", domain ) 
 
 		//todo, get host from env, wyong, 20201008 
 		e := cmdenv.(*env.Env)	
@@ -175,10 +178,10 @@ will be returned as a space separated table with url.
 		defer conn.Close()
 
 		//var result cid.Cid  
-		fmt.Printf("UrlGraphGetCidOfUrl(20), url =%s\n", req.Arguments[0] ) 
+		log.Debugf("UrlGraphGetCidOfUrl(20), url =%s\n", req.Arguments[0] ) 
 		result, err := conn.GetCidByUrl(req.Context, req.Arguments[0]) 
 
-		fmt.Printf("UrlGraphGetCidOfUrl(30), result=%s\n", result.String()) 
+		log.Debugf("UrlGraphGetCidOfUrl(30), result=%s\n", result.String()) 
 		return re.Emit(result)
 
         },
@@ -216,13 +219,13 @@ will be returned as a space separated table with url.
         Run: func(req *cmds.Request, re cmds.ResponseEmitter, env cmds.Environment) error {
 		url := req.Arguments[0]
 
-		fmt.Printf("commands/urlgraph.go, UrlGraphGetUrlNodeCmd(10)\n" ) 
+		log.Debugf("commands/urlgraph.go, UrlGraphGetUrlNodeCmd(10)\n" ) 
                 res, err := GetPorcelainAPI(env).UrlGraphGetUrlNode(req.Context, url )
                 if err != nil {
                         return err
                 }
 
-		fmt.Printf("commands/urlgraph.go, UrlGraphGetUrlNodeCmd(20)\n" ) 
+		log.Debugf("commands/urlgraph.go, UrlGraphGetUrlNodeCmd(20)\n" ) 
                 return re.Emit(&UrlGraphGetUrlNodeResult{
                         GasUsed:       types.NewGasUnits(0),
                         UrlNode: 	res,
@@ -271,13 +274,13 @@ will be returned as a space separated table with url.
         Run: func(req *cmds.Request, re cmds.ResponseEmitter, env cmds.Environment) error {
 		//url := req.Arguments[0]
 
-		fmt.Printf("commands/urlgraph.go, UrlGraphGetUrlNodesCmd(10)\n" ) 
+		log.Debugf("commands/urlgraph.go, UrlGraphGetUrlNodesCmd(10)\n" ) 
                 res, err := GetPorcelainAPI(env).UrlGraphGetUrlNodes(req.Context )
                 if err != nil {
                         return err
                 }
 
-		fmt.Printf("commands/urlgraph.go, UrlGraphGetUrlNodesCmd(20)\n" ) 
+		log.Debugf("commands/urlgraph.go, UrlGraphGetUrlNodesCmd(20)\n" ) 
                 return re.Emit(&UrlGraphGetUrlNodesResult{
                         GasUsed:       types.NewGasUnits(0),
                         UrlNodes: 	res,

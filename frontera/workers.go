@@ -5,7 +5,7 @@ import (
 	//"math/rand"
 	//"sync"
 	//"time"
-	"fmt"
+	//"fmt"
 
 	//bsmsg "github.com/siegfried415/gdf-rebuild/frontera/message"
 
@@ -14,6 +14,9 @@ import (
 	//procctx "github.com/ipfs/goprocess/context"
 	//peer "github.com/libp2p/go-libp2p-peer"
 	//logging "github.com/ipfs/go-log"
+
+	//wyong, 20201215
+	log "github.com/siegfried415/gdf-rebuild/utils/log"
 )
 
 var TaskWorkerCount = 8
@@ -54,19 +57,19 @@ func (f *Frontera) startWorkers(px process.Process, ctx context.Context) {
 
 func (f *Frontera) taskWorker(ctx context.Context, id int) {
 	//idmap := logging.LoggableMap{"ID": id}
-	//defer log.Debug("bitswap task worker shutting down...")
+	defer log.Debug("bitswap task worker shutting down...")
 	for {
 		//log.Event(ctx, "Bitswap.TaskWorker.Loop", idmap)
-		fmt.Printf("Frontera/taskWorker(10), enter loop\n") 
+		log.Debugf("Frontera/taskWorker(10), enter loop\n") 
 		select {
 		case bidMsg, ok := <-f.engine.Outbox():
-			fmt.Printf("Frontera/taksWorker(20), f.engine.Outbix fired!\n")
+			log.Debugf("Frontera/taksWorker(20), f.engine.Outbix fired!\n")
 
 			//select {
 			//case envelope, ok := <-nextEnvelope:
 				//log.Debugf("taksWorker, nextEnvelope fired!")
 				if !ok {
-					fmt.Printf("Frontera/taksWorker(25)\n")
+					log.Debugf("Frontera/taksWorker(25)\n")
 					continue
 				}
 
@@ -90,9 +93,9 @@ func (f *Frontera) taskWorker(ctx context.Context, id int) {
 				//bs.engine.MessageSent(envelope.Peer, outgoing)
 				*/
 
-				fmt.Printf("Frontera/taksWorker(30)\n")
+				log.Debugf("Frontera/taksWorker(30)\n")
 				f.wm.SendBids(ctx, bidMsg )
-				fmt.Printf("Frontera/taksWorker(40)\n")
+				log.Debugf("Frontera/taksWorker(40)\n")
 
 				/*
 				//bs.counterLk.Lock()
@@ -108,7 +111,7 @@ func (f *Frontera) taskWorker(ctx context.Context, id int) {
 			//	return
 			//}
 		case <-ctx.Done():
-			fmt.Printf("Frontera/taksWorker(50), ctx.Done fired!")
+			log.Debugf("Frontera/taksWorker(50), ctx.Done fired!")
 			return
 		}
 	}

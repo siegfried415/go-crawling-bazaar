@@ -76,6 +76,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("SELECT nonIndexedColumn FROM testSimple LIMIT 1; result %d\n", result)
+	log.Debugf("SELECT nonIndexedColumn FROM testSimple LIMIT 1; result %d\n", result)
 
 }

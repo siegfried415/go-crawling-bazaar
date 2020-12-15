@@ -54,6 +54,9 @@ import (
 	//"github.com/siegfried415/gdf-rebuild/repo"
 
 	//"github.com/siegfried415/gdf-rebuild/types"
+
+	//wyong, 20201215 
+	log "github.com/siegfried415/gdf-rebuild/utils/log"
 )
 
 const (
@@ -227,7 +230,7 @@ or input a passphrase by
 		var rawConfig *conf.Config
 		source, _ := req.Options["Source"].(string)
 		if source == "" {
-			fmt.Printf("Generating testnet %s config\n", req.Options["TestnetRegion"])
+			log.Debugf("Generating testnet %s config\n", req.Options["TestnetRegion"])
 
 			// Load testnet config
 			rawConfig = testnet.GetTestNetConfig()
@@ -243,7 +246,7 @@ or input a passphrase by
 			}
 		} else {
 			// Load from template file
-			fmt.Printf("Generating config base on %s templete\n", req.Options["Source"])
+			log.Debugf("Generating config base on %s templete\n", req.Options["Source"])
 			sourceConfig, err := ioutil.ReadFile(source)
 			if err != nil {
 				//ConsoleLog.WithError(err).Error("read config template failed")
@@ -398,12 +401,12 @@ or input a passphrase by
 
 
 		fmt.Println("Generated config.")
-		fmt.Printf("\nConfig file:      %s\n", configFilePath)
-		fmt.Printf("Private key file: %s\n", privateKeyFile)
-		fmt.Printf("Public key's hex: %s\n", hex.EncodeToString(publicKey.Serialize()))
+		log.Debugf("\nConfig file:      %s\n", configFilePath)
+		log.Debugf("Private key file: %s\n", privateKeyFile)
+		log.Debugf("Public key's hex: %s\n", hex.EncodeToString(publicKey.Serialize()))
 
-		fmt.Printf("\nWallet address: %s\n", walletAddr)
-		fmt.Printf(`
+		log.Debugf("\nWallet address: %s\n", walletAddr)
+		log.Debugf(`
 	Any further command could costs PTC.
 	You can get some free PTC from:
 		https://testnet.covenantsql.io/wallet/`)

@@ -360,19 +360,19 @@ func NewDomain(cfg *DomainConfig, f *Frontera, peers *proto.Peers, genesis *type
 
 // UpdatePeers defines peers update query interface.
 func (domain *Domain) UpdatePeers(peers *proto.Peers) (err error) {
-	fmt.Printf("Domain/UpdatePeers(10)\n") 
+	log.Debugf("Domain/UpdatePeers(10)\n") 
 	//wyong, 20200825 
 	for _, p := range peers.Servers {
-		fmt.Printf("Domain/UpdatePeers(20)\n") 
+		log.Debugf("Domain/UpdatePeers(20)\n") 
 		domain.addActivePeer(p)
 	}
 
-	fmt.Printf("Domain/UpdatePeers(30)\n") 
+	log.Debugf("Domain/UpdatePeers(30)\n") 
 	if err = domain.kayakRuntime.UpdatePeers(peers); err != nil {
 		return
 	}
 
-	fmt.Printf("Domain/UpdatePeers(40)\n") 
+	log.Debugf("Domain/UpdatePeers(40)\n") 
 	return domain.chain.UpdatePeers(peers)
 }
 
@@ -415,14 +415,14 @@ func (domain *Domain) InitTable() (err error) {
 //wyong, 20200821
 func (domain *Domain) SetCid( url string, c cid.Cid) (err error) {
 
-	fmt.Printf("Domain/SetCid(10), url=%s\n", url) 
+	log.Debugf("Domain/SetCid(10), url=%s\n", url) 
 	// build query 
 	q := fmt.Sprintf( "INSERT INTO urlgraph VALUES('%s', '%s')", url, c.String()) 
 	query := types.Query {
 		Pattern : q ,
 	}
 
-	fmt.Printf("Domain/SetCid(20), q=%s\n", q ) 
+	log.Debugf("Domain/SetCid(20), q=%s\n", q ) 
         // build request
         request := &types.Request{
                 Header: types.SignedRequestHeader{
@@ -442,16 +442,16 @@ func (domain *Domain) SetCid( url string, c cid.Cid) (err error) {
                 },
         }
 
-	fmt.Printf("Domain/SetCid(30)\n") 
+	log.Debugf("Domain/SetCid(30)\n") 
 	request.SetContext(context.Background())
 	_, _, err = domain.chain.Query(request, true)
 	if  err != nil {
-		fmt.Printf("Domain/SetCid(35)\n") 
+		log.Debugf("Domain/SetCid(35)\n") 
 		err = errors.Wrap(err, "failed to execute with eventual consistency")
 		return 
 	}
 
-	fmt.Printf("Domain/SetCid(40)\n" ) 
+	log.Debugf("Domain/SetCid(40)\n" ) 
 	return 
 }
 
@@ -468,14 +468,14 @@ func B2S(bs []uint8) string {
 //wyong, 20200817
 func (domain *Domain) GetCid( url string) (c cid.Cid, err error) {
 
-	fmt.Printf("Domain/GetCid(10), url=%s\n", url) 
+	log.Debugf("Domain/GetCid(10), url=%s\n", url) 
 	// build query 
 	q := fmt.Sprintf( "SELECT cid FROM urlgraph where url='%s'" , url ) 
 	query := types.Query {
 		Pattern : q ,
 	}
 
-	fmt.Printf("Domain/GetCid(20), q=%s\n", q ) 
+	log.Debugf("Domain/GetCid(20), q=%s\n", q ) 
         // build request
         request := &types.Request{
                 Header: types.SignedRequestHeader{
@@ -495,42 +495,42 @@ func (domain *Domain) GetCid( url string) (c cid.Cid, err error) {
                 },
         }
 
-	fmt.Printf("Domain/GetCid(30)\n") 
+	log.Debugf("Domain/GetCid(30)\n") 
 	request.SetContext(context.Background())
 	_, resp, err := domain.chain.Query(request, true)
 	if  err != nil {
-		fmt.Printf("Domain/GetCid(35)\n") 
+		log.Debugf("Domain/GetCid(35)\n") 
 		err = errors.Wrap(err, "failed to execute with eventual consistency")
 		return 
 	}
 
-	fmt.Printf("Domain/GetCid(40)\n") 
+	log.Debugf("Domain/GetCid(40)\n") 
 	//result process , wyong, 20200817 
 	rows := resp.Payload.Rows //all the rows 
 	if rows==nil  || len(rows) <= 0 {
 		return 
 	}
 
-	fmt.Printf("Domain/GetCid(50), first row =%s\n", rows[0]) 
+	log.Debugf("Domain/GetCid(50), first row =%s\n", rows[0]) 
 	fr := rows[0]		//first row
 	if len(fr.Values) <=0 {
 		return 
 	} 
 
-	fmt.Printf("Domain/GetCid(60), first column of first rows=%s \n", fr.Values[0] ) 
+	log.Debugf("Domain/GetCid(60), first column of first rows=%s \n", fr.Values[0] ) 
 
 	//bugfix, wyong, 20201208 
 	//fcfr:= fr.Values[0].(string)	//first column of first row 
 	fcfr:= B2S((fr.Values[0]).([]uint8))	//first column of first row 
 
-	fmt.Printf("Domain/GetCid(70), raw cid =%s\n", fcfr ) 
+	log.Debugf("Domain/GetCid(70), raw cid =%s\n", fcfr ) 
 	c, err  = cid.Decode(fcfr)	//convert it to cid 
 	if  err != nil {
-		fmt.Printf("Domain/GetCid(75)\n") 
+		log.Debugf("Domain/GetCid(75)\n") 
 		return 
 	}
 
-	fmt.Printf("Domain/GetCid(80), cid = %s\n", c.String()) 
+	log.Debugf("Domain/GetCid(80), cid = %s\n", c.String()) 
 	return 
 }
 
@@ -805,9 +805,9 @@ const provSearchDelay = time.Second * 10
 
 //wyong, 20200825 
 func (domain *Domain) addActivePeer(p proto.NodeID) {
-	fmt.Printf("Domain/addActivePeer(10), p=%s\n", p) 
+	log.Debugf("Domain/addActivePeer(10), p=%s\n", p) 
 	if _, ok := domain.activePeers[p]; !ok {
-		fmt.Printf("Domain/addActivePeer(20)\n") 
+		log.Debugf("Domain/addActivePeer(20)\n") 
 		domain.activePeers[p] = struct{}{}
 		domain.activePeersArr = append(domain.activePeersArr, p)
 
@@ -815,7 +815,7 @@ func (domain *Domain) addActivePeer(p proto.NodeID) {
 		//cmgr := s.f.network.ConnectionManager()
 		//cmgr.TagPeer(p, s.tag, 10)
 	}
-	fmt.Printf("Domain/addActivePeer(30)\n") 
+	log.Debugf("Domain/addActivePeer(30)\n") 
 }
 
 func (domain *Domain) resetTick() {
@@ -833,7 +833,7 @@ func (domain *Domain) run(ctx context.Context) {
 	for {
 		select {
 		case bid := <-domain.incoming:
-			fmt.Printf("Domain/run(10), bid := <- s.incoming, bid.url = %s\n", bid.url )
+			log.Debugf("Domain/run(10), bid := <- s.incoming, bid.url = %s\n", bid.url )
 			domain.tick.Stop()
 
 			if bid.from != "" {
@@ -851,17 +851,17 @@ func (domain *Domain) run(ctx context.Context) {
 
 
 		case urls := <-domain.newReqs:
-			fmt.Printf("Domain/run(20), urls := <- domain.newReqs\n" )
+			log.Debugf("Domain/run(20), urls := <- domain.newReqs\n" )
 
 			for _, url := range urls {
-				fmt.Printf("Domain/run(30), add url(%s) into interest\n", url)  
+				log.Debugf("Domain/run(30), add url(%s) into interest\n", url)  
 				domain.interest.Add(url, nil)
 			}
 
-			fmt.Printf("Domain/run(40), domain.liveWants=%d, activeWantsLimit=%d\n", domain.liveWants, activeWantsLimit )  
+			log.Debugf("Domain/run(40), domain.liveWants=%d, activeWantsLimit=%d\n", domain.liveWants, activeWantsLimit )  
 			if len(domain.liveWants) < activeWantsLimit {
 				toadd := activeWantsLimit - len(domain.liveWants)
-				fmt.Printf("Domain/run(50), toadd = %d\n", toadd )  
+				log.Debugf("Domain/run(50), toadd = %d\n", toadd )  
 				if toadd > len(urls) {
 					toadd = len(urls)
 				}
@@ -869,23 +869,23 @@ func (domain *Domain) run(ctx context.Context) {
 				now := urls[:toadd]
 				urls = urls[toadd:]
 
-				fmt.Printf("Domain/run(60), now set = %s\n", now )  
+				log.Debugf("Domain/run(60), now set = %s\n", now )  
 				domain.wantUrls(ctx, now)
 			}
 
-			fmt.Printf("Domain/run(70)\n")  
+			log.Debugf("Domain/run(70)\n")  
 			for _, url := range urls {
-				fmt.Printf("Domain/run(80), add url(%s) into tofetch \n", url)  
+				log.Debugf("Domain/run(80), add url(%s) into tofetch \n", url)  
 				domain.tofetch.Push(url)
 			}
-			fmt.Printf("Domain/run(80)\n")  
+			log.Debugf("Domain/run(80)\n")  
 
 		case urls := <-domain.cancelUrls:
-			fmt.Printf("domain/run, urls := <- domain.cancelUrls \n" )
+			log.Debugf("domain/run, urls := <- domain.cancelUrls \n" )
 			domain.cancel(urls)
 
 		case <-domain.tick.C:
-			fmt.Printf("domain/run,<- domain.tick.C\n" )
+			log.Debugf("domain/run,<- domain.tick.C\n" )
 			live := make([]string, 0, len(domain.liveWants))
 			now := time.Now()
 			for url := range domain.liveWants {
@@ -969,7 +969,7 @@ func (domain *Domain) receiveBid(ctx context.Context, url string ) {
 }
 
 func (domain *Domain) wantUrls(ctx context.Context, urls []string ) {
-	fmt.Printf("Domain/wantUrls(10)\n") 
+	log.Debugf("Domain/wantUrls(10)\n") 
 
 	now := time.Now()
 	for _, url := range urls {

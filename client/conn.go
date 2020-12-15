@@ -24,7 +24,7 @@ import (
 	"sync/atomic"
 	"time"
 	//"os"
-	"fmt" 
+	//"fmt" 
 
 	"github.com/pkg/errors"
 
@@ -299,7 +299,7 @@ func (c *pconn) close() error {
 
 //wyong, 20200729
  func (c *Conn) sendUrlRequest(ctx context.Context, requests []types.UrlRequest ) (err error) {
-	fmt.Printf("Client/Conn/sendUrlRequest(10)\n") 
+	log.Debugf("Client/Conn/sendUrlRequest(10)\n") 
 
 	var uc *pconn // peer connection used to execute the queries
 	uc = c.leader
@@ -350,13 +350,13 @@ func (c *pconn) close() error {
 		},
 	}
 
-	fmt.Printf("Client/Conn/sendUrlRequest(20)\n") 
+	log.Debugf("Client/Conn/sendUrlRequest(20)\n") 
 	if err = reqMsg.Sign(c.privKey); err != nil {
-		fmt.Printf("Client/Conn/sendUrlRequest(25), err=%s\n", err.Error()) 
+		log.Debugf("Client/Conn/sendUrlRequest(25), err=%s\n", err.Error()) 
 		return
 	}
 
-	fmt.Printf("Client/Conn/sendUrlRequest(30)\n") 
+	log.Debugf("Client/Conn/sendUrlRequest(30)\n") 
 	// set receipt if key exists in context
 	if val := ctx.Value(&ctxReceiptKey); val != nil {
 		val.(*atomic.Value).Store(&Receipt{
@@ -364,13 +364,13 @@ func (c *pconn) close() error {
 		})
 	}
 
-	fmt.Printf("Client/Conn/sendUrlRequest(40)\n") 
+	log.Debugf("Client/Conn/sendUrlRequest(40)\n") 
 
 	
 	//wyong, 20201007 
 	//if err = uc.pCaller.Call(route.FronteraURLRequest.String(), reqMsg, &response); err != nil {
 	if _, err = uc.pCaller.SendMsg(ctx, reqMsg ); err != nil {
-		fmt.Printf("Client/Conn/sendUrlRequest(45), err=%s\n", err.Error()) 
+		log.Debugf("Client/Conn/sendUrlRequest(45), err=%s\n", err.Error()) 
 		return
 	}
 
@@ -378,7 +378,7 @@ func (c *pconn) close() error {
 	var response types.Response
 	err = uc.pCaller.RecvMsg(ctx, &response) 
 	if err != nil {
-		fmt.Printf("Client/Conn/sendUrlRequest(47), err=%s\n", err.Error()) 
+		log.Debugf("Client/Conn/sendUrlRequest(47), err=%s\n", err.Error()) 
 		return
 	}
 
@@ -407,7 +407,7 @@ func (c *pconn) close() error {
 		}
 	}()
 
-	fmt.Printf("Client/Conn/sendUrlRequest(50)\n") 
+	log.Debugf("Client/Conn/sendUrlRequest(50)\n") 
 	return
 }
 
@@ -419,7 +419,7 @@ func (c *Conn) PutUrlRequest(ctx context.Context, parent types.UrlRequest, reque
 	//wyong, 20200519 
 	//log.SetOutput(os.Stdout) 
 	//log.WithField("query", query).Debug("ExecContext called...")
-	fmt.Printf("Client/Conn/PutUrlRequest(10)\n") 
+	log.Debugf("Client/Conn/PutUrlRequest(10)\n") 
 
 	/*
 	if atomic.LoadInt32(&c.closed) != 0 {
@@ -434,7 +434,7 @@ func (c *Conn) PutUrlRequest(ctx context.Context, parent types.UrlRequest, reque
 
 	//var affectedRows, lastInsertID int64
 	if err = c.sendUrlRequest(ctx, requests ); err != nil {
-		fmt.Printf("Client/Conn/PutUrlRequest(15), err=%s\n", err.Error()) 
+		log.Debugf("Client/Conn/PutUrlRequest(15), err=%s\n", err.Error()) 
 		return
 	}
 
@@ -445,14 +445,14 @@ func (c *Conn) PutUrlRequest(ctx context.Context, parent types.UrlRequest, reque
 	}
 	*/
 
-	fmt.Printf("Client/Conn/PutUrlRequest(20)\n") 
+	log.Debugf("Client/Conn/PutUrlRequest(20)\n") 
 	return
 }
 
 
 //wyong, 20200817 
  func (c *Conn) sendUrlCidRequest(ctx context.Context, request types.UrlCidRequest ) (result cid.Cid, err error) {
-	fmt.Printf("conn/sendUrlCidRequest(10)\n") 
+	log.Debugf("conn/sendUrlCidRequest(10)\n") 
 	var uc *pconn // peer connection used to execute the queries
 	uc = c.leader
 
@@ -482,7 +482,7 @@ func (c *Conn) PutUrlRequest(ctx context.Context, parent types.UrlRequest, reque
 	//}()
 
 
-	fmt.Printf("conn/sendUrlCidRequest(20)\n") 
+	log.Debugf("conn/sendUrlCidRequest(20)\n") 
 	// build request
 	reqMsg := &types.UrlCidRequestMessage {
 		Header: types.SignedUrlCidRequestHeader{
@@ -504,7 +504,7 @@ func (c *Conn) PutUrlRequest(ctx context.Context, parent types.UrlRequest, reque
 		return
 	}
 
-	fmt.Printf("conn/sendUrlCidRequest(30)\n") 
+	log.Debugf("conn/sendUrlCidRequest(30)\n") 
 	// set receipt if key exists in context
 	if val := ctx.Value(&ctxReceiptKey); val != nil {
 		val.(*atomic.Value).Store(&Receipt{
@@ -516,7 +516,7 @@ func (c *Conn) PutUrlRequest(ctx context.Context, parent types.UrlRequest, reque
 	//wyong, 20201008 
 	//if err = uc.pCaller.Call(route.FronteraURLCidRequest.String(), reqMsg, &response); err != nil {
 	if _, err = uc.pCaller.SendMsg(ctx, reqMsg ); err != nil {
-		fmt.Printf("conn/sendUrlCidRequest(35), err=%s\n", err.Error()) 
+		log.Debugf("conn/sendUrlCidRequest(35), err=%s\n", err.Error()) 
 		return
 	}
 
@@ -524,7 +524,7 @@ func (c *Conn) PutUrlRequest(ctx context.Context, parent types.UrlRequest, reque
 	var response types.UrlCidResponse
 	uc.pCaller.RecvMsg(ctx, &response) 
 	if err != nil {
-		fmt.Printf("Client/Conn/sendUrlRequest(47), err=%s\n", err.Error()) 
+		log.Debugf("Client/Conn/sendUrlRequest(47), err=%s\n", err.Error()) 
 		return
 	}
 
@@ -534,7 +534,7 @@ func (c *Conn) PutUrlRequest(ctx context.Context, parent types.UrlRequest, reque
 		result, _  = cid.Decode(cids[0])
 	}
 
-	fmt.Printf("conn/sendUrlCidRequest(40), result =%s\n", result.String() ) 
+	log.Debugf("conn/sendUrlCidRequest(40), result =%s\n", result.String() ) 
 	//rows = newRows(&response)
 	//if queryType == types.WriteQuery {
 	//	affectedRows = response.Header.AffectedRows
@@ -545,7 +545,7 @@ func (c *Conn) PutUrlRequest(ctx context.Context, parent types.UrlRequest, reque
 	//func() {
 	//	defer trace.StartRegion(ctx, "ackEnqueue").End()
 	//	if uc.ackCh != nil {
-	//		fmt.Printf("conn/sendUrlCidRequest(50)\n") 
+	//		log.Debugf("conn/sendUrlCidRequest(50)\n") 
 	//		uc.ackCh <- &types.Ack{
 	//			Header: types.SignedAckHeader{
 	//				AckHeader: types.AckHeader{
@@ -559,27 +559,27 @@ func (c *Conn) PutUrlRequest(ctx context.Context, parent types.UrlRequest, reque
 	//	}
 	//}()
 
-	fmt.Printf("conn/sendUrlCidRequest(60)\n") 
+	log.Debugf("conn/sendUrlCidRequest(60)\n") 
 	return
 }
 
 //wyong, 20200729 
 func (c *Conn) GetCidByUrl(ctx context.Context, url string ) (/* result driver.Result, */ result cid.Cid,  err error) {
 
-	fmt.Printf("conn/GetCidByUrl(10), url=%s\n", url ) 
+	log.Debugf("conn/GetCidByUrl(10), url=%s\n", url ) 
 	defer trace.StartRegion(ctx, "dbExec").End()
 
 	//wyong, 20200519 
 	//log.SetOutput(os.Stdout) 
 	//log.WithField("query", query).Debug("ExecContext called...")
-	//fmt.Printf("ExecContext called, query=%s\n, stack=%s", query, callinfo.Stacks()) 
+	//log.Debugf("ExecContext called, query=%s\n, stack=%s", query, callinfo.Stacks()) 
 
 	if atomic.LoadInt32(&c.closed) != 0 {
 		err = driver.ErrBadConn
 		return
 	}
 
-	fmt.Printf("conn/GetCidByUrl(20)\n") 
+	log.Debugf("conn/GetCidByUrl(20)\n") 
 	// TODO(xq262144): make use of the ctx argument
 	//query := fmt.Sprintf("select cid from UrlGraph where url=%s", url)
 	//sq := convertQuery(query, []driver.NamedValue{})
@@ -596,11 +596,11 @@ func (c *Conn) GetCidByUrl(ctx context.Context, url string ) (/* result driver.R
 	//}
 
 	if result,  err = c.sendUrlCidRequest(ctx, request); err != nil {
-		fmt.Printf("conn/GetCidByUrl(25), err=%s\n", err.Error()) 
+		log.Debugf("conn/GetCidByUrl(25), err=%s\n", err.Error()) 
 		return
 	}
 
-	fmt.Printf("conn/GetCidByUrl(30), result=%s\n", result.String() ) 
+	log.Debugf("conn/GetCidByUrl(30), result=%s\n", result.String() ) 
 
 	// todo, get cid from result,  wyong, 20200803 
 	//result = &execResult{
@@ -680,7 +680,7 @@ func (c *Conn) ExecContext(ctx context.Context, query string, args []driver.Name
 	//wyong, 20200519 
 	//log.SetOutput(os.Stdout) 
 	//log.WithField("query", query).Debug("ExecContext called...")
-	fmt.Printf("ExecContext called, query=%s\n, stack=%s", query, callinfo.Stacks()) 
+	log.Debugf("ExecContext called, query=%s\n, stack=%s", query, callinfo.Stacks()) 
 
 	if atomic.LoadInt32(&c.closed) != 0 {
 		err = driver.ErrBadConn
@@ -709,7 +709,7 @@ func (c *Conn) QueryContext(ctx context.Context, query string, args []driver.Nam
 	//wyong, 20200519 
 	//log.SetOutput(os.Stdout) 
 	//log.WithField("query", query).Debug("QueryContext called...")
-	fmt.Printf("QueryContext called, query=%s\n, stack=%s", query, callinfo.Stacks()) 
+	log.Debugf("QueryContext called, query=%s\n, stack=%s", query, callinfo.Stacks()) 
 
 	if atomic.LoadInt32(&c.closed) != 0 {
 		err = driver.ErrBadConn
@@ -868,7 +868,7 @@ func (c *Conn) sendQuery(ctx context.Context, queryType types.QueryType, queries
 	var response types.Response
 	err = uc.pCaller.RecvMsg(ctx, &response) 
 	if err != nil {
-		fmt.Printf("Client/Conn/sendUrlRequest(47), err=%s\n", err.Error()) 
+		log.Debugf("Client/Conn/sendUrlRequest(47), err=%s\n", err.Error()) 
 		return
 	}
 

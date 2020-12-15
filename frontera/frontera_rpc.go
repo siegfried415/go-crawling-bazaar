@@ -18,7 +18,7 @@ package frontera
 
 import (
 	"context" 
-	"fmt"
+	//"fmt"
 
 	//"github.com/pkg/errors"
 	metrics "github.com/rcrowley/go-metrics"
@@ -41,6 +41,8 @@ import (
 	//wyong, 20200928 
 	//"github.com/ugorji/go/codec"
 
+	//wyong, 20201215 
+	log "github.com/siegfried415/gdf-rebuild/utils/log"
 )
 
 var (
@@ -99,7 +101,7 @@ func (rpc *FronteraRPCService) UrlRequestHandler (
 	s net.Stream, 
 ) {
 	//todo, turn urlrequest from client to bidding whose target are random selected crawlers. 
-	fmt.Printf("FronteraRPCService/ReceiveUrlRequest called\n") 
+	log.Debugf("FronteraRPCService/ReceiveUrlRequest called\n") 
 
 	//decode req with Messagepack, wyong, 20200928 
 	//var decReq types.UrlRequestMessage
@@ -140,7 +142,7 @@ func (rpc *FronteraRPCService) UrlCidRequestHandler (
 ) {
 
 	//todo, turn urlrequest from client to bidding whose target are random selected crawlers. 
-	fmt.Printf("FronteraRPCService/ReceiveUrlCidRequest called\n") 
+	log.Debugf("FronteraRPCService/ReceiveUrlCidRequest called\n") 
 
 	//decode req with Messagepack, wyong, 20200928 
 	//var decReq types.UrlCidRequestMessage
@@ -177,7 +179,7 @@ func (rpc *FronteraRPCService) BiddingMessageHandler (
 	//req *types.UrlBiddingMessage, res *types.Response) (err error
 	s net.Stream, 
 ) {
-        fmt.Printf("FronteraRPCService/ReceiveBiddingMessage called\n")
+        log.Debugf("FronteraRPCService/ReceiveBiddingMessage called\n")
         //atomic.AddUint64(&bs.counters.messagesRecvd, 1)
 
 	//decode req with Messagepack, wyong, 20200928 
@@ -211,7 +213,7 @@ func (rpc *FronteraRPCService) BidMessageHandler (
 	//req *types.UrlBidMessage, res *types.Response) (err error
 	s net.Stream, 
 ) {
-        fmt.Printf("FronteraRPCService/ReceiveBidMessage called\n")
+        log.Debugf("FronteraRPCService/ReceiveBidMessage called\n")
 
 	//decode req with Messagepack, wyong, 20200928 
 	//var decReq types.UrlBidMessage

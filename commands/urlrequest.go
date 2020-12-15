@@ -3,7 +3,7 @@ package commands
 
 import (
 	//"errors"
-	"fmt"
+	//"fmt"
 	//"io"
 	//"time"
 
@@ -21,6 +21,10 @@ import (
 
 	//wyong, 20201022 	
 	env "github.com/siegfried415/gdf-rebuild/env" 
+
+	//wyong, 20201215 
+	log "github.com/siegfried415/gdf-rebuild/utils/log" 
+
 )
 
 //var log = logging.Logger("core/commands/bidding")
@@ -96,28 +100,26 @@ Put bidding for a url:
 	//},
 
 	Run: func(req *cmds.Request, res cmds.ResponseEmitter, cmdenv cmds.Environment) error {
-		//log.Debugf("BiddingPutCmd, Run() called...") 
-			
                 var parenturlrequest types.UrlRequest
                 var urlrequests []types.UrlRequest
 
                 //wyong, 20191114
-		fmt.Printf("commands/urlrequest.go(10), req.Arguments[0]=%s\n", req.Arguments[0]) 
+		log.Debugf("commands/urlrequest.go(10), req.Arguments[0]=%s\n", req.Arguments[0]) 
                 err := json.Unmarshal([]byte(req.Arguments[0]), &parenturlrequest)
                 if err != nil {
                         return err
                 }
 
-                fmt.Printf("commands/urlrequest.go(20), PushUrlRequestsCmd, get parent url %s with probability(%f)\n", parenturlrequest.Url, parenturlrequest.Probability)
+                log.Debugf("commands/urlrequest.go(20), PushUrlRequestsCmd, get parent url %s with probability(%f)\n", parenturlrequest.Url, parenturlrequest.Probability)
 
-		fmt.Printf("commands/urlrequest.go(30), req.Arguments[1]=%s\n", req.Arguments[1]) 
+		log.Debugf("commands/urlrequest.go(30), req.Arguments[1]=%s\n", req.Arguments[1]) 
                 err = json.Unmarshal([]byte(req.Arguments[1]), &urlrequests )
                 if err != nil {
                         return err
                 }
 
                 for _, urlrequest := range urlrequests {
-                        fmt.Printf("commands/urlrequest.go(40), PushUrlRequestsCmd, get url %s with probability(%f)\n", urlrequest.Url, urlrequest.Probability)
+                        log.Debugf("commands/urlrequest.go(40), PushUrlRequestsCmd, get url %s with probability(%f)\n", urlrequest.Url, urlrequest.Probability)
                 }
 
 
@@ -130,7 +132,7 @@ Put bidding for a url:
 			return err 
 		}
 
-		fmt.Printf("commands/urlrequest.go(50), domain=%s\n", domain) 
+		log.Debugf("commands/urlrequest.go(50), domain=%s\n", domain) 
 		//todo, send bidding request with client to random peers , wyong, 20200723 
 		//err := env.GetFrontera().PutBidding(req.Context, url )
 		//if err != nil {
@@ -153,17 +155,17 @@ Put bidding for a url:
 		//todo, define ProtocolUrlRequest, wyong, 20201008 
 		conn, err := getConn(host, "FRT.UrlRequest",  domain)
 		if err != nil {
-			fmt.Printf("commands/urlrequest.go(55), err=%s\n", err.Error()) 
+			log.Debugf("commands/urlrequest.go(55), err=%s\n", err.Error()) 
 			return nil 
 		}
 		defer conn.Close()
 
-		fmt.Printf("commands/urlrequest.go(60)\n") 
+		log.Debugf("commands/urlrequest.go(60)\n") 
 		//var result sql.Result
 		err = conn.PutUrlRequest(req.Context, parenturlrequest, urlrequests ) 
 
 		if err != nil {
-			fmt.Printf("commands/urlrequest.go(65), err=%s\n", err.Error()) 
+			log.Debugf("commands/urlrequest.go(65), err=%s\n", err.Error()) 
 			return nil 
 		}
 
@@ -177,7 +179,7 @@ Put bidding for a url:
 		//	Value: out.Value().String(),
 		//})
 
-		fmt.Printf("commands/urlrequest.go(70)\n") 
+		log.Debugf("commands/urlrequest.go(70)\n") 
 		return cmds.EmitOnce(res, 0)
 	},
 

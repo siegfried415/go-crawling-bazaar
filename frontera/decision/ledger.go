@@ -3,7 +3,7 @@ package decision
 import (
 	"sync"
 	"time"
-	"fmt"
+	//"fmt"
 
 	wl "github.com/siegfried415/gdf-rebuild/frontera/wantlist"
 	//bidlist "github.com/siegfried415/gdf-rebuild/frontera/bidlist"
@@ -12,6 +12,9 @@ import (
 	//cid "github.com/ipfs/go-cid"
 	//peer "github.com/libp2p/go-libpproto2p-peer"
 	//logging "github.com/ipfs/go-log"
+
+	//wyong, 20201214 
+	log "github.com/siegfried415/gdf-rebuild/utils/log"
 )
 
 //var log = logging.Logger("ledger")
@@ -87,12 +90,12 @@ func (l *ledger) ReceivedBytes(n int) {
 }
 
 func (l *ledger) AddWant(url string, probability float64 ) {
-	fmt.Printf("ledger/AddWant(10), peer %s wants %s with probability %f\n", l.Partner, url, probability )
+	log.Debugf("ledger/AddWant(10), peer %s wants %s with probability %f\n", l.Partner, url, probability )
 	l.wantList.Add(url, probability )
 }
 
 func (l *ledger) GetWants() (*wl.Wantlist, error) {
-	fmt.Printf("ledger/GetWants(10)\n") 
+	log.Debugf("ledger/GetWants(10)\n") 
 	return l.wantList, nil
 }
 

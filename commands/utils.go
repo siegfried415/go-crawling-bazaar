@@ -32,6 +32,9 @@ import (
 
         net "github.com/siegfried415/gdf-rebuild/net"
 
+	//wyong, 20201215 
+        log "github.com/siegfried415/gdf-rebuild/utils/log"
+
 )
 
 var (
@@ -127,7 +130,7 @@ func askDeleteFile(file string) {
                         return
                 }
                 reader := bufio.NewReader(os.Stdin)
-                fmt.Printf("\"%s\" already exists. \nDo you want to delete it? (y or n, press Enter for default n):\n",
+                log.Debugf("\"%s\" already exists. \nDo you want to delete it? (y or n, press Enter for default n):\n",
                         file)
                 t, err := reader.ReadString('\n')
                 t = strings.Trim(t, "\n")

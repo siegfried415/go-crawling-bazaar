@@ -5,7 +5,7 @@ import (
 	"context"
 	"sync"
 	"time"
-	"fmt" 
+	//"fmt" 
 
 	//wyong, 20200827 
 	//bsmsg "github.com/siegfried415/gdf-rebuild/frontera/message"
@@ -21,7 +21,11 @@ import (
 	bstore "github.com/ipfs/go-ipfs-blockstore"
 	//blocks "github.com/ipfs/go-block-format"
 	//peer "github.com/libp2p/go-libp2p-peer"
-	logging "github.com/ipfs/go-log"
+	//logging "github.com/ipfs/go-log"
+
+	//wyong, 20201215
+        log "github.com/siegfried415/gdf-rebuild/utils/log"
+	
 )
 
 
@@ -57,7 +61,7 @@ import (
 // whatever it sees fit to produce desired outcomes (get wanted keys
 // quickly, maintain good relationships with peers, etc).
 
-var log = logging.Logger("engine")
+//var log = logging.Logger("engine")
 const (
 	// outboxChanBuffer must be 0 to prevent stale messages from being sent
 	outboxChanBuffer = 0
@@ -162,7 +166,7 @@ func (e *Engine) getBid( p proto.NodeID) (*bidlist.Bidlist, error) {
 
 //TODO, wyong, 20181221
 func(e *Engine) CreateBid(ctx context.Context, url string, cid cid.Cid) {
-	fmt.Printf("Engine/CreateBid(10), url=%s, cid = %s\n", url, cid )
+	log.Debugf("Engine/CreateBid(10), url=%s, cid = %s\n", url, cid )
 	/*todo, wyong, 20200827
         d, exist := e.f.DomainForUrl(url)
         if exist != true {
@@ -172,13 +176,13 @@ func(e *Engine) CreateBid(ctx context.Context, url string, cid cid.Cid) {
 
 	bidMsg, err := e.createUrlBidMessage(ctx, /* d.domainID,*/  url, cid )
 	if err != nil {
-		fmt.Printf("Engine/CreateBid(15), err = %s\n", err.Error())
+		log.Debugf("Engine/CreateBid(15), err = %s\n", err.Error())
 		return // ctx cancelled
 	}
 
-	fmt.Printf("Engine/CreateBid(20)\n")
+	log.Debugf("Engine/CreateBid(20)\n")
 	e.outbox <- bidMsg  
-	fmt.Printf("Engine/CreateBid(30)\n")
+	log.Debugf("Engine/CreateBid(30)\n")
 }
 
 /*TODO, taskWorker is unnecessary, wyong, 20181221
@@ -209,7 +213,7 @@ func (e *Engine) taskWorker(ctx context.Context) {
 
 //TODO,wyong, 20181221
 func(e *Engine)createUrlBidMessage(ctx context.Context, url string, c cid.Cid) (*types.UrlBidMessage, error) {
-	fmt.Printf("Engine/createUrlBidMessage(10), url=%s, cid = %s\n", url, c )
+	log.Debugf("Engine/createUrlBidMessage(10), url=%s, cid = %s\n", url, c )
 	var target proto.NodeID 	
 	for _, l := range e.ledgerMap {
 		//l.lk.Lock()
@@ -218,13 +222,13 @@ func(e *Engine)createUrlBidMessage(ctx context.Context, url string, c cid.Cid) (
 			//work = true
 			//TODO, get a target 
 			target = l.Partner
-			fmt.Printf("Engine/createUrlBidMessage(20), found target %s\n", target ) 
+			log.Debugf("Engine/createUrlBidMessage(20), found target %s\n", target ) 
 			break
 		}
 		//l.lk.Unlock()
 	}
 
-	fmt.Printf("Engine/createUrlBidMessage(30)\n")
+	log.Debugf("Engine/createUrlBidMessage(30)\n")
 	// with a task in hand, we're ready to prepare the envelope...
 	//msg := bsmsg.New(true,string(e.nodeid))
 	
@@ -241,7 +245,7 @@ func(e *Engine)createUrlBidMessage(ctx context.Context, url string, c cid.Cid) (
 	//cids := map[proto.NodeID]cid.Cid{from : c} 
 	//msg.AddBidding(url, 0, cids )
 
-	fmt.Printf("Engine/createUrlBidMessage(40), from=%s\n", from )
+	log.Debugf("Engine/createUrlBidMessage(40), from=%s\n", from )
 
 	//return &Envelope{
 	//	Peer:    target,
@@ -278,7 +282,7 @@ func(e *Engine)createUrlBidMessage(ctx context.Context, url string, c cid.Cid) (
                  },
         }
 
-	fmt.Printf("Engine/createUrlBidMessage(50), msg=%s\n", bidMsg )
+	log.Debugf("Engine/createUrlBidMessage(50), msg=%s\n", bidMsg )
 	return bidMsg, nil 
 }
 
@@ -358,7 +362,7 @@ func (e *Engine) Peers() []proto.NodeID {
 
 //TODO, wyong, 20181222
 func(e *Engine) GetBidding(/* wyong, 20181227 p proto.NodeID */ ) (*wl.Wantlist, error) {
-	fmt.Printf("Engine/GetBidding(10)\n")
+	log.Debugf("Engine/GetBidding(10)\n")
 
 	/* wyong, 20181227 
 	//TODO, get biddings from ledger
@@ -368,24 +372,24 @@ func(e *Engine) GetBidding(/* wyong, 20181227 p proto.NodeID */ ) (*wl.Wantlist,
 
 	//TODO, wyong, 20181227 
 	for _, ledger := range e.ledgerMap {
-		fmt.Printf("Engine/GetBidding(20)\n")
+		log.Debugf("Engine/GetBidding(20)\n")
 		return ledger.GetWants() 
 	}
 
-	fmt.Printf("Engine/GetBidding(30)\n")
+	log.Debugf("Engine/GetBidding(30)\n")
 	return nil, nil 
 }
 
 // MessageReceived performs book-keeping. Returns error if passed invalid
 // arguments.
 func (e *Engine) UrlBiddingMessageReceived( ctx context.Context,  m *types.UrlBiddingMessage ) error {
-	fmt.Printf("Engine/UrlBiddingMessageReceived called(10)\n")
+	log.Debugf("Engine/UrlBiddingMessageReceived called(10)\n")
 	if m.Empty() {
-		fmt.Printf("Engine/UrlBiddingMessageReceived(15), received empty message\n")
+		log.Debugf("Engine/UrlBiddingMessageReceived(15), received empty message\n")
 	}
 
 	p := m.Header.UrlBiddingHeader.NodeID 
-	fmt.Printf("Engine/UrlBiddingMessageReceived called(20), from=%s\n", p )
+	log.Debugf("Engine/UrlBiddingMessageReceived called(20), from=%s\n", p )
 
 	newWorkExists := false
 	defer func() {
@@ -398,7 +402,7 @@ func (e *Engine) UrlBiddingMessageReceived( ctx context.Context,  m *types.UrlBi
 	l.lk.Lock()
 	defer l.lk.Unlock()
 
-	fmt.Printf("Engine/UrlBiddingMessageReceived called(30)\n")
+	log.Debugf("Engine/UrlBiddingMessageReceived called(30)\n")
 	/*todo, wyong, 20200827 
 	if m.Full() {
 		l.wantList = wl.New()
@@ -410,13 +414,13 @@ func (e *Engine) UrlBiddingMessageReceived( ctx context.Context,  m *types.UrlBi
 
 	//for _, entry := range m.Wantlist() {
 	for _, entry := range m.Payload.Requests {
-		fmt.Printf("Engine/UrlBiddingMessageReceived called(40), entry.Url=%s\n", entry.Url )
+		log.Debugf("Engine/UrlBiddingMessageReceived called(40), entry.Url=%s\n", entry.Url )
 		if entry.Cancel {
-			fmt.Printf("Engine/UrlBiddingMessageReceived(50), cancel %s", entry.Url)
+			log.Debugf("Engine/UrlBiddingMessageReceived(50), cancel %s", entry.Url)
 			l.CancelWant(entry.Url)
 			//e.peerRequestQueue.Remove(entry.Url, p)
 		} else {
-			fmt.Printf("Engine/UrlBiddingMessageReceived(60), wants %s with probability %f\n", entry.Url, entry.Probability)
+			log.Debugf("Engine/UrlBiddingMessageReceived(60), wants %s with probability %f\n", entry.Url, entry.Probability)
 			l.AddWant(entry.Url, entry.Probability)
 
 			/*TODO,wyong, 20181221

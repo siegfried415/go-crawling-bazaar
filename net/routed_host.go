@@ -29,6 +29,9 @@ import (
 	"github.com/siegfried415/gdf-rebuild/proto"
 	//"github.com/siegfried415/gdf-rebuild/route"
 	"github.com/siegfried415/gdf-rebuild/utils/log"
+
+	//wyong, 20201213 
+	//"github.com/siegfried415/gdf-rebuild/utils/callinfo"
 )
 
 //var log = logging.Logger("routedhost")
@@ -454,6 +457,14 @@ func (rh RoutedHost) SetCurrentPB(bpNodeID proto.NodeID) {
 // RequestPB sends request to main chain.
 func (rh RoutedHost)RequestPB(method string, req interface{}, resp interface{}) (err error) {
 	log.Debugf("RoutedHost/RequestPB(10)\n") 
+	//log.Debugf( "\x1b[%dmRoutedHost/RequestPB(10)\x1b[0m=", 36) 
+	//log.Debugf("\033[1;34m RoutedHost/RequestPB(10) \033[0m") 
+	//log.Debugf("%s\033[1;34m RoutedHost/RequestPB(10) \033[0m\n", callinfo.Prefix()) 
+
+	//log.WithFields(log.Fields{
+	//	"Prefix":    callinfo.Prefix(),
+	//	"Goid": callinfo.Goid(),
+	//}).Debugf("RoutedHost/RequestPB(10)")
 
 	//wyong, 20201020
 	ctx := context.Background()
@@ -464,17 +475,25 @@ func (rh RoutedHost)RequestPB(method string, req interface{}, resp interface{}) 
 	}
 
 	log.Debugf("RoutedHost/RequestPB(20), current pb is %s\n", bp.String()) 
+	//log.Debugf( "\x1b[%dmRoutedHost/RequestPB(20), current pb is %s\x1b[0m=", 36, bp.String()) 
+	//log.Debugf("\033[1;34m RoutedHost/RequestPB(20) \033[0m") 
+	//log.Debugf("%s\033[1;34m RoutedHost/RequestPB(20) \033[0m\n", callinfo.Prefix()) 
 
 	//todo, method->protocol, wyong, 20201008 
 	//return NewCaller().CallNode(bp, method, req, resp)
         s, err := rh.NewStreamExt(ctx, bp, protocol.ID(method))
         if err != nil {
                 log.Debugf("RoutedHost/RequestPB(25), error opening push stream to %s: %s", bp, err.Error())
+		//log.Debugf( "\x1b[%dmRoutedHost/RequestPB(25), error opening push stream to %s: %s\x1b[0m=", 36, bp, err.Error()) 
                 return
         }
         defer s.Close()
 
 	log.Debugf("RoutedHost/RequestPB(30)\n") 
+	//log.Debugf( "\x1b[%dmRoutedHost/RequestPB(30)\x1b[0m=", 36) 
+	//log.Debugf("\033[1;34m RoutedHost/RequestPB(30) \033[0m") 
+	//log.Debugf("%s\033[1;34m RoutedHost/RequestPB(30) \033[0m\n", callinfo.Prefix()) 
+
 	_, err = s.SendMsg(ctx, req )
 	if err != nil {
 		//log.WithFields(log.Fields{
@@ -482,10 +501,15 @@ func (rh RoutedHost)RequestPB(method string, req interface{}, resp interface{}) 
 		//	"instance": i.r.instanceID,
 		//}).WithError(err).Debug("send fetch request failed")
 		log.Debugf("RoutedHost/RequestPB(35), send presbyterian request failed") 
+		//log.Debugf( "\x1b[%dmRoutedHost/RequestPB(35), send presbyterian request fialed\x1b[0m=", 36) 
 		return err 
 	}
 
 	log.Debugf("RoutedHost/RequestPB(40)\n") 
+	//log.Debugf( "\x1b[%dmRoutedHost/RequestPB(40)\x1b[0m=", 36) 
+	//log.Debugf("\033[1;34m RoutedHost/RequestPB(40) \033[0m") 
+	//log.Debugf("%s\033[1;34m RoutedHost/RequestPB(40) \033[0m\n", callinfo.Prefix()) 
+
 	err = s.RecvMsg(ctx, resp )
 	if err!= nil {
 		//log.WithFields(log.Fields{
@@ -493,10 +517,15 @@ func (rh RoutedHost)RequestPB(method string, req interface{}, resp interface{}) 
 		//	"instance": i.r.instanceID,
 		//}).WithError(err).Debug("get fetch result failed")
 		log.Debugf("RoutedHost/RequestPB(45), get result for presbyterian request failed") 
+		//log.Debugf( "\x1b[%dmRoutedHost/RequestPB(45), get result for presbyteria request failed \x1b[0m=", 36) 
 		return err 	
 	} 
 
 	log.Debugf("RoutedHost/RequestPB(50)\n") 
+	//log.Debugf( "\x1b[%dmRoutedHost/RequestPB(50)\x1b[0m=", 36) 
+	//log.Debugf("\033[1;34m RoutedHost/RequestPB(50) \033[0m") 
+	//log.Debugf("%s\033[1;34m RoutedHost/RequestPB(50) \033[0m\n", callinfo.Prefix()) 
+
 	return nil 
 
 }
@@ -518,7 +547,7 @@ func (rh RoutedHost) RegisterNodeToPB(timeout time.Duration) (err error) {
 	}
 
 	//log.WithField("node", localNodeInfo).Debug("construct local node info")
-	fmt.Printf("construct local node info\n")
+	log.Debugf("construct local node info\n")
 
 	pingWaitCh := make(chan proto.NodeID)
 	bpNodeIDs := rh.route.GetPBs()
@@ -527,12 +556,12 @@ func (rh RoutedHost) RegisterNodeToPB(timeout time.Duration) (err error) {
 			for {
 				//wyong, 20201020 
 				//log.Infof("ping PB %s", id )
-				fmt.Printf("ping PB : localNodeInfo=%s, id=%s\n", localNodeInfo, id )
+				log.Debugf("ping PB : localNodeInfo=%s, id=%s\n", localNodeInfo, id )
 
 				err := rh.PingPB(localNodeInfo, id)
 				if err == nil {
 					//log.Infof("ping PB succeed: %v", localNodeInfo)
-					fmt.Printf("ping PB succeed: %v", localNodeInfo)
+					log.Debugf("ping PB succeed: %v", localNodeInfo)
 					select {
 					case ch <- id:
 					default:
@@ -541,7 +570,7 @@ func (rh RoutedHost) RegisterNodeToPB(timeout time.Duration) (err error) {
 				}
 
 				//log.Warnf("ping PB failed: %v", err)
-				fmt.Printf("ping PB failed: %v\n", err)
+				log.Debugf("ping PB failed: %v\n", err)
 				time.Sleep(3 * time.Second)
 			}
 		}(pingWaitCh, bpNodeID)
@@ -550,7 +579,7 @@ func (rh RoutedHost) RegisterNodeToPB(timeout time.Duration) (err error) {
 	select {
 	case bp := <-pingWaitCh:
 		//log.WithField("PB", bp).Infof("ping PB succeed")
-		fmt.Printf("ping PB(%s) succeed\n", bp)
+		log.Debugf("ping PB(%s) succeed\n", bp)
 
 	case <-time.After(timeout):
 		return errors.New("ping PB timeout")

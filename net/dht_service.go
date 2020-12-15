@@ -165,7 +165,7 @@ func (DHT *DHTService) PingHandler(
 	s Stream,
 ) {
 	//log.Debugf("got ping req, Yeah!")
-	fmt.Printf("DHTService/PingHandler(10),got ping req, Yeah!\n")
+	log.Debugf("DHTService/PingHandler(10),got ping req, Yeah!\n")
 
         ctx := context.Background()
         var req proto.PingReq 
@@ -174,11 +174,11 @@ func (DHT *DHTService) PingHandler(
 	//ns := Stream{ Stream: s } 
         err := s.RecvMsg(ctx, &req)
         //if err != nil {
-	//	fmt.Printf("DHTService/PingHandler(15), err=%s\n", err )
+	//	log.Debugf("DHTService/PingHandler(15), err=%s\n", err )
         //      return
         //}
 
-	fmt.Printf("DHTService/PingHandler(20)\n")
+	log.Debugf("DHTService/PingHandler(20)\n")
 
 	//todo, wyong, 20201110 
 	//if permissionCheckFunc != nil && !permissionCheckFunc(&req.Envelope, DHTPing) {
@@ -194,7 +194,7 @@ func (DHT *DHTService) PingHandler(
 		return
 	}
 
-	fmt.Printf("DHTService/PingHandler(30)\n")
+	log.Debugf("DHTService/PingHandler(30)\n")
 	// todo, wyong, 20201114 
 	// Checking if ID Nonce Pubkey matched
 	//if !kms.IsIDPubNonceValid(req.Node.ID.ToRawNodeID(), &req.Node.Nonce, req.Node.PublicKey) {
@@ -211,13 +211,13 @@ func (DHT *DHTService) PingHandler(
 	//	return
 	//}
 
-	fmt.Printf("DHTService/PingHandler(40)\n")
+	log.Debugf("DHTService/PingHandler(40)\n")
 	err = DHT.Consistent.Add(req.Node)
 	if err != nil {
 		err = fmt.Errorf("DHT.Consistent.Add %v failed: %s", req.Node, err)
-		fmt.Printf("DHTService/PingHandler(45), err=%s\n", err)
+		log.Debugf("DHTService/PingHandler(45), err=%s\n", err)
 	} else {
-		fmt.Printf("DHTService/PingHandler(47)\n")
+		log.Debugf("DHTService/PingHandler(47)\n")
 		//resp.Msg = "Pong"
 		resp := proto.PingResp {
 			Msg: "Pong",
@@ -225,6 +225,6 @@ func (DHT *DHTService) PingHandler(
         	s.SendMsg(ctx, &resp)
 	}
 
-	fmt.Printf("DHTService/PingHandler(50)\n")
+	log.Debugf("DHTService/PingHandler(50)\n")
 	return
 }

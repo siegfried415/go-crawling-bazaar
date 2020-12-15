@@ -364,7 +364,7 @@ func setupBenchmarkStorage(b *testing.B) (
 			b.Fatalf("failed to setup bench environment: %v", err)
 		}
 		if i%10000 == 0 {
-			fmt.Printf("Done setup key at %v\n", i)
+			log.Debugf("Done setup key at %v\n", i)
 		}
 	}
 	// Setup query string and dest slice

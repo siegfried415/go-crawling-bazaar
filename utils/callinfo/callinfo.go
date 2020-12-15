@@ -79,7 +79,7 @@ func Stacks() []string {
 	for {
 		f, more := frames.Next()
                 //prefix += " "  
-                //fmt.Printf("%s:%d %s\n", f.File, f.Line, f.Function)
+                //log.Debugf("%s:%d %s\n", f.File, f.Line, f.Function)
                 if !foundCaller && strings.HasSuffix(f.File, "callinfo.go") && more {
                         f, _ = frames.Next()
                         //relFuncName := strings.TrimPrefix(f.Function, "github.com/siegfried415/gdf-rebuild/")

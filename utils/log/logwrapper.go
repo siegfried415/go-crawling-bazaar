@@ -25,7 +25,10 @@ import (
 	"time"
 	//"os" 
 
+        //wyong, 20201213
 	"github.com/sirupsen/logrus"
+        "github.com/siegfried415/gdf-rebuild/utils/callinfo"
+
 )
 
 const (
@@ -54,9 +57,11 @@ var (
 		"metric": InfoLevel,
 		"rpc":    InfoLevel,
 	}
+
+	//N->Y, wyong, 20201211
 	// SimpleLog is the flag of simple log format
 	// "Y" for true, "N" for false. defined in `go build`
-	SimpleLog = "N"
+	SimpleLog = "Y"
 )
 
 // Logger wraps logrus logger type.
@@ -72,22 +77,30 @@ type CallerHook struct {
 
 func init() {
 	AddHook(StandardCallerHook())
-
+	SetFormatter(&ColoredTextFormatter{})
 }
 
-//var (
-//	// std is the name of the standard logger in stdlib `log`
-//	std = logrus.New()
-//)
+var (
+	// std is the name of the standard logger in stdlib `log`
+	// std = logrus.New()
+)
 
 // StandardLogger returns the standard logger.
 func StandardLogger() *Logger {
 	//wyong, 20200715 
 	return (*Logger)(logrus.StandardLogger())
+
+	/*
 	//l := logrus.StandardLogger()
-	//l.SetLevel(logrus.InfoLevel)
-	//l.SetOutput(os.Stdout) 
-	//return (*Logger)(l)
+	l := logrus.New()
+	l.SetLevel(logrus.InfoLevel)
+	l.SetOutput(os.Stdout) 
+	
+	//wyong, 20201213
+	l.SetFormatter(new(ColoredTextFormatter)) 
+
+	return (*Logger)(l)
+	*/
 }
 
 // Printf logs a message at level Info on the standard logger.
@@ -139,6 +152,13 @@ func (hook *CallerHook) Fire(entry *logrus.Entry) error {
 		}
 	}
 	entry.Data["caller"] = caller
+
+	//wyong, 20201211
+	//var cMsg string 
+	//cMsg := fmt.Sprintf(" \x1b[%dm%s\x1b[0m=", 36, entry.Message)
+	//fmt.Sprintf(cMsg, "\033[1;34m %s \033[0m", entry.Message) 
+	//entry.Message = cMsg 
+
 	return nil
 }
 
@@ -178,7 +198,7 @@ func (hook *CallerHook) caller(entry *logrus.Entry) (relFuncName, caller string)
 		_frames := runtime.CallersFrames(pcs)
 		for {
 			f, more := _frames.Next()
-			//fmt.Printf("%s:%d %s\n", f.File, f.Line, f.Function)
+			//log.Debugf("%s:%d %s\n", f.File, f.Line, f.Function)
 			if !foundCaller && strings.HasSuffix(f.File, "logwrapper.go") && more {
 				f, _ = _frames.Next()
 				relFuncName = strings.TrimPrefix(f.Function, "github.com/siegfried415/gdf-rebuild/")
@@ -253,6 +273,7 @@ func AddHook(hook logrus.Hook) {
 	logrus.AddHook(hook)
 }
 
+
 // WithError creates an entry from the standard logger and adds an error to it, using the value defined in ErrorKey as key.
 func WithError(err error) *Entry {
 	return WithField(logrus.ErrorKey, err)
@@ -284,80 +305,158 @@ func WithTime(t time.Time) *Entry {
 
 // Debug logs a message at level Debug on the standard logger.
 func Debug(args ...interface{}) {
-	logrus.Debug(args...)
+	//logrus.Debug(args...)
+	entry := (*Entry)(logrus.WithFields(logrus.Fields{
+                "Prefix":    callinfo.Prefix(),
+                "Goid": callinfo.Goid(),
+        }))
+	entry.Debug(args...) 
 }
 
 // Print logs a message at level Info on the standard logger.
 func Print(args ...interface{}) {
-	logrus.Print(args...)
+	//logrus.Print(args...)
+	entry := (*Entry)(logrus.WithFields(logrus.Fields{
+                "Prefix":    callinfo.Prefix(),
+                "Goid": callinfo.Goid(),
+        }))
+	entry.Print(args...) 
 }
 
 // Info logs a message at level Info on the standard logger.
 func Info(args ...interface{}) {
-	logrus.Info(args...)
+	//logrus.Info(args...)
+	entry := (*Entry)(logrus.WithFields(logrus.Fields{
+                "Prefix":    callinfo.Prefix(),
+                "Goid": callinfo.Goid(),
+        }))
+	entry.Info(args...) 
 }
 
 // Warn logs a message at level Warn on the standard logger.
 func Warn(args ...interface{}) {
-	logrus.Warn(args...)
+	//logrus.Warn(args...)
+	entry := (*Entry)(logrus.WithFields(logrus.Fields{
+                "Prefix":    callinfo.Prefix(),
+                "Goid": callinfo.Goid(),
+        }))
+	entry.Warn(args...) 
 }
 
 // Warning logs a message at level Warn on the standard logger.
 func Warning(args ...interface{}) {
-	logrus.Warning(args...)
+	//logrus.Warning(args...)
+	entry := (*Entry)(logrus.WithFields(logrus.Fields{
+                "Prefix":    callinfo.Prefix(),
+                "Goid": callinfo.Goid(),
+        }))
+	entry.Warning(args...) 
 }
 
 // Error logs a message at level Error on the standard logger.
 func Error(args ...interface{}) {
 	//std.WithField("Func", getFuncPath(2)).Error(args...)
-	logrus.Error(args...)
+	//logrus.Error(args...)
+	entry := (*Entry)(logrus.WithFields(logrus.Fields{
+                "Prefix":    callinfo.Prefix(),
+                "Goid": callinfo.Goid(),
+        }))
+	entry.Error(args...) 
 }
 
 // Fatal logs a message at level Fatal on the standard logger.
 func Fatal(args ...interface{}) {
 	//std.WithField("Func", getFuncPath(2)).Fatal(args...)
-	logrus.Fatal(args...)
+	//logrus.Fatal(args...)
+	entry := (*Entry)(logrus.WithFields(logrus.Fields{
+                "Prefix":    callinfo.Prefix(),
+                "Goid": callinfo.Goid(),
+        }))
+	entry.Fatal(args...) 
 }
 
 // Panic logs a message at level Panic on the standard logger.
 func Panic(args ...interface{}) {
 	//std.WithField("Func", getFuncPath(2)).Panic(args...)
-	logrus.Panic(args...)
+	//logrus.Panic(args...)
+	entry := (*Entry)(logrus.WithFields(logrus.Fields{
+                "Prefix":    callinfo.Prefix(),
+                "Goid": callinfo.Goid(),
+        }))
+	entry.Panic(args...) 
 }
 
 // Debugf logs a message at level Debug on the standard logger.
 func Debugf(format string, args ...interface{}) {
-	logrus.Debugf(format, args...)
+	//wyong, 20201213
+	//logrus.Debugf(format, args...)
+	entry := (*Entry)(logrus.WithFields(logrus.Fields{
+                "Prefix":    callinfo.Prefix(),
+                "Goid": callinfo.Goid(),
+        }))
+	entry.Debugf(format, args...) 
 }
 
 // Printf logs a message at level Info on the standard logger.
 func Printf(format string, args ...interface{}) {
-	logrus.Printf(format, args...)
+	//logrus.Printf(format, args...)
+	entry := (*Entry)(logrus.WithFields(logrus.Fields{
+                "Prefix":    callinfo.Prefix(),
+                "Goid": callinfo.Goid(),
+        }))
+	entry.Printf(format, args...) 
 }
 
 // Infof logs a message at level Info on the standard logger.
 func Infof(format string, args ...interface{}) {
-	logrus.Infof(format, args...)
+	//wyong, 20201214
+	//logrus.Infof(format, args...)
+	entry := (*Entry)(logrus.WithFields(logrus.Fields{
+                "Prefix":    callinfo.Prefix(),
+                "Goid": callinfo.Goid(),
+        }))
+	entry.Infof(format, args...) 
 }
 
 // Warnf logs a message at level Warn on the standard logger.
 func Warnf(format string, args ...interface{}) {
-	logrus.Warnf(format, args...)
+	//wyong, 20201214
+	//logrus.Warnf(format, args...)
+	entry := (*Entry)(logrus.WithFields(logrus.Fields{
+                "Prefix":    callinfo.Prefix(),
+                "Goid": callinfo.Goid(),
+        }))
+	entry.Warnf(format, args...) 
 }
 
 // Warningf logs a message at level Warn on the standard logger.
 func Warningf(format string, args ...interface{}) {
-	logrus.Warningf(format, args...)
+	//logrus.Warningf(format, args...)
+	entry := (*Entry)(logrus.WithFields(logrus.Fields{
+                "Prefix":    callinfo.Prefix(),
+                "Goid": callinfo.Goid(),
+        }))
+	entry.Warningf(format, args...) 
 }
 
 // Errorf logs a message at level Error on the standard logger.
 func Errorf(format string, args ...interface{}) {
-	logrus.Errorf(format, args...)
+	//logrus.Errorf(format, args...)
+	entry := (*Entry)(logrus.WithFields(logrus.Fields{
+                "Prefix":    callinfo.Prefix(),
+                "Goid": callinfo.Goid(),
+        }))
+	entry.Errorf(format, args...) 
 }
 
 // Fatalf logs a message at level Fatal on the standard logger.
 func Fatalf(format string, args ...interface{}) {
-	logrus.Fatalf(format, args...)
+	//logrus.Fatalf(format, args...)
+	entry := (*Entry)(logrus.WithFields(logrus.Fields{
+                "Prefix":    callinfo.Prefix(),
+                "Goid": callinfo.Goid(),
+        }))
+	entry.Fatalf(format, args...) 
 }
 
 // Panicf logs a message at level Panic on the standard logger.

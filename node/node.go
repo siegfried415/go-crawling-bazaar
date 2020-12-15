@@ -33,7 +33,7 @@ import (
 	//wyong, 20201125 
 	//"github.com/siegfried415/gdf-rebuild/utils"
 
-	//"github.com/siegfried415/gdf-rebuild/utils/log"
+	"github.com/siegfried415/gdf-rebuild/utils/log"
 
 	//wyong, 20200911 
 	//"github.com/pkg/errors"
@@ -62,7 +62,7 @@ import (
 
 	//bserv "github.com/ipfs/go-blockservice"
 	//"github.com/ipfs/go-hamt-ipld"
-	logging "github.com/ipfs/go-log"
+	//logging "github.com/ipfs/go-log"
 	//"github.com/libp2p/go-libp2p-core/host"
 	//"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/pkg/errors"
@@ -121,7 +121,7 @@ const (
 	mwMinerDiskRoot     = "service:miner:disk:root"
 )
 
-var log = logging.Logger("node") // nolint: deadcode
+//var log = logging.Logger("node") // nolint: deadcode
 
 var (
 	// ErrNoMinerAddress is returned when the node is not configured to have any miner addresses.
@@ -284,12 +284,12 @@ func (node *Node) Stop(ctx context.Context) {
 
 
         if err := node.Host.Close(); err != nil {
-                fmt.Printf("error closing host: %s\n", err)
+                log.Debugf("error closing host: %s\n", err)
         }
 
 	//wyong, 20201027 
         //if err := node.Repo.Close(); err != nil {
-        //        fmt.Printf("error closing repo: %s\n", err)
+        //        log.Debugf("error closing repo: %s\n", err)
         //}
 
         //node.Network.Bootstrapper.Stop()
@@ -299,7 +299,7 @@ func (node *Node) Stop(ctx context.Context) {
 
 func (node *Node) Start(ctx context.Context) error {
 
-	fmt.Printf("Node/Start(10)\n") 
+	log.Debug("Node/Start(10)\n") 
 
 	//todo, wyong, 20201021 
 	// set generate key pair config
@@ -316,22 +316,21 @@ func (node *Node) Start(ctx context.Context) error {
 		//net.TrackerRegisterDisconnect(node.Network.host.Network(), node.Network.PeerTracker)
 	}
 
-	fmt.Printf("Node/Start(20)\n") 
+	log.Debug("Node/Start(20)\n") 
 
 	//wyong, 20201125
 	switch node.Role {
 	case proto.Client: 
-		fmt.Printf("Node/Start(30)\n") 
+		log.Debug("Node/Start(30)\n") 
 		return nil
 
-	case proto.Leader: 
-		fallthrough
-	case proto.Follower:
-		fmt.Printf("Node/Start(40)\n") 
+	case proto.Leader, 
+	     proto.Follower:
+		log.Debug("Node/Start(40)\n") 
 		node.Chain.Start()
 
 	case proto.Miner: 
-		fmt.Printf("Node/Start(50)\n") 
+		log.Debug("Node/Start(50)\n") 
 		go func() {
 			err := node.Host.RegisterNodeToPB(30 * time.Second)
 			if err != nil {
@@ -340,7 +339,7 @@ func (node *Node) Start(ctx context.Context) error {
 		}()
 
 
-		fmt.Printf("Node/Start(60)\n") 
+		log.Debug("Node/Start(60)\n") 
 		// start periodic provide service transaction generator
 		go func() {
 			tick := time.NewTicker(conf.GConf.Miner.ProvideServiceInterval)
@@ -359,18 +358,27 @@ func (node *Node) Start(ctx context.Context) error {
 			}
 		}()
 
-		fmt.Printf("Node/Start(70)\n") 
+		log.Debug("Node/Start(70)\n") 
+
+		//move the following code from builder to here, wyong, 20201215 
+		if err := node.Frontera.Init(); err != nil {
+			err = errors.Wrap(err, "init Frontera failed")
+			return err 
+		}
+
+		log.Debug("Node/Start(80)\n") 
+
 		if err := node.Frontera.Start(ctx); err != nil {
 			// FIXME(auxten): if restart all miners with the same db,
 			// miners will fail to start
 			time.Sleep(10 * time.Second)
-			//log.WithError(err).Fatal("start dbms failed")
+			log.WithError(err).Fatal("start dbms failed")
 		}
 
-		fmt.Printf("Node/Start(80)\n") 
+		log.Debug("Node/Start(90)\n") 
 
 	case proto.Unknown:
-		fmt.Printf("Node/Start(90)\n") 
+		log.Debug("Node/Start(100)\n") 
                 return nil
 
 	}
@@ -380,7 +388,7 @@ func (node *Node) Start(ctx context.Context) error {
 	//<-utils.WaitForExit()
 	//utils.StopProfile()
 
-	fmt.Printf("Node/Start(100)\n") 
+	log.Debug("Node/Start(110)\n") 
 	return nil 
 }
 
