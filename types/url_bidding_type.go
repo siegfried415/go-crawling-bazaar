@@ -16,13 +16,31 @@ import (
 //wyong, 20191113 
 type UrlBidding struct {
 	Url    string 
+	ParentUrl	string	//wyong, 20210125 
 	Probability	float64	
 	Cancel	bool 	//wyong, 20200827 
 }
 
+
+//define UrlBiddingArray for sort operation, wyong, 20210125  
+//type UrlBiddingArray []UrlBidding
+// 
+//func (s UrlBiddingArray) Len() int { 
+//	return len(s) 
+//}
+// 
+//func (s UrlBiddingArray) Swap(i, j int) { 
+//	s[i], s[j] = s[j], s[i] 
+//}
+// 
+//func (s UrlBiddingArray) Less(i, j int) bool { 
+//	return s[i].Probability < s[j].Probability 
+//}
+ 
 // RequestPayload defines a queries payload.
 type UrlBiddingPayload struct {
 	Requests []UrlBidding `json:"qs"`
+	//Requests UrlBiddingArray `json:"qs"`	//wyong, 20210125 
 }
 
 // RequestHeader defines a query request header.

@@ -164,7 +164,7 @@ func (rpc *FronteraRPCService) UrlCidRequestHandler (
 
 	var res *types.UrlCidResponse
 	//ctx := context.Background() 
-	if res, err = rpc.frontera.GetCid(ctx, &req); err != nil {
+	if res, err = rpc.frontera.RetriveUrlCid(ctx, &req); err != nil {
 		return
 	}
 

@@ -41,7 +41,7 @@ import (
 
 
 	decision "github.com/siegfried415/gdf-rebuild/frontera/decision"
-	wantlist "github.com/siegfried415/gdf-rebuild/frontera/wantlist" 
+	biddinglist "github.com/siegfried415/gdf-rebuild/frontera/biddinglist" 
 	//bsmsg "github.com/siegfried415/gdf-rebuild/frontera/message" 
 	//fnet "github.com/siegfried415/gdf-rebuild/frontera/network" 
 
@@ -141,7 +141,7 @@ type Frontera struct {
 	//wyong, 20200721 
 	// the peermanager manages sending messages to peers in a way that
 	// wont block biddingsys operation
-	wm *WantManager
+	bm *BiddingManager
 
 	// the engine is the bit of logic that decides who to send which blocks to
 	engine *decision.Engine
@@ -250,7 +250,7 @@ func NewFrontera( cfg *FronteraConfig, peerHost net.RoutedHost  ) (f *Frontera, 
 		//provideKeys:   make(chan cid.Cid, provideKeysBufferSize),
 
 		//wyong, 20200924 
-		wm:            NewWantManager(ctx, peerHost,  nodeID),
+		bm:            NewBiddingManager(ctx, peerHost,  nodeID),
 
 		counters:      new(counters),
 
@@ -313,7 +313,7 @@ func NewFrontera( cfg *FronteraConfig, peerHost net.RoutedHost  ) (f *Frontera, 
 
 	//log.Infof("NewFrontera(100)") 
 	//wyong, 20200721 
-	//go f.wm.Run()
+	//go f.bm.Run()
 
 	//todo, wyong, 20201020 
 	//network.SetDelegate(f)
@@ -351,7 +351,7 @@ func( f *Frontera) Start(ctx context.Context ) error {
 
 	log.Infof("NewFrontera(100)") 
 	//wyong, 20200721 
-	go f.wm.Run()
+	go f.bm.Run()
 
 	log.Infof("NewFrontera(110)") 
 	// Start up biddingsyss async worker routines
@@ -800,7 +800,7 @@ func (f *Frontera) Update(instance *types.ServiceInstance) (err error) {
 	var exists bool
 
 	log.Debugf("Frontera/Update(10)\n") 
-	//update frontera 's peer info which hold by wm and engine, wyong,20200825 
+	//update frontera 's peer info which hold by bm and engine, wyong,20200825 
 	f.PeersConnected(instance.Peers )
 
 	log.Debugf("Frontera/Update(20)\n") 
@@ -1003,7 +1003,9 @@ func (f *Frontera) PutBidding(ctx context.Context, req *types.UrlRequestMessage 
 	log.Debugf("Frontera/PutBidding(20), domain=%s\n", domain.domainID )
 	for _, r := range req.Payload.Requests {
 		log.Debugf("Frontera/PutBidding(30)\n")
-		err = domain.PutBidding(ctx, r.Url, r.Probability )
+
+		//todo, add parameter 'ParentUrl', wyong, 20210125 
+		err = domain.PutBidding(ctx, r.Url, r.Probability, r.ParentUrl  )
 		if err != nil {
 			log.Debugf("Frontera/PutBidding(35), err=%s\n", err.Error())
 			return 
@@ -1034,7 +1036,7 @@ func (f *Frontera) PutBidding(ctx context.Context, req *types.UrlRequestMessage 
 func (f *Frontera) DelBidding(ctx context.Context, url string) error {
 	d, exist := f.DomainForUrl(url) 
 	if exist != true {
-		f.CancelWants([]string{url,} , d.domainID) 
+		f.CancelBiddings([]string{url,} , d.domainID) 
 	}
 
 	return nil 
@@ -1055,13 +1057,13 @@ func (f *Frontera) getNextSessionID() uint64 {
 */
 
 
-// CancelWant removes a given urls from the wantlist
-func (f *Frontera) CancelWants(urls []string,  domainID proto.DomainID ) bool {
-	return f.wm.CancelWants(context.Background(), urls, nil, domainID )
+// CancelBiddings removes a given urls from the biddinglist
+func (f *Frontera) CancelBiddings(urls []string,  domainID proto.DomainID ) bool {
+	return f.bm.CancelBiddings(context.Background(), urls, nil, domainID )
 }
 
 
-func(f *Frontera) GetBidding(ctx context.Context) ([]*wantlist.BiddingEntry,  error) {
+func(f *Frontera) GetBidding(ctx context.Context) ([]*biddinglist.BiddingEntry,  error) {
 	log.Debugf("Frontera/GetBidding(10)\n ")
 	//return bs.engine.GetBidding(/* wyong, 20181227 p */ )
 
@@ -1069,12 +1071,12 @@ func(f *Frontera) GetBidding(ctx context.Context) ([]*wantlist.BiddingEntry,  er
 	biddinglist, _ := f.engine.GetBidding()
 	if biddinglist == nil {
 		log.Debugf("Frontera/GetBidding(15)\n ")
-		return []*wantlist.BiddingEntry{}, nil
+		return []*biddinglist.BiddingEntry{}, nil
 	}
 
 	log.Debugf("Frontera/GetBidding(20)\n ")
 	biddings := biddinglist.BiddingEntries()
-        out := make([]*wantlist.BiddingEntry, 0, len(biddings))
+        out := make([]*biddinglist.BiddingEntry, 0, len(biddings))
         for _, bidding := range biddings {
                 log.Debugf("Frontera/GetBidding(30), %s\n", bidding.Url )
 		if (bidding.Seen == false ) {
@@ -1089,14 +1091,14 @@ func(f *Frontera) GetBidding(ctx context.Context) ([]*wantlist.BiddingEntry,  er
 
 
 //wyong, 20190116
-func(f *Frontera) GetCompletedBiddings(ctx context.Context) ([]*wantlist.BiddingEntry, error) {
+func(f *Frontera) GetCompletedBiddings(ctx context.Context) ([]*biddinglist.BiddingEntry, error) {
 	log.Debugf("GetCompletedBiddings called...")
 
 	//wyong, 20190131
-	//return bs.wm.GetCompletedBiddings() 
+	//return bs.bm.GetCompletedBiddings() 
 
-	completedbiddings,_ := f.wm.GetCompletedBiddings()
-        out := make([]*wantlist.BiddingEntry, 0, len(completedbiddings))
+	completedbiddings,_ := f.bm.GetCompletedBiddings()
+        out := make([]*biddinglist.BiddingEntry, 0, len(completedbiddings))
 
         for _, bidding := range completedbiddings {
                 //log.Debugf("GetBidding (30), %s", e.GetUrl())
@@ -1110,15 +1112,15 @@ func(f *Frontera) GetCompletedBiddings(ctx context.Context) ([]*wantlist.Bidding
 }
 
 //wyong, 20190116
-func(f *Frontera) GetUncompletedBiddings(ctx context.Context) ([]*wantlist.BiddingEntry, error) {
+func(f *Frontera) GetUncompletedBiddings(ctx context.Context) ([]*biddinglist.BiddingEntry, error) {
 	log.Debugf("GetUncompletedBiddings called...")
-	return f.wm.GetUncompletedBiddings()
+	return f.bm.GetUncompletedBiddings()
 }
 
 //wyong, 20190120
-func(f *Frontera) GetBids(ctx context.Context, url string ) ([]*wantlist.BidEntry, error) {
+func(f *Frontera) GetBids(ctx context.Context, url string ) ([]*biddinglist.BidEntry, error) {
 	log.Debugf("GetBids called...")
-	biddings, _ := f.wm.GetCompletedBiddings() 
+	biddings, _ := f.bm.GetCompletedBiddings() 
 	for _, bidding := range biddings {
 		if bidding.GetUrl() == url {
 			return bidding.GetBids(), nil 
@@ -1209,8 +1211,8 @@ func (f *Frontera) receiveBidFrom(ctx context.Context,  from proto.NodeID, url s
 	d, exist := f.DomainForUrl(url) 
 	if exist == true {
 		log.Debugf("Frontera/receiveBidFrom(20)\n")
-		if (f.wm.ReceiveBidForWants(ctx, url, c, from, d.domainID)) {
-			//wait until wm have processed the incoming bid. 
+		if (f.bm.ReceiveBidForBiddings(ctx, url, c, from, d.domainID)) {
+			//wait until bm have processed the incoming bid. 
 			//if we have received two bids, remove bidding from domain.
 			//wyong, 20200831
 			log.Debugf("Frontera/receiveBidFrom(30)\n")
@@ -1297,7 +1299,7 @@ func (f *Frontera) ReceiveMessage(ctx context.Context, p proto.NodeID, incoming 
 	log.Debugf("receiveMessage called")
 	atomic.AddUint64(&bs.counters.messagesRecvd, 1)
 
-	// This call records changes to wantlists, blocks received,
+	// This call records changes to biddinglists, blocks received,
 	// and number of bytes transfered.
 	bs.engine.MessageReceived(p, incoming)
 
@@ -1338,12 +1340,12 @@ func (f *Frontera) ReceiveMessage(ctx context.Context, p proto.NodeID, incoming 
 //wyong, 20181221
 func(f *Frontera) PutBid(ctx context.Context, url string, cid cid.Cid) error {
 	log.Debugf("Frontera/PutBid(10), url = %s, cid = %s\n", url, cid)
-	f.engine.CreateBid(ctx, url, cid )
+	f.engine.PutBid(ctx, url, cid )
 	return nil 
 }
 
 //wyong, 20200817
-func(f *Frontera) GetCid(ctx context.Context, req *types.UrlCidRequestMessage ) (res *types.UrlCidResponse, err error) {
+func(f *Frontera) RetriveUrlCid(ctx context.Context, req *types.UrlCidRequestMessage ) (res *types.UrlCidResponse, err error) {
 	log.Debugf("Frontera/GetCid(10), domainID =%s\n", req.Header.DomainID ) 
 
 	//wyong, 20200820 
@@ -1357,7 +1359,7 @@ func(f *Frontera) GetCid(ctx context.Context, req *types.UrlCidRequestMessage ) 
 	var cids []string
 	for _, r := range req.Payload.Requests {
 		var c cid.Cid 
-		c, err = domain.GetCid(r.Url) 
+		c, err = domain.RetriveUrlCid(r.Url) 
 		log.Debugf("Frontera/GetCid(30), r.Url=%s\n", r.Url ) 
 		if err != nil {
 			break 	
@@ -1398,7 +1400,7 @@ func (f *Frontera) PeersConnected(peers *proto.Peers ) {
 	log.Debugf("Frontera/PeersConnected(10)\n")
 	for _, p := range peers.Servers {
 		log.Debugf("Frontera/PeerConnected(20), p=%s\n", p )
-		f.wm.Connected(p)
+		f.bm.Connected(p)
 		f.engine.PeerConnected(p)
 	}
 }
@@ -1408,7 +1410,7 @@ func (f *Frontera) PeersDisconnected(peers *proto.Peers ) {
 	log.Debugf("Frontera/PeerDisconnected(10)\n")
 	for _, p := range peers.Servers {
 		log.Debugf("Frontera/PeerDisconnected(20), p=%s\n", p )
-		f.wm.Disconnected(p)
+		f.bm.Disconnected(p)
 		f.engine.PeerDisconnected(p)
 	}
 }
@@ -1427,8 +1429,8 @@ func (bs *Biddingsys) Close() error {
 */
 
 
-func (f *Frontera) GetWantlist() []string {
-	entries := f.wm.wl.Entries()
+func (f *Frontera) GetBiddinglist() []string {
+	entries := f.bm.bl.Entries()
 	out := make([]string, 0, len(entries))
 	for _, e := range entries {
 		out = append(out, e.Url )

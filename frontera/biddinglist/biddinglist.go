@@ -1,6 +1,6 @@
-// package wantlist implements an object for bitswap that contains the keys
+// package biddinglist implements an object for bitswap that contains the keys
 // that a given peer wants.
-package wantlist
+package biddinglist
 
 import (
 	"sort"
@@ -12,14 +12,23 @@ import (
 )
 
 
-type ThreadSafe struct {
-	lk  sync.RWMutex
-	set map[string]*BiddingEntry
+//wyong, 20190114 
+type BidEntry struct {
+	Cid	cid.Cid 
+	From	proto.NodeID 
 }
 
-// not threadsafe
-type Wantlist struct {
-	set map[string]*BiddingEntry
+//wyong, 20190118
+func NewBidEntry(cid cid.Cid, from proto.NodeID ) *BidEntry {
+	return &BidEntry{
+		Cid:      cid,
+		From: 	  from,
+	}
+}
+
+//wyong, 20190119 
+func( bid *BidEntry)GetCid() cid.Cid {
+	return bid.Cid
 }
 
 type BiddingEntry struct {
@@ -37,24 +46,17 @@ type BiddingEntry struct {
 	Bids map[proto.NodeID]*BidEntry  
 }
 
-//wyong, 20190114 
-type BidEntry struct {
-	Cid	cid.Cid 
-	From	proto.NodeID 
-}
-
-//wyong, 20190119 
-func( bid *BidEntry)GetCid() cid.Cid {
-	return bid.Cid
-}
-
-//wyong, 20190118
-func NewBidEntry(cid cid.Cid, from proto.NodeID ) *BidEntry {
-	return &BidEntry{
-		Cid:      cid,
-		From: 	  from,
+// NewRefEntry creates a new reference tracked biddinglist entry
+func NewRefBiddingEntry(url string, p float64 ) *BiddingEntry {
+	return &BiddingEntry{
+		Url:      url,
+		Probability: p,
+		SesTrk:   make(map[proto.DomainID]struct{}),
+		Seen: false, //wyong, 20190131 
+		Bids : 	  make(map[proto.NodeID]*BidEntry), //wyong, 20190125 
 	}
 }
+
 
 func (bidding *BiddingEntry) GetUrl() string {
 	return bidding.Url
@@ -68,6 +70,9 @@ func (bidding *BiddingEntry) AddBid(url string, cid cid.Cid, from proto.NodeID )
 	if _, ok := bidding.Bids[from]; ok {
 		return false
 	}
+
+	//todo, insert this commit to current revision (of url). 
+	//wyong, 20210117
 
 	bidding.Bids[from] = &BidEntry{
 		Cid:  cid ,
@@ -104,22 +109,16 @@ func(bidding *BiddingEntry) GetCid() cid.Cid {
 	return c
 }
 
-// NewRefEntry creates a new reference tracked wantlist entry
-func NewRefBiddingEntry(url string, p float64 ) *BiddingEntry {
-	return &BiddingEntry{
-		Url:      url,
-		Probability: p,
-		SesTrk:   make(map[proto.DomainID]struct{}),
-		Seen: false, //wyong, 20190131 
-		Bids : 	  make(map[proto.NodeID]*BidEntry), //wyong, 20190125 
-	}
-}
-
 type entrySlice []*BiddingEntry
-
 func (es entrySlice) Len() int           { return len(es) }
 func (es entrySlice) Swap(i, j int)      { es[i], es[j] = es[j], es[i] }
 func (es entrySlice) Less(i, j int) bool { return es[i].Probability > es[j].Probability }
+
+
+type ThreadSafe struct {
+	lk  sync.RWMutex
+	set map[string]*BiddingEntry
+}
 
 func NewThreadSafe() *ThreadSafe {
 	return &ThreadSafe{
@@ -127,19 +126,13 @@ func NewThreadSafe() *ThreadSafe {
 	}
 }
 
-func New() *Wantlist {
-	return &Wantlist{
-		set: make(map[string]*BiddingEntry),
-	}
-}
-
-// Add adds the given cid to the wantlist with the specified priority, governed
+// Add adds the given cid to the biddinglist with the specified priority, governed
 // by the session ID 'ses'.  if a cid is added under multiple session IDs, then
 // it must be removed by each of those sessions before it is no longer 'in the
-// wantlist'. Calls to Add are idempotent given the same arguments. Subsequent
+// biddinglist'. Calls to Add are idempotent given the same arguments. Subsequent
 // calls with different values for priority will not update the priority
 // TODO: think through priority changes here
-// Add returns true if the cid did not exist in the wantlist before this call
+// Add returns true if the cid did not exist in the biddinglist before this call
 // (even if it was under a different session)
 func (w *ThreadSafe) Add(url string, probability float64, domain proto.DomainID) bool {
 	w.lk.Lock()
@@ -162,7 +155,7 @@ func (w *ThreadSafe) Add(url string, probability float64, domain proto.DomainID)
 	return true
 }
 
-// AddEntry adds given Entry to the wantlist. For more information see Add method.
+// AddEntry adds given Entry to the biddinglist. For more information see Add method.
 func (w *ThreadSafe) AddBiddingEntry(e *BiddingEntry, domain proto.DomainID ) bool {
 	w.lk.Lock()
 	defer w.lk.Unlock()
@@ -196,7 +189,7 @@ func (w *ThreadSafe) Remove(url string, domain proto.DomainID ) bool {
 	return false
 }
 
-// Contains returns true if the given cid is in the wantlist tracked by one or
+// Contains returns true if the given cid is in the biddinglist tracked by one or
 // more sessions
 func (w *ThreadSafe) Contains(url string) (*BiddingEntry, bool) {
 	w.lk.RLock()
@@ -227,11 +220,22 @@ func (w *ThreadSafe) Len() int {
 	return len(w.set)
 }
 
-func (w *Wantlist) Len() int {
+// not threadsafe
+type BiddingList struct {
+	set map[string]*BiddingEntry
+}
+
+func New() *BiddingList {
+	return &BiddingList{
+		set: make(map[string]*BiddingEntry),
+	}
+}
+
+func (w *BiddingList) Len() int {
 	return len(w.set)
 }
 
-func (w *Wantlist) Add(url string, probability float64) bool {
+func (w *BiddingList) Add(url string, probability float64) bool {
 	if be, ok := w.set[url]; ok {
 		be.Seen = false 	//wyong, 20190131 
 		return false
@@ -247,7 +251,7 @@ func (w *Wantlist) Add(url string, probability float64) bool {
 	return true
 }
 
-func (w *Wantlist) AddBiddingEntry(e *BiddingEntry) bool {
+func (w *BiddingList) AddBiddingEntry(e *BiddingEntry) bool {
 	if be, ok := w.set[e.Url]; ok {
 		be.Seen = false		//wyong, 20190131 
 		return false
@@ -256,7 +260,7 @@ func (w *Wantlist) AddBiddingEntry(e *BiddingEntry) bool {
 	return true
 }
 
-func (w *Wantlist) Remove(url string) bool {
+func (w *BiddingList) Remove(url string) bool {
 	_, ok := w.set[url]
 	if !ok {
 		return false
@@ -266,12 +270,12 @@ func (w *Wantlist) Remove(url string) bool {
 	return true
 }
 
-func (w *Wantlist) Contains(url string) (*BiddingEntry, bool) {
+func (w *BiddingList) Contains(url string) (*BiddingEntry, bool) {
 	e, ok := w.set[url]
 	return e, ok
 }
 
-func (w *Wantlist) BiddingEntries() []*BiddingEntry {
+func (w *BiddingList) BiddingEntries() []*BiddingEntry {
 	es := make([]*BiddingEntry, 0, len(w.set))
 	for _, e := range w.set {
 		es = append(es, e)
@@ -281,7 +285,7 @@ func (w *Wantlist) BiddingEntries() []*BiddingEntry {
 
 /*
 //wyong, 20190131
-func (w *Wantlist) SeenEntries() bool {
+func (w *BiddingList) SeenEntries() bool {
 	for _, e := range w.set {
 		e.Seen = true 	
 	}
@@ -290,7 +294,7 @@ func (w *Wantlist) SeenEntries() bool {
 */
 
 
-func (w *Wantlist) SortedBiddingEntries() []*BiddingEntry {
+func (w *BiddingList) SortedBiddingEntries() []*BiddingEntry {
 	es := w.BiddingEntries()
 	sort.Sort(entrySlice(es))
 	return es

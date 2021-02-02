@@ -5,7 +5,7 @@ import (
 	"time"
 	//"fmt"
 
-	wl "github.com/siegfried415/gdf-rebuild/frontera/wantlist"
+	bl "github.com/siegfried415/gdf-rebuild/frontera/biddinglist"
 	//bidlist "github.com/siegfried415/gdf-rebuild/frontera/bidlist"
 	"github.com/siegfried415/gdf-rebuild/proto"
 
@@ -22,7 +22,7 @@ import (
 func newLedger(p proto.NodeID) *ledger {
 	log.Debugf("newLedger called...") 
 	return &ledger{
-		wantList:   wl.New(),
+		biddingList:   bl.New(),
 		Partner:    p,
 		sentToPeer: make(map[string]time.Time),
 	}
@@ -43,8 +43,8 @@ type ledger struct {
 	// exchangeCount is the number of exchanges with this peer
 	exchangeCount uint64
 
-	// wantList is a (bounded, small) set of keys that Partner desires.
-	wantList *wl.Wantlist
+	// biddingList is a (bounded, small) set of keys that Partner desires.
+	biddingList *bl.BiddingList
 
 	//wyong, 20181223
 	//bidList *bidlist.Bidlist
@@ -89,22 +89,22 @@ func (l *ledger) ReceivedBytes(n int) {
 	l.Accounting.BytesRecv += uint64(n)
 }
 
-func (l *ledger) AddWant(url string, probability float64 ) {
-	log.Debugf("ledger/AddWant(10), peer %s wants %s with probability %f\n", l.Partner, url, probability )
-	l.wantList.Add(url, probability )
+func (l *ledger) AddBidding(url string, probability float64 ) {
+	log.Debugf("ledger/AddBidding(10), peer %s wants %s with probability %f\n", l.Partner, url, probability )
+	l.biddingList.Add(url, probability )
 }
 
-func (l *ledger) GetWants() (*wl.Wantlist, error) {
-	log.Debugf("ledger/GetWants(10)\n") 
-	return l.wantList, nil
+func (l *ledger) GetBiddings() (*bl.BiddingList, error) {
+	log.Debugf("ledger/GetBiddings(10)\n") 
+	return l.biddingList, nil
 }
 
-func (l *ledger) CancelWant(url string) {
-	l.wantList.Remove(url)
+func (l *ledger) CancelBidding(url string) {
+	l.biddingList.Remove(url)
 }
 
-func (l *ledger) WantListContains(url string) (*wl.BiddingEntry, bool) {
-	return l.wantList.Contains(url)
+func (l *ledger) BiddingListContains(url string) (*bl.BiddingEntry, bool) {
+	return l.biddingList.Contains(url)
 }
 
 func (l *ledger) ExchangeCount() uint64 {

@@ -25,6 +25,9 @@ import (
 	"time"
 	"fmt"
 
+	//wyong, 20210125 
+	"sort" 
+
 	"github.com/pkg/errors"
 
 	//wyong, 20201018
@@ -55,6 +58,9 @@ import (
 
 	//wyong, 20200818
 	cid "github.com/ipfs/go-cid"
+
+	//wyong, 20210122
+        cache "github.com/patrickmn/go-cache"
 
 )
 
@@ -90,7 +96,7 @@ const (
 	SlowQuerySampleSize = 1 << 10
 
 	//wyong, 20200805 
-	activeWantsLimit = 16
+	activeBiddingsLimit = 16
 )
 
 // Database defines a single database instance in worker runtime.
@@ -115,19 +121,28 @@ type Domain struct {
 
 	//wyong, move session stuff here,  20200805 
 	ctx            context.Context
-	tofetch        *urlQueue
+	tofetch        *ProbBiddingQueue
 	activePeers    map[proto.NodeID]struct{}
 	activePeersArr []proto.NodeID
 
-	f *Frontera 
-	incoming     chan bidRecv
+	//wyong, 20210129
+	waitQueue	*TimedBiddingQueue
 
-	newReqs      chan []string 
-	cancelUrls   chan []string
+	f *Frontera 
+
+	//wyong, 20210127 
+	//incoming     chan bidRecv
+	bidIncoming	chan bidRecv 
+
+	//wyong, 20210125 
+	//newReqs      chan []string 
+	biddingReqs	chan[]types.UrlBidding	
+
+	cancelBiddings   chan []string
 	interestReqs chan interestReq
 
 	interest  *lru.Cache
-	liveWants map[string]time.Time
+	liveBiddings map[string]time.Time
 
 	tick          *time.Timer
 	baseTickDelay time.Duration
@@ -139,6 +154,12 @@ type Domain struct {
 	//uuid logging.Loggable
 	//id  uint64
 	//tag string
+
+	//wyong, 20210122 
+	urlCidCache 	*cache.Cache 
+	urlGraphCache	*cache.Cache
+	urlNodeCache	*cache.Cache 
+	
 }
 
 // NewDomain create a single domain instance using config.
@@ -191,22 +212,37 @@ func NewDomain(cfg *DomainConfig, f *Frontera, peers *proto.Peers, genesis *type
 		//wyong, 20201018 
 		host: cfg.Host,
 
-		liveWants:     make(map[string]time.Time),
-		newReqs:       make(chan []string),
-		cancelUrls:    make(chan []string),
-		tofetch:       newUrlQueue(),
+		liveBiddings:     make(map[string]time.Time),
+
+		//wyong, 20210125 
+		//newReqs:       make(chan []string),
+		biddingReqs:	make(chan []types.UrlBidding),
+
+		cancelBiddings:    make(chan []string),
+		tofetch:       newProbBiddingQueue(),
 		interestReqs:  make(chan interestReq),
 		//ctx:           ctx,
+
+		//wyong, 20210129
+		waitQueue	: newTimedBiddingQueue(), 
 
 		//wyong, 20200825 
 		f:            f,
 
-		incoming:      make(chan bidRecv),
+		//wyong, 20210127 
+		//incoming:      make(chan bidRecv),
+		bidIncoming:      make(chan bidRecv),
+
 		//notif:         notifications.New(),
 		//uuid:          loggables.Uuid("GetBlockRequest"),
 		baseTickDelay: time.Millisecond * 500,
 		//id:            f.getNextSessionID(),
 	}
+
+	//todo, get expiration time from urlchain miner time,  wyong, 20210122 
+	domain.urlCidCache = cache.New(5*time.Minute, 10*time.Minute)
+	urlGraphCache = cache.New(5*time.Minute, 10*time.Minute)
+	urlNodeCache	= cache.New(5*time.Minute, 10*time.Minute)
 
 	//bugfix, wyong, 20200825 
 	cache, _ := lru.New(2048)
@@ -286,7 +322,7 @@ func NewDomain(cfg *DomainConfig, f *Frontera, peers *proto.Peers, genesis *type
 
 	log.Infof("NewDomain(110)")
 	//wyong, 20200817
-	if err = domain.InitTable(); err != nil {
+	if err = domain.InitTables(); err != nil {
 		return
 	}
 	
@@ -376,278 +412,6 @@ func (domain *Domain) UpdatePeers(peers *proto.Peers) (err error) {
 	return domain.chain.UpdatePeers(peers)
 }
 
-//wyong, 20200817 
-func (domain *Domain) InitTable() (err error) {
-
-	// build query 
-	query := types.Query {
-		Pattern : "CREATE TABLE urlgraph (url TEXT PRIMARY KEY NOT NULL, cid CHAR(64))",
-	}
-
-        // build request
-        request := &types.Request{
-                Header: types.SignedRequestHeader{
-                        RequestHeader: types.RequestHeader{
-                                QueryType:    types.WriteQuery,
-                                NodeID:       domain.nodeID,
-                                DomainID:     domain.domainID,
-
-				//todo, wyong, 20200817 
-                                //ConnectionID: connID,
-                                //SeqNo:        seqNo,
-                                //Timestamp:    getLocalTime(),
-                        },
-                },
-                Payload: types.RequestPayload{
-                        Queries: []types.Query{query},
-                },
-        }
-
-	request.SetContext(context.Background())
-	if _, _, err := domain.chain.Query(request, true); err != nil {
-		err = errors.Wrap(err, "failed to execute with eventual consistency")
-	}
-
-	return 
-}
-
-
-//wyong, 20200821
-func (domain *Domain) SetCid( url string, c cid.Cid) (err error) {
-
-	log.Debugf("Domain/SetCid(10), url=%s\n", url) 
-	// build query 
-	q := fmt.Sprintf( "INSERT INTO urlgraph VALUES('%s', '%s')", url, c.String()) 
-	query := types.Query {
-		Pattern : q ,
-	}
-
-	log.Debugf("Domain/SetCid(20), q=%s\n", q ) 
-        // build request
-        request := &types.Request{
-                Header: types.SignedRequestHeader{
-                        RequestHeader: types.RequestHeader{
-                                QueryType:    types.WriteQuery,
-                                NodeID:       domain.nodeID,
-                                DomainID:     domain.domainID,
-
-				//todo, wyong, 20200817 
-                                //ConnectionID: connID,
-                                //SeqNo:        seqNo,
-                                //Timestamp:    getLocalTime(),
-                        },
-                },
-                Payload: types.RequestPayload{
-                        Queries: []types.Query{query},
-                },
-        }
-
-	log.Debugf("Domain/SetCid(30)\n") 
-	request.SetContext(context.Background())
-	_, _, err = domain.chain.Query(request, true)
-	if  err != nil {
-		log.Debugf("Domain/SetCid(35)\n") 
-		err = errors.Wrap(err, "failed to execute with eventual consistency")
-		return 
-	}
-
-	log.Debugf("Domain/SetCid(40)\n" ) 
-	return 
-}
-
-//wyong, 20201208 
-func B2S(bs []uint8) string {
-	ba := []byte{}
-	for _, b := range bs {
-		ba = append(ba, byte(b))
-	}
-	return string(ba)
-}
-
-
-//wyong, 20200817
-func (domain *Domain) GetCid( url string) (c cid.Cid, err error) {
-
-	log.Debugf("Domain/GetCid(10), url=%s\n", url) 
-	// build query 
-	q := fmt.Sprintf( "SELECT cid FROM urlgraph where url='%s'" , url ) 
-	query := types.Query {
-		Pattern : q ,
-	}
-
-	log.Debugf("Domain/GetCid(20), q=%s\n", q ) 
-        // build request
-        request := &types.Request{
-                Header: types.SignedRequestHeader{
-                        RequestHeader: types.RequestHeader{
-                                QueryType:    types.ReadQuery,
-                                NodeID:       domain.nodeID,
-                                DomainID:     domain.domainID,
-
-				//todo, wyong, 20200817 
-                                //ConnectionID: connID,
-                                //SeqNo:        seqNo,
-                                //Timestamp:    getLocalTime(),
-                        },
-                },
-                Payload: types.RequestPayload{
-                        Queries: []types.Query{query},
-                },
-        }
-
-	log.Debugf("Domain/GetCid(30)\n") 
-	request.SetContext(context.Background())
-	_, resp, err := domain.chain.Query(request, true)
-	if  err != nil {
-		log.Debugf("Domain/GetCid(35)\n") 
-		err = errors.Wrap(err, "failed to execute with eventual consistency")
-		return 
-	}
-
-	log.Debugf("Domain/GetCid(40)\n") 
-	//result process , wyong, 20200817 
-	rows := resp.Payload.Rows //all the rows 
-	if rows==nil  || len(rows) <= 0 {
-		return 
-	}
-
-	log.Debugf("Domain/GetCid(50), first row =%s\n", rows[0]) 
-	fr := rows[0]		//first row
-	if len(fr.Values) <=0 {
-		return 
-	} 
-
-	log.Debugf("Domain/GetCid(60), first column of first rows=%s \n", fr.Values[0] ) 
-
-	//bugfix, wyong, 20201208 
-	//fcfr:= fr.Values[0].(string)	//first column of first row 
-	fcfr:= B2S((fr.Values[0]).([]uint8))	//first column of first row 
-
-	log.Debugf("Domain/GetCid(70), raw cid =%s\n", fcfr ) 
-	c, err  = cid.Decode(fcfr)	//convert it to cid 
-	if  err != nil {
-		log.Debugf("Domain/GetCid(75)\n") 
-		return 
-	}
-
-	log.Debugf("Domain/GetCid(80), cid = %s\n", c.String()) 
-	return 
-}
-
-// Query defines database query interface.
-func (domain *Domain) Query(request *types.Request) (response *types.Response, err error) {
-	// Just need to verify signature in domain.saveAck
-	//if err = request.Verify(); err != nil {
-	//	return
-	//}
-
-	var (
-		isSlowQuery uint32
-		tracker     *x.QueryTracker
-		tmStart     = time.Now()
-	)
-
-	// log the query if the underlying storage layer take too long to response
-	slowQueryTimer := time.AfterFunc(domain.cfg.SlowQueryTime, func() {
-		// mark as slow query
-		atomic.StoreUint32(&isSlowQuery, 1)
-		domain.logSlow(request, false, tmStart)
-	})
-	defer slowQueryTimer.Stop()
-	defer func() {
-		if atomic.LoadUint32(&isSlowQuery) == 1 {
-			// slow query
-			domain.logSlow(request, true, tmStart)
-		}
-	}()
-
-	switch request.Header.QueryType {
-	case types.ReadQuery:
-		if tracker, response, err = domain.chain.Query(request, false); err != nil {
-			err = errors.Wrap(err, "failed to query read query")
-			return
-		}
-	case types.WriteQuery:
-		if domain.cfg.UseEventualConsistency {
-			// reset context
-			request.SetContext(context.Background())
-			if tracker, response, err = domain.chain.Query(request, true); err != nil {
-				err = errors.Wrap(err, "failed to execute with eventual consistency")
-				return
-			}
-		} else {
-			if tracker, response, err = domain.writeQuery(request); err != nil {
-				err = errors.Wrap(err, "failed to execute")
-				return
-			}
-		}
-	default:
-		// TODO(xq262144): verbose errors with custom error structure
-		return nil, errors.Wrap(ErrInvalidRequest, "invalid query type")
-	}
-
-	//todo, wyong, 20200930 
-	//response.Header.ResponseAccount = domain.accountAddr
-
-	// build hash
-	if err = response.BuildHash(); err != nil {
-		err = errors.Wrap(err, "failed to build response hash")
-		return
-	}
-
-	if err = domain.chain.AddResponse(&response.Header); err != nil {
-		log.WithError(err).Debug("failed to add response to index")
-		return
-	}
-	tracker.UpdateResp(response)
-
-	return
-}
-
-func (domain *Domain) logSlow(request *types.Request, isFinished bool, tmStart time.Time) {
-	if request == nil {
-		return
-	}
-
-	// sample the queries
-	querySample := ""
-
-	for _, q := range request.Payload.Queries {
-		if len(querySample) < SlowQuerySampleSize {
-			querySample += "; "
-			querySample += q.Pattern
-		} else {
-			break
-		}
-	}
-
-	if len(querySample) >= SlowQuerySampleSize {
-		querySample = querySample[:SlowQuerySampleSize-3]
-		querySample += "..."
-	}
-
-	log.WithFields(log.Fields{
-		"finished": isFinished,
-		"domain":       request.Header.DomainID,
-		"req_time": request.Header.Timestamp.String(),
-		"req_node": request.Header.NodeID,
-		"count":    request.Header.BatchCount,
-		"type":     request.Header.QueryType.String(),
-		"sample":   querySample,
-		"start":    tmStart.String(),
-		"elapsed":  time.Now().Sub(tmStart).String(),
-	}).Error("slow query detected")
-}
-
-// Ack defines client response ack interface.
-func (domain *Domain) Ack(ack *types.Ack) (err error) {
-	// Just need to verify signature in domain.saveAck
-	//if err = ack.Verify(); err != nil {
-	//	return
-	//}
-
-	return domain.saveAck(&ack.Header)
-}
 
 // Shutdown stop database handles and stop service the database.
 func (domain *Domain) Shutdown() (err error) {
@@ -700,52 +464,6 @@ func (domain *Domain) Destroy() (err error) {
 	return
 }
 
-func (domain *Domain) writeQuery(request *types.Request) (tracker *x.QueryTracker, response *types.Response, err error) {
-	// check database size first, wal/kayak/chain database size is not included
-	if domain.cfg.SpaceLimit > 0 {
-		path := filepath.Join(domain.cfg.DataDir, StorageFileName)
-		var statInfo os.FileInfo
-		if statInfo, err = os.Stat(path); err != nil {
-			if !os.IsNotExist(err) {
-				return
-			}
-		} else {
-			if uint64(statInfo.Size()) > domain.cfg.SpaceLimit {
-				// rejected
-				err = ErrSpaceLimitExceeded
-				return
-			}
-		}
-	}
-
-	// call kayak runtime Process
-	var result interface{}
-	if result, _, err = domain.kayakRuntime.Apply(request.GetContext(), request); err != nil {
-		err = errors.Wrap(err, "apply failed")
-		return
-	}
-
-	var (
-		tr *TrackerAndResponse
-		ok bool
-	)
-	if tr, ok = (result).(*TrackerAndResponse); !ok {
-		err = errors.Wrap(err, "invalid response type")
-		return
-	}
-	tracker = tr.Tracker
-	response = tr.Response
-	return
-}
-
-func (domain *Domain) saveAck(ackHeader *types.SignedAckHeader) (err error) {
-	return domain.chain.VerifyAndPushAckedQuery(ackHeader)
-}
-
-func getLocalTime() time.Time {
-	return time.Now().UTC()
-}
-
 type bidRecv struct {
 	from proto.NodeID
 	url string 
@@ -754,7 +472,7 @@ type bidRecv struct {
 func (domain *Domain) receiveBidFrom(from proto.NodeID,  url string  ) {
 	//log.Debug("receiveBidFrom called...")
 	select {
-	case domain.incoming <- bidRecv{from: from, url: url }:
+	case domain.bidIncoming <- bidRecv{from: from, url: url }:
 	
 	//wyong, 20200824 
 	//case <-domain.ctx.Done():
@@ -769,7 +487,7 @@ type interestReq struct {
 // TODO: PERF: this is using a channel to guard a map access against race
 // conditions. This is definitely much slower than a mutex, though its unclear
 // if it will actually induce any noticeable slowness. This is implemented this
-// way to avoid adding a more complex set of mutexes around the liveWants map.
+// way to avoid adding a more complex set of mutexes around the liveBiddings map.
 // note that in the average case (where this session *is* interested in the
 // block we received) this function will not be called, as the cid will likely
 // still be in the interest cache.
@@ -832,8 +550,59 @@ func (domain *Domain) run(ctx context.Context) {
 	newpeers := make(chan proto.NodeID, 16)
 	for {
 		select {
-		case bid := <-domain.incoming:
-			log.Debugf("Domain/run(10), bid := <- s.incoming, bid.url = %s\n", bid.url )
+		case biddings := <-domain.biddingReqs	// <-domain.newReqs: 
+			log.Debugf("Domain/run(20), urls := <- domain.biddingReqs\n" )
+
+			//for _, url := range urls {
+			//	log.Debugf("Domain/run(30), add url(%s) into interest\n", url)  
+			//	domain.interest.Add(url, nil)
+			//}
+
+			log.Debugf("Domain/run(40), domain.liveBiddings=%d, activeBiddingsLimit=%d\n", domain.liveBiddings, activeBiddingsLimit )  
+
+			for _, bidding := range biddings { 
+				//when forwad probability of this url is zero, get parent of the node, 
+				//caculate forward probability of this url, 
+				if probability == 0.0 { 
+					bidding.probability := domain.GetProbability(bidding.ParentUrl, bidding.Url ) 
+				}
+			}
+
+			//insert bidding in biddings accroding to their probability. 
+			domain.tofetch.fastInserts(biddings) 
+
+			while len(domain.liveBiddings) < activeBiddingsLimit {
+				bidding := domain.tofetch.Pop()	
+				if bidding == nil {
+					break 
+				}
+
+				//get or create url node from url chain
+				urlNode := domain.GetUrlNode(bidding.Url)	
+				if urlNode == nil {
+					urlNode = domain.CreateUrlNode(parentUrl, bidding.Url)	
+				}
+
+				//read last requested height, and filter out urls which crawled too fast, 
+				if urlNode.LastRequestedHeight + MIN_CRAWLED_INTERVAL < Now() { 
+					continue 
+				} 
+
+				if bidding.probability <= MIN_FORWARD_PROBABILITY { 
+					continue 
+				}
+
+				//todo, increment requested count and save to url chain,wyong, 20210126  
+				domain.SetLastRequestHeight(bidding.Url, domain.chain.Height  )
+
+				log.Debugf("Domain/run(60), now set = %s\n", now )  
+				domain.addBiddings(ctx, nowAddBiddings, MIN_CRAWLING_COUNT )
+			}
+
+			log.Debugf("Domain/run(80)\n")  
+
+		case bid := <-domain.bidIncoming:
+			log.Debugf("Domain/run(10), bid := <- s.bidIncoming, bid.url = %s\n", bid.url )
 			domain.tick.Stop()
 
 			if bid.from != "" {
@@ -843,75 +612,69 @@ func (domain *Domain) run(ctx context.Context) {
 			//wyong, 20200828 
 			bidding, exist := domain.f.wm.completed_wantlist.Contains(bid.url) 
 			if exist == true { 
-				domain.SetCid(bidding.GetUrl(), bidding.GetCid())
+				
+				domain.BiddingCompleted(ctx, bid.url )
+
+				//this has been moved to crawler side , wyong, 20210129 
+				//domain.SetCid(bidding.GetUrl(), bidding.GetCid())
+
+
 			}
 
-			domain.receiveBid(ctx, bid.url )
-			domain.resetTick()
 
+			//todo, wyong, 20210129 
+			//domain.resetTick()
 
-		case urls := <-domain.newReqs:
-			log.Debugf("Domain/run(20), urls := <- domain.newReqs\n" )
-
-			for _, url := range urls {
-				log.Debugf("Domain/run(30), add url(%s) into interest\n", url)  
-				domain.interest.Add(url, nil)
-			}
-
-			log.Debugf("Domain/run(40), domain.liveWants=%d, activeWantsLimit=%d\n", domain.liveWants, activeWantsLimit )  
-			if len(domain.liveWants) < activeWantsLimit {
-				toadd := activeWantsLimit - len(domain.liveWants)
-				log.Debugf("Domain/run(50), toadd = %d\n", toadd )  
-				if toadd > len(urls) {
-					toadd = len(urls)
-				}
-
-				now := urls[:toadd]
-				urls = urls[toadd:]
-
-				log.Debugf("Domain/run(60), now set = %s\n", now )  
-				domain.wantUrls(ctx, now)
-			}
-
-			log.Debugf("Domain/run(70)\n")  
-			for _, url := range urls {
-				log.Debugf("Domain/run(80), add url(%s) into tofetch \n", url)  
-				domain.tofetch.Push(url)
-			}
-			log.Debugf("Domain/run(80)\n")  
-
-		case urls := <-domain.cancelUrls:
-			log.Debugf("domain/run, urls := <- domain.cancelUrls \n" )
-			domain.cancel(urls)
+		case biddings := <-domain.cancelBiddings:
+			log.Debugf("domain/run, urls := <- domain.cancelBiddings \n" )
+			domain.cancel(biddings)
 
 		case <-domain.tick.C:
-			log.Debugf("domain/run,<- domain.tick.C\n" )
-			live := make([]string, 0, len(domain.liveWants))
-			now := time.Now()
-			for url := range domain.liveWants {
-				live = append(live, url)
-				domain.liveWants[url] = now
+
+			//todo, move request ready to go from wait queue to domain.tofetch, wyong, 20210116 
+			//for job := range domain.waitQueue {
+			while _, bidding := domain.waitQueue.Pop() { 
+				//if job.runTime > now() {
+				//	//wait queue is sorted , so break as soon as possible. 
+				//	break
+				//}
+				//delete job from wait queue 
+				biddings = append(biddings, bidding ) 
+			}
+			
+			if len(biddings) {
+				domain.PutBidding(ctx, biddings)
 			}
 
-			//todo, wyong, 20200813 
+			//move re-broadcast to want manager, wyong, 20210117 
+			//log.Debugf("domain/run,<- domain.tick.C\n" )
+			//live := make([]string, 0, len(domain.liveBiddings))
+			//now := time.Now()
+			//for url := range domain.liveBiddings {
+			//	live = append(live, url)
+			//	domain.liveBiddings[url] = now
+			//}
+			//
 			// Broadcast these keys to everyone we're connected to
 			//domain.f.wm.WantUrls(ctx, live, nil, domain.domainID)
 
-			/*TODO, review the following code is necessary, wyong, 20190119
-			if len(live) > 0 {
-				go func(k string ) {
-					// TODO: have a task queue setup for this to:
-					// - rate limit
-					// - manage timeouts
-					// - ensure two 'findprovs' calls for the same block don't run concurrently
-					// - share peers between sessions based on interest set
-					for p := range domain.f.network.FindProvidersAsync(ctx, k, 10) {
-						newpeers <- p
-					}
-				}(live[0])
-			}
-			*/
+			//TODO, review the following code is necessary, wyong, 20190119
+			//if len(live) > 0 {
+			//	go func(k string ) {
+			//		// TODO: have a task queue setup for this to:
+			//		// - rate limit
+			//		// - manage timeouts
+			//		// - ensure two 'findprovs' calls for the same block don't run concurrently
+			//		// - share peers between sessions based on interest set
+			//		for p := range domain.f.network.FindProvidersAsync(ctx, k, 10) {
+			//			newpeers <- p
+			//		}
+			//	}(live[0])
+			//}
+
+			//todo, make this tick for waitQueue, wyong, 20210117  
 			domain.resetTick()
+
 		case p := <-newpeers:
 			//log.Debug("session/run, p := <-newpeers " )
 			domain.addActivePeer(p)
@@ -939,7 +702,7 @@ func (domain *Domain) run(ctx context.Context) {
 }
 
 func (domain *Domain) urlIsWanted(url string) bool {
-	_, ok := domain.liveWants[url]
+	_, ok := domain.liveBiddings[url]
 	if !ok {
 		ok = domain.tofetch.Has(url)
 	}
@@ -947,38 +710,101 @@ func (domain *Domain) urlIsWanted(url string) bool {
 	return ok
 }
 
-func (domain *Domain) receiveBid(ctx context.Context, url string ) {
+func (domain *Domain) BiddingCompleted(ctx context.Context, url string ) {
 	//log.Debug("receiveBid called..." )
 	//url := bid.Url()
 
 	if domain.urlIsWanted(url) {
-		tval, ok := domain.liveWants[url]
+		tval, ok := domain.liveBiddings[url]
 		if ok {
 			domain.latTotal += time.Since(tval)
-			delete(domain.liveWants, url)
+			delete(domain.liveBiddings, url)
 		} else {
 			domain.tofetch.Remove(url)
 		}
+
+		urlNode, err := domain.GetUrlNode(url) 
+		if err == nil {
+			deltaHeight := domain.chain.height - urlNode.LastCrawledHeight
+			newCrawlInterval = ( urlNode.CrawlInterval / 2 ) + ( deltaHeight / 2 )
+			domain.SetCrawlInterval(url, newCrawlInterval ) 
+
+			//save last crawled height to url chain.
+			domain.SetLastCrawledHeight(url, domain.chain.height) 
+
+			//create a bidding in future for this url and push it to wait queue
+			domain.waitQueue.Push(Now()+urlNode.CrawlInterval, types.UrlBidding {
+							Url : url,
+							Probability : 1.0,      //todo
+							ExpectCrawlerCount : 1, //todo
+						})
+
+		}
+
 		domain.fetchcnt++
 		//domain.notif.Publish(url)
 
 		if next := domain.tofetch.Pop(); /* next.Defined() */ next != ""  {
-			domain.wantUrls(ctx, []string{next})
+			domain.addBiddings(ctx, []string{next}, MIN_CRAWLING_COUNT )
 		}
-	}
-}
 
-func (domain *Domain) wantUrls(ctx context.Context, urls []string ) {
-	log.Debugf("Domain/wantUrls(10)\n") 
-
-	now := time.Now()
-	for _, url := range urls {
-		domain.liveWants[url] = now
 	}
 
-	//todo, select 2~3 random selected peers, wyong, 20200805 
-	domain.f.wm.WantUrls(ctx, urls, domain.activePeersArr, /* todo, wyong, 20200825 []proto.NodeID{},*/ domain.domainID)
 }
+
+//add parameter n, which indicate how many times the url should crawled at least, 
+//if url was not blocked by this node,  move the url to local ledger, and crawl the other (n - 1) 
+//times by remote peers , wyong, 20210117  
+func (domain *Domain) addBiddings(ctx context.Context, urls []string, n int ) {
+        localBiddings := make([]types.UrlBidding , 0, len(urls))
+        remoteBiddings := make([]types.UrlBidding , 0, len(urls))
+        for _, url := range urls {
+		if !isBlockedUrl(url) {
+			localBiddings = append(localBiddings,  types.UrlBidding {
+				//wyong, 20200827
+				//Cancel: cancel,
+				//BiddingEntry:  wantlist.NewRefBiddingEntry(url, kMaxPriority-i),
+				Url : url,
+				Probability : 1.0,      //todo, wyong, 2bility020082o
+				ExpectCrawlerCount : 1,	//wyong, 20210117 
+			})
+
+			url.expectCrawlerCount = url.expectCrawlerCount - 1 
+		}
+
+		if url.expectCrawlerCount > 0 {
+			remoteBiddings = append (remoteBiddings, types.UrlBidding{ 
+				Url : url,
+				Probability : url.probability,      
+				ExpectCrawlerCount : url.expectCrawlerCount,
+			})
+		}
+
+		now := time.Now()
+		domain.liveBiddings[url] = now
+		
+        }
+
+	//put local biddings to engine.ledger to notify spider sub-system there are jobs to run. 
+	if len(localBiddings) > 0 {
+		domain.f.engine.UrlBiddingReceived(ctx, domain.nodeID, localBiddings )
+	}
+	
+	//broadcast remoteBiddings to all active peers. 
+	if len(remoteBiddings) > 0 {
+		//now := time.Now()
+		//for _, remoteBidding := range remoteBiddings {
+		//	domain.liveBiddings[remoteBidding.Url] = now
+		//}
+
+		domain.f.wm.AddBiddings(ctx,  remoteBiddings, 
+						domain.activePeersArr, 
+						domain.domainID)
+	}
+
+	//return 
+}
+
 
 func (domain *Domain) cancel(urls []string ) {
 	for _, url := range urls {
@@ -986,7 +812,8 @@ func (domain *Domain) cancel(urls []string ) {
 	}
 }
 
-func (domain *Domain) cancelWants(urls []string ) {
+/* wyong, 20210126 
+func (domain *Domain) cancelBiddings(urls []string ) {
 	select {
 	case domain.cancelUrls <- urls:
 
@@ -994,6 +821,7 @@ func (domain *Domain) cancelWants(urls []string ) {
 	//case <-domain.ctx.Done():
 	}
 }
+*/
 
 /* wyong, 20200806 
 func (domain *Domain) put(ctx context.Context, urls []string ) {
@@ -1006,12 +834,16 @@ func (domain *Domain) put(ctx context.Context, urls []string ) {
 */
 
 // GetBlock fetches a single block
-func (domain *Domain) PutBidding(ctx context.Context, url string, probability float64 ) (/* blocks.Block, */  error) {
+func (domain *Domain) PutBidding(ctx context.Context, url string, probability float64, parentUrl string  ) (/* blocks.Block, */  error) {
 	//log.Debug("PutBidding called")
 	//return putBidding(ctx, url, domain.PutBiddings)
 	//return domain.put(ctx, []string{url}) 
 	select {
-		case domain.newReqs <- []string{url}:
+		case domain.biddingReqs <- []types.UrlBidding{ //wyong, 20210125 
+						Url: url,
+						ParentUrl : parentUrl, 
+						Probability : probability, 
+					} // []string{url}:
 		case <-ctx.Done():
 		
 		//wyong, 20200824 
@@ -1020,61 +852,33 @@ func (domain *Domain) PutBidding(ctx context.Context, url string, probability fl
 	return nil 
 }
 
-type urlQueue struct {
-	elems []string 
-	//eset  *cid.Set
-	eset map[string]struct{} 
-}
 
-func newUrlQueue() *urlQueue {
-	//return &cidQueue{eset: cid.NewSet()}
-	return &urlQueue{eset:  make(map[string]struct{})}
-}
-
-func (uq *urlQueue) Pop() string {
-	for {
-		if len(uq.elems) == 0 {
-			return "" 
-		}
-
-		out := uq.elems[0]
-		uq.elems = uq.elems[1:]
-
-		//if cq.eset.Has(out) {
-		_, has := uq.eset[out]
-		if has {
-			//cq.eset.Remove(out)
-			delete(uq.eset, out)
-			return out
-		}
-	}
-}
-
-
-func (uq *urlQueue) Push(u string) {
-	//if uq.eset.Visit(u) {
-	//	uq.elems = append(uq.elems, u)
-	//}
-
-	_, has := uq.eset[u] 
-	if !has {
-		uq.eset[u]=struct{}{}
-		uq.elems = append(uq.elems, u)
+func (domain *Domain) RetriveUrlCid(ctx context.Context, parentUrl string, url string  ) (cid.Cid, error) {
+	urlnode, err := domain.GetUrlNode(url)
+	if err != nil {
+		return cid.Cid{}, nil 
 	}
 
-}
+	c, err = domain.GetCid(url) 
+	if err != nil {
+		return cid.Cid{}, nil 
+	}
 
-func (uq *urlQueue) Remove(u string) {
-	//cq.eset.Remove(c)
-	delete(uq.eset, u) 
-}
+	err = domain.SetRetrivedCount(url, urlNode.RetrivedCount + 1 )
+	if err != nil {
+		return cid.Cid{}, nil 
+	}
+	
+	linksCount, err := domain.GetUrlLinksCount(parentUrl, url ) 
+	if err != nil {
+		//return cid.Cid{}, nil 
+		linksCount = 0 
+	}
 
-func (uq *urlQueue) Has(u string) bool {
-	_, has := uq.eset[u]
-	return has 
-}
+	err = domain.SetUrlLinksCount(parentUrl, url, linksCount + 1 ) 
+	if err != nil {
+		return cid.Cid{}, nil 
+	}
 
-func (uq *urlQueue) Len() int {
-	//return cq.eset.Len()
-	return len(uq.eset)
+	return c, nil 
 }

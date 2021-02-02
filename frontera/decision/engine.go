@@ -10,7 +10,7 @@ import (
 	//wyong, 20200827 
 	//bsmsg "github.com/siegfried415/gdf-rebuild/frontera/message"
 
-	wl "github.com/siegfried415/gdf-rebuild/frontera/wantlist"
+	bl "github.com/siegfried415/gdf-rebuild/frontera/biddinglist"
 	//bidlist "github.com/siegfried415/gdf-rebuild/frontera/bidlist"
 	"github.com/siegfried415/gdf-rebuild/proto"
 
@@ -26,20 +26,22 @@ import (
 	//wyong, 20201215
         log "github.com/siegfried415/gdf-rebuild/utils/log"
 	
+	//wyong, 20210118 
+	ecvrf github.com/vechain/go-ecvrf
 )
 
 
 // TODO consider taking responsibility for other types of requests. For
 // example, there could be a |cancelQueue| for all of the cancellation
-// messages that need to go out. There could also be a |wantlistQueue| for
-// the local peer's wantlists. Alternatively, these could all be bundled
+// messages that need to go out. There could also be a |biddinglistQueue| for
+// the local peer's biddinglists. Alternatively, these could all be bundled
 // into a single, intelligent global queue that efficiently
 // batches/combines and takes all of these into consideration.
 //
 // Right now, messages go onto the network for four reasons:
-// 1. an initial `sendwantlist` message to a provider of the first key in a
+// 1. an initial `sendbiddinglist` message to a provider of the first key in a
 //    request
-// 2. a periodic full sweep of `sendwantlist` messages to all providers
+// 2. a periodic full sweep of `sendbiddinglist` messages to all providers
 // 3. upon receipt of blocks, a `cancel` message to all peers
 // 4. draining the priority queue of `blockrequests` from peers
 //
@@ -50,11 +52,11 @@ import (
 //
 // Some examples of what would be possible:
 //
-// * when sending out the wantlists, include `cancel` requests
-// * when handling `blockrequests`, include `sendwantlist` and `cancel` as
+// * when sending out the biddinglists, include `cancel` requests
+// * when handling `blockrequests`, include `sendbiddinglist` and `cancel` as
 //   appropriate
 // * when handling `cancel`, if we recently received a wanted block from a
-//   peer, include a partial wantlist that contains a few other high priority
+//   peer, include a partial biddinglist that contains a few other high priority
 //   blocks
 //
 // In a sense, if we treat the decision engine as a black box, it could do
@@ -128,11 +130,11 @@ func NewEngine(ctx context.Context, nodeid proto.NodeID /* , bs bstore.Blockstor
 	return e
 }
 
-func (e *Engine) WantlistForPeer(p proto.NodeID) (out []*wl.BiddingEntry) {
+func (e *Engine) BiddinglistForPeer(p proto.NodeID) (out []*bl.BiddingEntry) {
 	partner := e.findOrCreate(p)
 	partner.lk.Lock()
 	defer partner.lk.Unlock()
-	return partner.wantList.SortedBiddingEntries()
+	return partner.biddingList.SortedBiddingEntries()
 }
 
 //wyong, 20190118
@@ -165,24 +167,28 @@ func (e *Engine) getBid( p proto.NodeID) (*bidlist.Bidlist, error) {
 */
 
 //TODO, wyong, 20181221
-func(e *Engine) CreateBid(ctx context.Context, url string, cid cid.Cid) {
-	log.Debugf("Engine/CreateBid(10), url=%s, cid = %s\n", url, cid )
-	/*todo, wyong, 20200827
+func(e *Engine) PutBid(ctx context.Context, url string, cid cid.Cid) {
+	log.Debugf("Engine/PutBid(10), url=%s, cid = %s\n", url, cid )
+
+	//wyong, 20210126 
+	//wyong, 20200827
         d, exist := e.f.DomainForUrl(url)
         if exist != true {
 		return 
         }
-	*/
+
+	//write url<-->cid to domain.UrlCidsCache and url chain, wyong, 20210126  
+	d.SetCid(url, c, ... )
 
 	bidMsg, err := e.createUrlBidMessage(ctx, /* d.domainID,*/  url, cid )
 	if err != nil {
-		log.Debugf("Engine/CreateBid(15), err = %s\n", err.Error())
+		log.Debugf("Engine/PutBid(15), err = %s\n", err.Error())
 		return // ctx cancelled
 	}
 
-	log.Debugf("Engine/CreateBid(20)\n")
+	log.Debugf("Engine/PutBid(20)\n")
 	e.outbox <- bidMsg  
-	log.Debugf("Engine/CreateBid(30)\n")
+	log.Debugf("Engine/PutBid(30)\n")
 }
 
 /*TODO, taskWorker is unnecessary, wyong, 20181221
@@ -217,7 +223,7 @@ func(e *Engine)createUrlBidMessage(ctx context.Context, url string, c cid.Cid) (
 	var target proto.NodeID 	
 	for _, l := range e.ledgerMap {
 		//l.lk.Lock()
-		if _, ok := l.WantListContains(url); ok {
+		if _, ok := l.BiddingListContains(url); ok {
 			//e.peerRequestQueue.Push(l.Partner, entry)
 			//work = true
 			//TODO, get a target 
@@ -361,28 +367,53 @@ func (e *Engine) Peers() []proto.NodeID {
 }
 
 //TODO, wyong, 20181222
-func(e *Engine) GetBidding(/* wyong, 20181227 p proto.NodeID */ ) (*wl.Wantlist, error) {
+func(e *Engine) GetBidding(/* wyong, 20181227 p proto.NodeID */ ) (*bl.BiddingList, error) {
 	log.Debugf("Engine/GetBidding(10)\n")
 
 	/* wyong, 20181227 
 	//TODO, get biddings from ledger
 	l := e.findOrCreate(p)
-	return l.GetWants()
+	return l.GetBiddings()
 	*/
 
 	//TODO, wyong, 20181227 
 	for _, ledger := range e.ledgerMap {
 		log.Debugf("Engine/GetBidding(20)\n")
-		return ledger.GetWants() 
+		return ledger.GetBiddings() 
 	}
 
 	log.Debugf("Engine/GetBidding(30)\n")
 	return nil, nil 
 }
 
-// MessageReceived performs book-keeping. Returns error if passed invalid
-// arguments.
+//todo, wyong, 20210118 
+// IsWinner returns true if the input challengeTicket wins the election
+func (e *Engine) IsWinner(challengeTicket []byte, /* minerPower, networkPower abi.StoragePower*/ expectCrawlerCount int , totalPeersCount int ) bool {
+
+	//todo, wyong, 20210127 
+        // (ChallengeTicket / MaxChallengeTicket) < ExpectedLeadersPerEpoch * (MinerPower / NetworkPower)
+        // ->
+        // ChallengeTicket * NetworkPower < ExpectedLeadersPerEpoch * MinerPower * MaxChallengeTicket
+	//
+	//--> 
+	//
+        // (ChallengeTicket / MaxChallengeTicket) < (ExpectedCrawlerCount / totalPeersCount )
+        // ->
+        // ChallengeTicket * totalPeersCount < ExpectedCrawlerCount * MaxChallengeTicket
+	
+
+        lhs := big.PositiveFromUnsignedBytes(challengeTicket[:])
+        lhs = big.Mul(lhs, /* networkPower*/ totalPeersCount )
+
+        rhs := big.Lsh(/*minerPower,*/ challengeBits)
+        rhs = big.Mul(rhs, big.NewInt( /* expectedLeadersPerEpoch */ expectCrawlingCount ))
+
+        return big.Cmp(lhs, rhs) < 0
+}
+
+//split UrlBiddingMessageReceived to 2 functions, wyong, 20210117 
 func (e *Engine) UrlBiddingMessageReceived( ctx context.Context,  m *types.UrlBiddingMessage ) error {
+
 	log.Debugf("Engine/UrlBiddingMessageReceived called(10)\n")
 	if m.Empty() {
 		log.Debugf("Engine/UrlBiddingMessageReceived(15), received empty message\n")
@@ -390,6 +421,39 @@ func (e *Engine) UrlBiddingMessageReceived( ctx context.Context,  m *types.UrlBi
 
 	p := m.Header.UrlBiddingHeader.NodeID 
 	log.Debugf("Engine/UrlBiddingMessageReceived called(20), from=%s\n", p )
+
+	//todo, only node successfully in competeting has the right to crawl the url in bidding
+	//wyong, 20210117 
+
+	// `beta`: the VRF hash output
+	// `pi`: the VRF proof
+	beta, pi, err := ecvrf.NewSecp256k1Sha256Tai().Prove(sk, []byte(url))
+	if err != nil {
+	    // something wrong.
+	    // most likely sk is not properly loaded.
+	    return
+	}
+
+	//todo, save hash(beta) & proof(pi) with bidding, wyong, 20200118 
+	//entry.Hash = beta 
+	//entry.VRFProof = pi 
+
+	//wyong, 20210127 
+        IDs, err := kms.GetAllNodeID()
+        if err != nil {
+                log.WithError(err).Error("get all node id failed")
+                return
+        }
+
+	//20210127 
+	if IsWinner(beta, expectCrawlerCount, len(IDs)) {
+		e.UrlBiddingReceived(ctx, p, m.Payload.Requests ) 
+	}
+
+}
+
+// MessageReceived performs book-keeping. Returns error if passed invalid arguments.
+func (e *Engine) UrlBiddingReceived( ctx context.Context,  requests []types.UrlBidding) error {
 
 	newWorkExists := false
 	defer func() {
@@ -405,23 +469,22 @@ func (e *Engine) UrlBiddingMessageReceived( ctx context.Context,  m *types.UrlBi
 	log.Debugf("Engine/UrlBiddingMessageReceived called(30)\n")
 	/*todo, wyong, 20200827 
 	if m.Full() {
-		l.wantList = wl.New()
+		l.biddingList = bl.New()
 	}
 	*/
 
 	//var msgSize int
-	//var activeEntries []*wl.BiddingEntry
+	//var activeEntries []*bl.BiddingEntry
 
-	//for _, entry := range m.Wantlist() {
-	for _, entry := range m.Payload.Requests {
+	for _, entry := range requests {
 		log.Debugf("Engine/UrlBiddingMessageReceived called(40), entry.Url=%s\n", entry.Url )
 		if entry.Cancel {
 			log.Debugf("Engine/UrlBiddingMessageReceived(50), cancel %s", entry.Url)
-			l.CancelWant(entry.Url)
+			l.CancelBidding(entry.Url)
 			//e.peerRequestQueue.Remove(entry.Url, p)
 		} else {
 			log.Debugf("Engine/UrlBiddingMessageReceived(60), wants %s with probability %f\n", entry.Url, entry.Probability)
-			l.AddWant(entry.Url, entry.Probability)
+			l.AddBidding(entry.Url, entry.Probability)
 
 			/*TODO,wyong, 20181221
 			blockSize, err := e.bs.GetSize(entry.Url)
@@ -435,7 +498,7 @@ func (e *Engine) UrlBiddingMessageReceived( ctx context.Context,  m *types.UrlBi
 				newWorkExists = true
 				if msgSize+blockSize > maxMessageSize {
 					e.peerRequestQueue.Push(p, activeEntries...)
-					activeEntries = []*wl.BiddingEntry{}
+					activeEntries = []*bl.BiddingEntry{}
 					msgSize = 0
 				}
 				activeEntries = append(activeEntries, entry.BiddingEntry)
@@ -469,7 +532,7 @@ func (e *Engine) addBid(bid bsmsg.BidEntry ) {
 
 	for _, l := range e.ledgerMap {
 		l.lk.Lock()
-		if entry, ok := l.WantListContains(bid.Url); ok {
+		if entry, ok := l.BiddingListContains(bid.Url); ok {
 			e.peerRequestQueue.Push(l.Partner, entry)
 			work = true
 		}
@@ -492,9 +555,9 @@ func (e *Engine) AddBid(bid bsmsg.BidEntry ) {
 
 
 /*TODO, wyong, 20181220
-// TODO add contents of m.WantList() to my local wantlist? NB: could introduce
+// TODO add contents of m.BiddingList() to my local biddinglist? NB: could introduce
 // race conditions where I send a message, but MessageSent gets handled after
-// MessageReceived. The information in the local wantlist could become
+// MessageReceived. The information in the local biddinglist could become
 // inconsistent. Would need to ensure that Sends and acknowledgement of the
 // send happen atomically
 
@@ -506,7 +569,7 @@ func (e *Engine) MessageSent(p proto.NodeID, m bsmsg.BiddingMessage) error {
 
 	for _, bid := range m.Bids() {
 		//l.SentBytes(len(bid.RawData()))
-		l.wantList.Remove(bid.Url())
+		l.biddingList.Remove(bid.Url())
 		e.peerRequestQueue.Remove(bid.Url(), p)
 	}
 
