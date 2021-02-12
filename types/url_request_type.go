@@ -15,6 +15,10 @@ import (
 type UrlRequest struct {
 	Url    string 
 	Probability	float64	
+
+	//wyong, 20210205 
+	ParentUrl 	string
+	ParentProbability float64 
 }
 
 // RequestPayload defines a queries payload.

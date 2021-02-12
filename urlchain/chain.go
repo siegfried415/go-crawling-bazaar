@@ -1297,7 +1297,9 @@ func (c *Chain) billing(h int32, node *blockNode) (ub *types.UpdateBilling, err 
 	ub = types.NewUpdateBilling(&types.UpdateBillingHeader{
 		Users: make([]*types.UserCost, len(usersMap)),
 	})
-	ub.Version = int32(ub.HSPDefaultVersion())
+
+	//todo, check if the following line is necessary, wyong, 20210203 
+	//ub.Version = int32(ub.HSPDefaultVersion())
 
 	i = 0
 	j = 0
@@ -1371,6 +1373,7 @@ func (c *Chain) updateMetrics() {
 	c.expVars.Get(mwMinerChainBlockTimestamp).(*expvar.String).Set(b.Timestamp().String())
 }
 
-func (c *Chain) getCurrentHeight() int32 {
+//export this fuction, wyong, 20210205 
+func (c *Chain) GetCurrentHeight() int32 {
 	return c.rt.getHead().Height
 }

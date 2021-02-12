@@ -21,12 +21,12 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
-	"sync/atomic"
+	//"sync/atomic"
 	"time"
-	"fmt"
+	//"fmt"
 
 	//wyong, 20210125 
-	"sort" 
+	//"sort" 
 
 	"github.com/pkg/errors"
 
@@ -50,7 +50,7 @@ import (
 	"github.com/siegfried415/gdf-rebuild/storage"
 	"github.com/siegfried415/gdf-rebuild/types"
 	"github.com/siegfried415/gdf-rebuild/utils/log"
-	x "github.com/siegfried415/gdf-rebuild/xenomint"
+	//x "github.com/siegfried415/gdf-rebuild/xenomint"
 	net "github.com/siegfried415/gdf-rebuild/net"
 
 	//wyong, 20200805 
@@ -97,6 +97,11 @@ const (
 
 	//wyong, 20200805 
 	activeBiddingsLimit = 16
+
+	//wyong, 20210205 
+	MinCrawlersExpected	= 2 
+	IncrementalCrawlingInterval uint32 = 100
+	MinFrowardProbability	float64 = 0.2 
 )
 
 // Database defines a single database instance in worker runtime.
@@ -241,8 +246,8 @@ func NewDomain(cfg *DomainConfig, f *Frontera, peers *proto.Peers, genesis *type
 
 	//todo, get expiration time from urlchain miner time,  wyong, 20210122 
 	domain.urlCidCache = cache.New(5*time.Minute, 10*time.Minute)
-	urlGraphCache = cache.New(5*time.Minute, 10*time.Minute)
-	urlNodeCache	= cache.New(5*time.Minute, 10*time.Minute)
+	domain.urlGraphCache = cache.New(5*time.Minute, 10*time.Minute)
+	domain.urlNodeCache = cache.New(5*time.Minute, 10*time.Minute)
 
 	//bugfix, wyong, 20200825 
 	cache, _ := lru.New(2048)
@@ -550,7 +555,7 @@ func (domain *Domain) run(ctx context.Context) {
 	newpeers := make(chan proto.NodeID, 16)
 	for {
 		select {
-		case biddings := <-domain.biddingReqs	// <-domain.newReqs: 
+		case biddings := <-domain.biddingReqs:	// <-domain.newReqs: 
 			log.Debugf("Domain/run(20), urls := <- domain.biddingReqs\n" )
 
 			//for _, url := range urls {
@@ -563,41 +568,53 @@ func (domain *Domain) run(ctx context.Context) {
 			for _, bidding := range biddings { 
 				//when forwad probability of this url is zero, get parent of the node, 
 				//caculate forward probability of this url, 
-				if probability == 0.0 { 
-					bidding.probability := domain.GetProbability(bidding.ParentUrl, bidding.Url ) 
+				if bidding.Probability == 0.0 { 
+					bidding.Probability, _ = domain.GetProbability(bidding.ParentUrl, bidding.ParentProbability,  bidding.Url ) 
 				}
 			}
 
 			//insert bidding in biddings accroding to their probability. 
-			domain.tofetch.fastInserts(biddings) 
+			domain.tofetch.FastInserts(biddings) 
 
-			while len(domain.liveBiddings) < activeBiddingsLimit {
-				bidding := domain.tofetch.Pop()	
-				if bidding == nil {
+			//wyong, 20210203 
+			addBiddings := make([]types.UrlBidding, 0, len(biddings))
+
+			for {
+				if (len(domain.liveBiddings) < activeBiddingsLimit) {
 					break 
 				}
 
+				bidding, err := domain.tofetch.Pop()
+				if  err != nil  {
+					break 
+				}
+
+				//currentHeight is int32, wyong, 20210205 	
+				currentHeight := uint32(domain.chain.GetCurrentHeight())
+
 				//get or create url node from url chain
-				urlNode := domain.GetUrlNode(bidding.Url)	
+				urlNode, _ := domain.GetUrlNode(bidding.Url)	
 				if urlNode == nil {
-					urlNode = domain.CreateUrlNode(parentUrl, bidding.Url)	
+					urlNode, _ = domain.CreateUrlNode(/* parentUrl, */ bidding.Url, currentHeight, 0, 0, 0 )	
 				}
 
 				//read last requested height, and filter out urls which crawled too fast, 
-				if urlNode.LastRequestedHeight + MIN_CRAWLED_INTERVAL < Now() { 
+				if (urlNode.LastRequestedHeight + IncrementalCrawlingInterval) < currentHeight { 
 					continue 
 				} 
 
-				if bidding.probability <= MIN_FORWARD_PROBABILITY { 
+				if bidding.Probability <= MinFrowardProbability { 
 					continue 
 				}
 
 				//todo, increment requested count and save to url chain,wyong, 20210126  
-				domain.SetLastRequestHeight(bidding.Url, domain.chain.Height  )
+				domain.SetLastRequestedHeight(bidding.Url, currentHeight)
 
-				log.Debugf("Domain/run(60), now set = %s\n", now )  
-				domain.addBiddings(ctx, nowAddBiddings, MIN_CRAWLING_COUNT )
+				addBiddings = append(addBiddings, bidding) 
 			}
+
+			log.Debugf("Domain/run(60)\n")  
+			domain.addBiddings(ctx, addBiddings )
 
 			log.Debugf("Domain/run(80)\n")  
 
@@ -610,7 +627,7 @@ func (domain *Domain) run(ctx context.Context) {
 			}
 
 			//wyong, 20200828 
-			bidding, exist := domain.f.wm.completed_wantlist.Contains(bid.url) 
+			_, exist := domain.f.bc.completed_bl.Contains(bid.url) 
 			if exist == true { 
 				
 				domain.BiddingCompleted(ctx, bid.url )
@@ -621,7 +638,6 @@ func (domain *Domain) run(ctx context.Context) {
 
 			}
 
-
 			//todo, wyong, 20210129 
 			//domain.resetTick()
 
@@ -630,20 +646,30 @@ func (domain *Domain) run(ctx context.Context) {
 			domain.cancel(biddings)
 
 		case <-domain.tick.C:
+			
+			//todo, wyong, 20210205 
+			biddings := make([]types.UrlBidding, 0 ) 
 
 			//todo, move request ready to go from wait queue to domain.tofetch, wyong, 20210116 
 			//for job := range domain.waitQueue {
-			while _, bidding := domain.waitQueue.Pop() { 
+			//while _, bidding := domain.waitQueue.Pop() { 
+			for {
+				_, bidding, err := domain.waitQueue.Pop() 
+				if err != nil  {
+					break 
+				}
+
 				//if job.runTime > now() {
 				//	//wait queue is sorted , so break as soon as possible. 
 				//	break
 				//}
+
 				//delete job from wait queue 
 				biddings = append(biddings, bidding ) 
 			}
 			
-			if len(biddings) {
-				domain.PutBidding(ctx, biddings)
+			if len(biddings) > 0  {
+				domain.PutBiddings(ctx, biddings)
 			}
 
 			//move re-broadcast to want manager, wyong, 20210117 
@@ -725,15 +751,17 @@ func (domain *Domain) BiddingCompleted(ctx context.Context, url string ) {
 
 		urlNode, err := domain.GetUrlNode(url) 
 		if err == nil {
-			deltaHeight := domain.chain.height - urlNode.LastCrawledHeight
-			newCrawlInterval = ( urlNode.CrawlInterval / 2 ) + ( deltaHeight / 2 )
-			domain.SetCrawlInterval(url, newCrawlInterval ) 
+			currentHeight := uint32(domain.chain.GetCurrentHeight()) 
+			deltaHeight := currentHeight - urlNode.LastCrawledHeight
+			newCrawlInterval := ( urlNode.CrawlInterval / 2 ) + ( deltaHeight / 2 )
+			domain.SetCrawlInterval(url, newCrawlInterval) 
 
 			//save last crawled height to url chain.
-			domain.SetLastCrawledHeight(url, domain.chain.height) 
+			domain.SetLastCrawledHeight(url, currentHeight) 
 
 			//create a bidding in future for this url and push it to wait queue
-			domain.waitQueue.Push(Now()+urlNode.CrawlInterval, types.UrlBidding {
+			runtime := time.Now().Add(time.Duration(urlNode.CrawlInterval) * time.Second)
+			domain.waitQueue.Push(runtime, types.UrlBidding {
 							Url : url,
 							Probability : 1.0,      //todo
 							ExpectCrawlerCount : 1, //todo
@@ -744,8 +772,8 @@ func (domain *Domain) BiddingCompleted(ctx context.Context, url string ) {
 		domain.fetchcnt++
 		//domain.notif.Publish(url)
 
-		if next := domain.tofetch.Pop(); /* next.Defined() */ next != ""  {
-			domain.addBiddings(ctx, []string{next}, MIN_CRAWLING_COUNT )
+		if next, err  := domain.tofetch.Pop();  err != nil   {
+			domain.addBiddings(ctx, []types.UrlBidding{next})
 		}
 
 	}
@@ -755,28 +783,32 @@ func (domain *Domain) BiddingCompleted(ctx context.Context, url string ) {
 //add parameter n, which indicate how many times the url should crawled at least, 
 //if url was not blocked by this node,  move the url to local ledger, and crawl the other (n - 1) 
 //times by remote peers , wyong, 20210117  
-func (domain *Domain) addBiddings(ctx context.Context, urls []string, n int ) {
+func (domain *Domain) addBiddings(ctx context.Context, /* urls []string */ biddings []types.UrlBidding) {
+
+	/* wyong, 20210204 
         localBiddings := make([]types.UrlBidding , 0, len(urls))
         remoteBiddings := make([]types.UrlBidding , 0, len(urls))
-        for _, url := range urls {
-		if !isBlockedUrl(url) {
+        for _, bidding := range biddings {
+		if !isBlockedUrl(bidding.Url) {
 			localBiddings = append(localBiddings,  types.UrlBidding {
 				//wyong, 20200827
 				//Cancel: cancel,
-				//BiddingEntry:  wantlist.NewRefBiddingEntry(url, kMaxPriority-i),
-				Url : url,
-				Probability : 1.0,      //todo, wyong, 2bility020082o
+				//BiddingEntry:  NewBiddingEntry(url, kMaxPriority-i),
+				Url : bidding.Url,
+				Probability : bidding.Probability,      
+				ParentUrl   : bidding.ParentUrl, 
 				ExpectCrawlerCount : 1,	//wyong, 20210117 
 			})
 
-			url.expectCrawlerCount = url.expectCrawlerCount - 1 
+			url.ExpectCrawlerCount = url.ExpectCrawlerCount - 1 
 		}
 
-		if url.expectCrawlerCount > 0 {
+		if url.ExpectCrawlerCount > 0 {
 			remoteBiddings = append (remoteBiddings, types.UrlBidding{ 
-				Url : url,
-				Probability : url.probability,      
-				ExpectCrawlerCount : url.expectCrawlerCount,
+				Url : bidding.Url,
+				Probability : bidding.Probability,      
+				ParentUrl   : bidding.ParentUrl,
+				ExpectCrawlerCount : bidding.ExpectCrawlerCount,
 			})
 		}
 
@@ -787,7 +819,7 @@ func (domain *Domain) addBiddings(ctx context.Context, urls []string, n int ) {
 
 	//put local biddings to engine.ledger to notify spider sub-system there are jobs to run. 
 	if len(localBiddings) > 0 {
-		domain.f.engine.UrlBiddingReceived(ctx, domain.nodeID, localBiddings )
+		domain.f.bs.UrlBiddingReceived(ctx, domain.nodeID, localBiddings )
 	}
 	
 	//broadcast remoteBiddings to all active peers. 
@@ -797,9 +829,20 @@ func (domain *Domain) addBiddings(ctx context.Context, urls []string, n int ) {
 		//	domain.liveBiddings[remoteBidding.Url] = now
 		//}
 
-		domain.f.wm.AddBiddings(ctx,  remoteBiddings, 
+		domain.f.bc.AddBiddings(ctx,  remoteBiddings, 
 						domain.activePeersArr, 
 						domain.domainID)
+	}
+
+	*/
+
+        for _, bidding := range biddings {
+		now := time.Now()
+		domain.liveBiddings[bidding.Url] = now
+	}
+
+	if len(biddings) > 0 {
+		domain.f.bc.AddBiddings(ctx,  biddings, domain.activePeersArr, domain.domainID)
 	}
 
 	//return 
@@ -834,16 +877,24 @@ func (domain *Domain) put(ctx context.Context, urls []string ) {
 */
 
 // GetBlock fetches a single block
-func (domain *Domain) PutBidding(ctx context.Context, url string, probability float64, parentUrl string  ) (/* blocks.Block, */  error) {
+func (domain *Domain) PutBidding(ctx context.Context, url string, probability float64, parentUrl string , parentProbability float64  ) (/* blocks.Block, */  error) {
 	//log.Debug("PutBidding called")
 	//return putBidding(ctx, url, domain.PutBiddings)
 	//return domain.put(ctx, []string{url}) 
+	bidding := types.UrlBidding {
+		Url: url,
+		Probability : probability, 
+
+		//wyong, 20210205 
+		ParentUrl : parentUrl, 
+		ParentProbability : parentProbability, 
+		
+		//wyong, 20210203 
+		ExpectCrawlerCount : MinCrawlersExpected, 
+	}
+
 	select {
-		case domain.biddingReqs <- []types.UrlBidding{ //wyong, 20210125 
-						Url: url,
-						ParentUrl : parentUrl, 
-						Probability : probability, 
-					} // []string{url}:
+		case domain.biddingReqs <- []types.UrlBidding{ bidding }:  
 		case <-ctx.Done():
 		
 		//wyong, 20200824 
@@ -852,14 +903,23 @@ func (domain *Domain) PutBidding(ctx context.Context, url string, probability fl
 	return nil 
 }
 
+func (domain *Domain) PutBiddings(ctx context.Context, biddings []types.UrlBidding ) error {
+	select {
+		case domain.biddingReqs <- biddings :  
+		case <-ctx.Done():
+		//wyong, 20200824 
+		//case <-domain.ctx.Done():
+	}
+	return nil 
+}
 
 func (domain *Domain) RetriveUrlCid(ctx context.Context, parentUrl string, url string  ) (cid.Cid, error) {
-	urlnode, err := domain.GetUrlNode(url)
+	urlNode, err := domain.GetUrlNode(url)
 	if err != nil {
 		return cid.Cid{}, nil 
 	}
 
-	c, err = domain.GetCid(url) 
+	c, err := domain.GetCid(parentUrl, url) 
 	if err != nil {
 		return cid.Cid{}, nil 
 	}

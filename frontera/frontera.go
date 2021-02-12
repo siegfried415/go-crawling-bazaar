@@ -40,8 +40,10 @@ import (
 	procctx "github.com/jbenet/goprocess/context" 
 
 
-	decision "github.com/siegfried415/gdf-rebuild/frontera/decision"
-	biddinglist "github.com/siegfried415/gdf-rebuild/frontera/biddinglist" 
+	//wyong, 20210203 
+	//decision "github.com/siegfried415/gdf-rebuild/frontera/decision"
+
+	//biddinglist "github.com/siegfried415/gdf-rebuild/frontera/biddinglist" 
 	//bsmsg "github.com/siegfried415/gdf-rebuild/frontera/message" 
 	//fnet "github.com/siegfried415/gdf-rebuild/frontera/network" 
 
@@ -141,10 +143,11 @@ type Frontera struct {
 	//wyong, 20200721 
 	// the peermanager manages sending messages to peers in a way that
 	// wont block biddingsys operation
-	bm *BiddingManager
+	bc *BiddingClient 
 
-	// the engine is the bit of logic that decides who to send which blocks to
-	engine *decision.Engine
+	// the BiddingServer is the bit of logic that decides who to send which blocks to
+	//engine *decision.Engine
+	bs *BiddingServer 
 
 	// network delivers messages on behalf of the session
 	//network fnet.BiddingNetwork
@@ -239,7 +242,7 @@ func NewFrontera( cfg *FronteraConfig, peerHost net.RoutedHost  ) (f *Frontera, 
 		nodeID: nodeID,
 
 		//todo, network.NodeId()? bstore? wyong, 20200730 
-		engine:        decision.NewEngine(ctx, nodeID /*, bstore */ ), 
+		bs :        /* decision. */ NewBiddingServer (ctx, nodeID /*, bstore */ ), 
 
 		//network:       network,
 		host : peerHost, 
@@ -250,13 +253,17 @@ func NewFrontera( cfg *FronteraConfig, peerHost net.RoutedHost  ) (f *Frontera, 
 		//provideKeys:   make(chan cid.Cid, provideKeysBufferSize),
 
 		//wyong, 20200924 
-		bm:            NewBiddingManager(ctx, peerHost,  nodeID),
+		bc :            NewBiddingClient(ctx, peerHost,  nodeID),
 
 		counters:      new(counters),
 
 		//dupMetric: dupHist,
 		//allMetric: allHist,
 	}
+
+	//wyong, 20210203
+	f.bs.f  = f 
+	f.bc.f  = f 
 
 	// init kayak rpc mux
 	if f.kayakMux, err = NewDomainKayakMuxService(DomainKayakRPCName, peerHost ); err != nil {
@@ -313,7 +320,7 @@ func NewFrontera( cfg *FronteraConfig, peerHost net.RoutedHost  ) (f *Frontera, 
 
 	//log.Infof("NewFrontera(100)") 
 	//wyong, 20200721 
-	//go f.bm.Run()
+	//go f.bc.Run()
 
 	//todo, wyong, 20201020 
 	//network.SetDelegate(f)
@@ -351,7 +358,7 @@ func( f *Frontera) Start(ctx context.Context ) error {
 
 	log.Infof("NewFrontera(100)") 
 	//wyong, 20200721 
-	go f.bm.Run()
+	go f.bc.Run()
 
 	log.Infof("NewFrontera(110)") 
 	// Start up biddingsyss async worker routines
@@ -800,7 +807,7 @@ func (f *Frontera) Update(instance *types.ServiceInstance) (err error) {
 	var exists bool
 
 	log.Debugf("Frontera/Update(10)\n") 
-	//update frontera 's peer info which hold by bm and engine, wyong,20200825 
+	//update frontera 's peer info which hold by bc and bs, wyong,20200825 
 	f.PeersConnected(instance.Peers )
 
 	log.Debugf("Frontera/Update(20)\n") 
@@ -1005,7 +1012,7 @@ func (f *Frontera) PutBidding(ctx context.Context, req *types.UrlRequestMessage 
 		log.Debugf("Frontera/PutBidding(30)\n")
 
 		//todo, add parameter 'ParentUrl', wyong, 20210125 
-		err = domain.PutBidding(ctx, r.Url, r.Probability, r.ParentUrl  )
+		err = domain.PutBidding(ctx, r.Url, r.Probability, r.ParentUrl, r.ParentProbability  )
 		if err != nil {
 			log.Debugf("Frontera/PutBidding(35), err=%s\n", err.Error())
 			return 
@@ -1043,8 +1050,8 @@ func (f *Frontera) DelBidding(ctx context.Context, url string) error {
 }
 
 
-func (f *Frontera) LedgerForPeer(p proto.NodeID) *decision.Receipt {
-	return f.engine.LedgerForPeer(p)
+func (f *Frontera) LedgerForPeer(p proto.NodeID) * /* decision. */ Receipt {
+	return f.bs.LedgerForPeer(p)
 }
 
 /*wyong, 20200805 
@@ -1059,24 +1066,22 @@ func (f *Frontera) getNextSessionID() uint64 {
 
 // CancelBiddings removes a given urls from the biddinglist
 func (f *Frontera) CancelBiddings(urls []string,  domainID proto.DomainID ) bool {
-	return f.bm.CancelBiddings(context.Background(), urls, nil, domainID )
+	return f.bc.CancelBiddings(context.Background(), urls, nil, domainID )
 }
 
 
-func(f *Frontera) GetBidding(ctx context.Context) ([]*biddinglist.BiddingEntry,  error) {
+func(f *Frontera) GetBidding(ctx context.Context) ([]*BiddingEntry,  error) {
 	log.Debugf("Frontera/GetBidding(10)\n ")
-	//return bs.engine.GetBidding(/* wyong, 20181227 p */ )
-
 	//wyong, 20190131
-	biddinglist, _ := f.engine.GetBidding()
-	if biddinglist == nil {
+	bl, _ := f.bs.GetBidding()
+	if bl == nil {
 		log.Debugf("Frontera/GetBidding(15)\n ")
-		return []*biddinglist.BiddingEntry{}, nil
+		return []*BiddingEntry{}, nil
 	}
 
 	log.Debugf("Frontera/GetBidding(20)\n ")
-	biddings := biddinglist.BiddingEntries()
-        out := make([]*biddinglist.BiddingEntry, 0, len(biddings))
+	biddings := bl.BiddingEntries()
+        out := make([]*BiddingEntry, 0, len(biddings))
         for _, bidding := range biddings {
                 log.Debugf("Frontera/GetBidding(30), %s\n", bidding.Url )
 		if (bidding.Seen == false ) {
@@ -1091,14 +1096,14 @@ func(f *Frontera) GetBidding(ctx context.Context) ([]*biddinglist.BiddingEntry, 
 
 
 //wyong, 20190116
-func(f *Frontera) GetCompletedBiddings(ctx context.Context) ([]*biddinglist.BiddingEntry, error) {
+func(f *Frontera) GetCompletedBiddings(ctx context.Context) ([]*BiddingEntry, error) {
 	log.Debugf("GetCompletedBiddings called...")
 
 	//wyong, 20190131
-	//return bs.bm.GetCompletedBiddings() 
+	//return bs.bc.GetCompletedBiddings() 
 
-	completedbiddings,_ := f.bm.GetCompletedBiddings()
-        out := make([]*biddinglist.BiddingEntry, 0, len(completedbiddings))
+	completedbiddings,_ := f.bc.GetCompletedBiddings()
+        out := make([]*BiddingEntry, 0, len(completedbiddings))
 
         for _, bidding := range completedbiddings {
                 //log.Debugf("GetBidding (30), %s", e.GetUrl())
@@ -1112,15 +1117,15 @@ func(f *Frontera) GetCompletedBiddings(ctx context.Context) ([]*biddinglist.Bidd
 }
 
 //wyong, 20190116
-func(f *Frontera) GetUncompletedBiddings(ctx context.Context) ([]*biddinglist.BiddingEntry, error) {
+func(f *Frontera) GetUncompletedBiddings(ctx context.Context) ([]*BiddingEntry, error) {
 	log.Debugf("GetUncompletedBiddings called...")
-	return f.bm.GetUncompletedBiddings()
+	return f.bc.GetUncompletedBiddings()
 }
 
 //wyong, 20190120
-func(f *Frontera) GetBids(ctx context.Context, url string ) ([]*biddinglist.BidEntry, error) {
+func(f *Frontera) GetBids(ctx context.Context, url string ) ([]*BidEntry, error) {
 	log.Debugf("GetBids called...")
-	biddings, _ := f.bm.GetCompletedBiddings() 
+	biddings, _ := f.bc.GetCompletedBiddings() 
 	for _, bidding := range biddings {
 		if bidding.GetUrl() == url {
 			return bidding.GetBids(), nil 
@@ -1133,33 +1138,33 @@ func(f *Frontera) GetBids(ctx context.Context, url string ) ([]*biddinglist.BidE
 //wyong, 20200828 
 func (f *Frontera) UrlBidMessageReceived(ctx context.Context, req *types.UrlBidMessage) (err error) {
 
-	p := req.Header.UrlBidHeader.NodeID
+	from := req.Header.UrlBidHeader.NodeID
 
         // TODO: this is bad, and could be easily abused.
         // Should only track *useful* messages in ledger
-        cids := req.Payload.Cids
-        if len(cids) == 0 {
+        bids := req.Payload.Bids
+        if len(bids) == 0 {
                 return
         }
 
         wg := sync.WaitGroup{}
-        for u, c := range cids {
+        for _, bid := range bids {
                 wg.Add(1)
-                go func(p proto.NodeID, u string, c string) {
+                go func(p proto.NodeID, bid types.UrlBid ) {
                         // TODO: this probably doesnt need to be a goroutine...
                         defer wg.Done()
 
                         //TODO,wyong, 20181220
                         //bs.updateReceiveCounters(cid)
 
-                        log.Debugf("Frontera/UrlBidMessageReceived(10), got cid(%s) for url(%s) from %s", c, u, p)
-			c1, err  := cid.Decode(c) 
+                        log.Debugf("Frontera/UrlBidMessageReceived(10), got cid(%s) for url(%s) from %s", bid.Cid, bid.Url, p)
+			cid, err  := cid.Decode(bid.Cid) 
 			if err!= nil {
 				//todo, wyong, 20200907 
 				return 
 			}
 
-                        if err := f.receiveBidFrom(ctx, p, u, c1); err != nil {
+                        if err := f.receiveBidFrom(ctx, p, bid.Url, cid, bid.Hash, bid.Proof ); err != nil {
                                 log.Warningf("ReceiveMessage recvBidFrom error: %s", err)
                         }
 
@@ -1167,7 +1172,7 @@ func (f *Frontera) UrlBidMessageReceived(ctx context.Context, req *types.UrlBidM
                         //wyong, 20190119
                         //log.Event(ctx, "Biddingsys.PutBiddingRequest.End", bidding.Url())
 
-                }(p, u, c)
+                }(from, bid)
         }
         wg.Wait()
 	
@@ -1179,7 +1184,7 @@ func (f *Frontera) UrlBidMessageReceived(ctx context.Context, req *types.UrlBidM
 // from the user, not when receiving it from the network.
 // In case you run `git blame` on this comment, I'll save you some time: ask
 // @whyrusleeping, I don't know the answers you seek.
-func (f *Frontera) receiveBidFrom(ctx context.Context,  from proto.NodeID, url string, c cid.Cid) error {
+func (f *Frontera) receiveBidFrom(ctx context.Context,  from proto.NodeID, url string, c cid.Cid, hash []byte, proof []byte ) error {
 	select {
 	case <-f.process.Closing():
 		return errors.New("biddingsys is closed")
@@ -1211,8 +1216,8 @@ func (f *Frontera) receiveBidFrom(ctx context.Context,  from proto.NodeID, url s
 	d, exist := f.DomainForUrl(url) 
 	if exist == true {
 		log.Debugf("Frontera/receiveBidFrom(20)\n")
-		if (f.bm.ReceiveBidForBiddings(ctx, url, c, from, d.domainID)) {
-			//wait until bm have processed the incoming bid. 
+		if (f.bc.ReceiveBidForBiddings(ctx, url, c, from, d.domainID, hash, proof )) {
+			//wait until bc have processed the incoming bid. 
 			//if we have received two bids, remove bidding from domain.
 			//wyong, 20200831
 			log.Debugf("Frontera/receiveBidFrom(30)\n")
@@ -1223,7 +1228,7 @@ func (f *Frontera) receiveBidFrom(ctx context.Context,  from proto.NodeID, url s
 
 	}
 
-	//bs.engine.AddBid(bid)
+	//f.bs.AddBid(bid)
 	
 	//select {
 	//case bs.newBids <- bid.Cid():
@@ -1301,7 +1306,7 @@ func (f *Frontera) ReceiveMessage(ctx context.Context, p proto.NodeID, incoming 
 
 	// This call records changes to biddinglists, blocks received,
 	// and number of bytes transfered.
-	bs.engine.MessageReceived(p, incoming)
+	f.bs.MessageReceived(p, incoming)
 
 	// TODO: this is bad, and could be easily abused.
 	// Should only track *useful* messages in ledger
@@ -1340,7 +1345,7 @@ func (f *Frontera) ReceiveMessage(ctx context.Context, p proto.NodeID, incoming 
 //wyong, 20181221
 func(f *Frontera) PutBid(ctx context.Context, url string, cid cid.Cid) error {
 	log.Debugf("Frontera/PutBid(10), url = %s, cid = %s\n", url, cid)
-	f.engine.PutBid(ctx, url, cid )
+	f.bs.PutBid(ctx, url, cid )
 	return nil 
 }
 
@@ -1359,7 +1364,7 @@ func(f *Frontera) RetriveUrlCid(ctx context.Context, req *types.UrlCidRequestMes
 	var cids []string
 	for _, r := range req.Payload.Requests {
 		var c cid.Cid 
-		c, err = domain.RetriveUrlCid(r.Url) 
+		c, err = domain.RetriveUrlCid(ctx, r.ParentUrl,  r.Url) 
 		log.Debugf("Frontera/GetCid(30), r.Url=%s\n", r.Url ) 
 		if err != nil {
 			break 	
@@ -1400,8 +1405,8 @@ func (f *Frontera) PeersConnected(peers *proto.Peers ) {
 	log.Debugf("Frontera/PeersConnected(10)\n")
 	for _, p := range peers.Servers {
 		log.Debugf("Frontera/PeerConnected(20), p=%s\n", p )
-		f.bm.Connected(p)
-		f.engine.PeerConnected(p)
+		f.bc.Connected(p)
+		f.bs.PeerConnected(p)
 	}
 }
 
@@ -1410,8 +1415,8 @@ func (f *Frontera) PeersDisconnected(peers *proto.Peers ) {
 	log.Debugf("Frontera/PeerDisconnected(10)\n")
 	for _, p := range peers.Servers {
 		log.Debugf("Frontera/PeerDisconnected(20), p=%s\n", p )
-		f.bm.Disconnected(p)
-		f.engine.PeerDisconnected(p)
+		f.bc.Disconnected(p)
+		f.bs.PeerDisconnected(p)
 	}
 }
 
@@ -1430,7 +1435,7 @@ func (bs *Biddingsys) Close() error {
 
 
 func (f *Frontera) GetBiddinglist() []string {
-	entries := f.bm.bl.Entries()
+	entries := f.bc.bl.Entries()
 	out := make([]string, 0, len(entries))
 	for _, e := range entries {
 		out = append(out, e.Url )

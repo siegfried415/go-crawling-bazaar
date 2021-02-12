@@ -16,9 +16,13 @@ import (
 //wyong, 20191113 
 type UrlBidding struct {
 	Url    string 
-	ParentUrl	string	//wyong, 20210125 
 	Probability	float64	
-	Cancel	bool 	//wyong, 20200827 
+
+	ParentUrl	string	//wyong, 20210125 
+	ParentProbability float64	//wyong, 20210205 
+
+	Cancel	bool 		//wyong, 20200827 
+	ExpectCrawlerCount int	//wyong, 20210203 
 }
 
 

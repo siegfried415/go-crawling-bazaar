@@ -2,26 +2,29 @@
 package frontera
 
 import (
-	"time"
-	"fmt"
-}
+	//"time"
+	//"fmt"
+	"errors" 
+	"sort" 
+
+        "github.com/siegfried415/gdf-rebuild/types"
+)
 
 //todo, biddingQueue->probBiddingQueue, wyong, 20210126 
-type probBiddingQueue struct {
-	elems []*types.UrlBidding 
-	//eset  *cid.Set
+type ProbBiddingQueue struct {
+	elems []types.UrlBidding 
 	eset map[string]struct{} 
 }
 
-func newProbBiddingQueue() *probBiddingQueue {
+func newProbBiddingQueue() *ProbBiddingQueue {
 	//return &cidQueue{eset: cid.NewSet()}
-	return &probBiddingQueue{eset:  make(map[string]struct{})}
+	return &ProbBiddingQueue{eset:  make(map[string]struct{})}
 }
 
-func (pbq *probBiddingQueue) Pop() *types.UrlBidding{
+func (pbq *ProbBiddingQueue) Pop() (types.UrlBidding, error) {
 	for {
 		if len(pbq.elems) == 0 {
-			return nil 
+			return types.UrlBidding{}, errors.New("no item can be poped")
 		}
 
 		out := pbq.elems[0]
@@ -29,31 +32,31 @@ func (pbq *probBiddingQueue) Pop() *types.UrlBidding{
 
 		_, has := pbq.eset[out.Url]
 		if has {
-			delete(pbq.eset, out)
-			return out
+			delete(pbq.eset, out.Url)
+			return out, nil 
 		}
 	}
 }
 
 //todo, Insert biddings into the queue accroding to probability. 
-func (pbq *probBiddingQueue) Insert(bs []*types.UrlBidding) {
+func (pbq *ProbBiddingQueue) Insert(bidding types.UrlBidding) int {
 	return pbq.insert(bidding, 0 )
 }
 
 //todo, Insert biddings into the queue accroding to probability. 
-func (pbq *probBiddingQueue) insert(bidding *types.UrlBidding, from int ) {
-        rear1 :=  []*types.UrlBidding{}
+func (pbq *ProbBiddingQueue) insert(bidding types.UrlBidding, from int ) int {
+        rear1 :=  []types.UrlBidding{}
 	if pbq.Has(bidding.Url) { 
 		for i, b := range pbq.elems {
 			if b.Url == bidding.Url { 
 				if bidding.Probability <= b.Probability {
-					return 
+					return i + 1 
 				}else {
-					if i < ( pbp.Len() - 1 ) {
+					if i < ( pbq.Len() - 1 ) {
 						rear1 = pbq.elems[i+1:]
 					}
 					pbq.elems = append(pbq.elems[0:i], rear1...)
-					delete(pbq.eset, u) 
+					delete(pbq.eset, b.Url) 
 					break 
 				}
 			}
@@ -61,10 +64,12 @@ func (pbq *probBiddingQueue) insert(bidding *types.UrlBidding, from int ) {
 	}
 
 	//put bidding into queue at some positon by score.
-        rear2 :=  []*types.UrlBidding{}
-	for i:= from; i < pbp.Len(); i++ ) { 
+        rear2 :=  []types.UrlBidding{}
+	i := 0 
+	for i= from; i < pbq.Len(); i++ { 
+		b := pbq.elems[i] 
 		if bidding.Probability > b.Probability { 
-			if i < ( bp.Len() - 1 ) {
+			if i < ( pbq.Len() - 1 ) {
 				rear2 = pbq.elems[i+1:]
 			}
 			break
@@ -73,7 +78,7 @@ func (pbq *probBiddingQueue) insert(bidding *types.UrlBidding, from int ) {
 
 	pbq.elems = append(pbq.elems[0:i], bidding )
 	pbq.elems = append (pbq.elems, rear2...)
-	pbq.eset[b]=struct{}{}
+	pbq.eset[bidding.Url]=struct{}{}
 
 	//return the position, so we have chance to skip elems[0:i+1]
 	return i + 1
@@ -81,14 +86,14 @@ func (pbq *probBiddingQueue) insert(bidding *types.UrlBidding, from int ) {
 }
 
 //Insert biddings into the queue accroding to probability. 
-func (pbq *probBiddingQueue) Inserts(biddings []*types.UrlBidding) {
+func (pbq *ProbBiddingQueue) Inserts(biddings []types.UrlBidding) {
 	for _, bidding := range biddings {
 		pbq.insert(bidding, 0 )
 	}
 }
 
 //Insert biddings into the queue accroding to probability. 
-func (pbq *probBiddingQueue) FastInserts(biddings []*types.UrlBidding) {
+func (pbq *ProbBiddingQueue) FastInserts(biddings []types.UrlBidding) {
 
 	//Sort urls with probability. wyong, 20210119 
 	sort.Slice(biddings, func(i, j int) bool {
@@ -101,25 +106,25 @@ func (pbq *probBiddingQueue) FastInserts(biddings []*types.UrlBidding) {
 	}
 }
 
-func (pbq *probBiddingQueue) Push(b *types.UrlBidding) {
+func (pbq *ProbBiddingQueue) Push(b types.UrlBidding) {
 	_, has := pbq.eset[b.Url] 
 	if !has {
 		//todo, get position by probability.  
-		pbq.eset[b]=struct{}{}
+		pbq.eset[b.Url]=struct{}{}
 		pbq.elems = append(pbq.elems, b)
 	}
 
 }
 
-func (pbq *probBiddingQueue) Remove(u string) {
+func (pbq *ProbBiddingQueue) Remove(u string) {
 	delete(pbq.eset, u) 
 }
 
-func (pbq *probBiddingQueue) Has(u string) bool {
+func (pbq *ProbBiddingQueue) Has(u string) bool {
 	_, has := pbq.eset[u]
 	return has 
 }
 
-func (pbq *probBiddingQueue) Len() int {
+func (pbq *ProbBiddingQueue) Len() int {
 	return len(pbq.eset)
 }

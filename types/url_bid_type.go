@@ -36,12 +36,23 @@ import (
 //	Values []interface{}
 //}
 
+//wyong, 20210203 
+type UrlBid struct {
+	Url    	string 
+	Cid 	string	
+	
+	Hash	[]byte	//wyong, 20210203
+	Proof 	[]byte 	//wyong, 20210203
+}
+
 // ResponsePayload defines column names and rows of query response.
 type UrlBidPayload struct {
 	//Columns   []string      `json:"c"`
 	//DeclTypes []string      `json:"t"`
 	//Rows      []ResponseRow `json:"r"`
-	Cids	    map[string]string	`json:"c"`	//wyong, 20200907 
+
+	//Cids	    map[string]string	`json:"c"`	//wyong, 20200907 
+	Bids	    []UrlBid		`json:"b"`	//wyong, 20210203 
 }
 
 // ResponseHeader defines a query response header.

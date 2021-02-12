@@ -35,15 +35,16 @@ func (z *SignedUrlCidRequestHeader) Msgsize() (s int) {
 func (z UrlCidRequest) MarshalHash() (o []byte, err error) {
 	var b []byte
 	o = hsp.Require(b, z.Msgsize())
-	// map header, size 1
-	o = append(o, 0x81)
+	// map header, size 2
+	o = append(o, 0x82)
+	o = hsp.AppendString(o, z.ParentUrl)
 	o = hsp.AppendString(o, z.Url)
 	return
 }
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z UrlCidRequest) Msgsize() (s int) {
-	s = 1 + 4 + hsp.StringPrefixSize + len(z.Url)
+	s = 1 + 10 + hsp.StringPrefixSize + len(z.ParentUrl) + 4 + hsp.StringPrefixSize + len(z.Url)
 	return
 }
 
@@ -113,9 +114,10 @@ func (z *UrlCidRequestMessage) MarshalHash() (o []byte, err error) {
 	o = append(o, 0x81)
 	o = hsp.AppendArrayHeader(o, uint32(len(z.Payload.Requests)))
 	for za0001 := range z.Payload.Requests {
-		// map header, size 1
-		o = append(o, 0x81)
+		// map header, size 2
+		o = append(o, 0x82)
 		o = hsp.AppendString(o, z.Payload.Requests[za0001].Url)
+		o = hsp.AppendString(o, z.Payload.Requests[za0001].ParentUrl)
 	}
 	return
 }
@@ -124,7 +126,7 @@ func (z *UrlCidRequestMessage) MarshalHash() (o []byte, err error) {
 func (z *UrlCidRequestMessage) Msgsize() (s int) {
 	s = 1 + 9 + z.Envelope.Msgsize() + 7 + 1 + 20 + z.Header.UrlCidRequestHeader.Msgsize() + 28 + z.Header.DefaultHashSignVerifierImpl.Msgsize() + 8 + 1 + 9 + hsp.ArrayHeaderSize
 	for za0001 := range z.Payload.Requests {
-		s += 1 + 4 + hsp.StringPrefixSize + len(z.Payload.Requests[za0001].Url)
+		s += 1 + 4 + hsp.StringPrefixSize + len(z.Payload.Requests[za0001].Url) + 10 + hsp.StringPrefixSize + len(z.Payload.Requests[za0001].ParentUrl)
 	}
 	return
 }
@@ -137,9 +139,10 @@ func (z *UrlCidRequestPayload) MarshalHash() (o []byte, err error) {
 	o = append(o, 0x81)
 	o = hsp.AppendArrayHeader(o, uint32(len(z.Requests)))
 	for za0001 := range z.Requests {
-		// map header, size 1
-		o = append(o, 0x81)
+		// map header, size 2
+		o = append(o, 0x82)
 		o = hsp.AppendString(o, z.Requests[za0001].Url)
+		o = hsp.AppendString(o, z.Requests[za0001].ParentUrl)
 	}
 	return
 }
@@ -148,7 +151,7 @@ func (z *UrlCidRequestPayload) MarshalHash() (o []byte, err error) {
 func (z *UrlCidRequestPayload) Msgsize() (s int) {
 	s = 1 + 9 + hsp.ArrayHeaderSize
 	for za0001 := range z.Requests {
-		s += 1 + 4 + hsp.StringPrefixSize + len(z.Requests[za0001].Url)
+		s += 1 + 4 + hsp.StringPrefixSize + len(z.Requests[za0001].Url) + 10 + hsp.StringPrefixSize + len(z.Requests[za0001].ParentUrl)
 	}
 	return
 }

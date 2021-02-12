@@ -16,6 +16,7 @@ import (
 //wyong, 20191113 
 type UrlCidRequest struct {
 	Url    string 
+	ParentUrl string 	//wyong, 20210205 
 }
 
 // RequestPayload defines a queries payload.

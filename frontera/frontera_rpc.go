@@ -203,7 +203,7 @@ func (rpc *FronteraRPCService) BiddingMessageHandler (
         //todo, This call records changes to wantlists, blocks received,
         // and number of bytes transfered. wyong, 20200730 
 	//ctx := context.Background() 
-        rpc.frontera.engine.UrlBiddingMessageReceived(ctx, &req )
+        rpc.frontera.bs.UrlBiddingMessageReceived(ctx, &req )
 	
 	//return nil 
 }

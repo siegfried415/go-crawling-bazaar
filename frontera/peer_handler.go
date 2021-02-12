@@ -13,9 +13,9 @@ import (
 	//bsmsg "github.com/siegfried415/gdf-rebuild/frontera/message"
 
 	//fnet "github.com/siegfried415/gdf-rebuild/frontera/network"
-	biddinglist "github.com/siegfried415/gdf-rebuild/frontera/biddinglist"
+	//biddinglist "github.com/siegfried415/gdf-rebuild/frontera/biddinglist"
 
-	cid "github.com/ipfs/go-cid"
+	//cid "github.com/ipfs/go-cid"
 
 	//wyong, 20200925
         //pstore "github.com/libp2p/go-libp2p-peerstore"
@@ -48,7 +48,7 @@ import (
 	log "github.com/siegfried415/gdf-rebuild/utils/log" 
 
         //wyong, 20210118
-        ecvrf github.com/vechain/go-ecvrf
+        //ecvrf "github.com/vechain/go-ecvrf"
 
 )
 
@@ -62,7 +62,7 @@ type msgQueue struct {
 	//network fnet.BiddingNetwork
 	host 	net.RoutedHost 
 	
-	bl      *biddinglist.ThreadSafe
+	bl      *ThreadSafe
 
 	//wyong, 20200924 
 	//sender fnet.MessageSender

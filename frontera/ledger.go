@@ -1,11 +1,11 @@
-package decision
+package frontera
 
 import (
 	"sync"
 	"time"
 	//"fmt"
 
-	bl "github.com/siegfried415/gdf-rebuild/frontera/biddinglist"
+	//bl "github.com/siegfried415/gdf-rebuild/frontera/biddinglist"
 	//bidlist "github.com/siegfried415/gdf-rebuild/frontera/bidlist"
 	"github.com/siegfried415/gdf-rebuild/proto"
 
@@ -22,7 +22,7 @@ import (
 func newLedger(p proto.NodeID) *ledger {
 	log.Debugf("newLedger called...") 
 	return &ledger{
-		biddingList:   bl.New(),
+		biddingList:   NewBiddingList(),
 		Partner:    p,
 		sentToPeer: make(map[string]time.Time),
 	}
@@ -44,7 +44,7 @@ type ledger struct {
 	exchangeCount uint64
 
 	// biddingList is a (bounded, small) set of keys that Partner desires.
-	biddingList *bl.BiddingList
+	biddingList *BiddingList
 
 	//wyong, 20181223
 	//bidList *bidlist.Bidlist
@@ -89,12 +89,12 @@ func (l *ledger) ReceivedBytes(n int) {
 	l.Accounting.BytesRecv += uint64(n)
 }
 
-func (l *ledger) AddBidding(url string, probability float64 ) {
+func (l *ledger) AddBidding(url string, parentUrl string, probability float64, expectCrawlerCount int, hash []byte, proof []byte ) {
 	log.Debugf("ledger/AddBidding(10), peer %s wants %s with probability %f\n", l.Partner, url, probability )
-	l.biddingList.Add(url, probability )
+	l.biddingList.Add(url, parentUrl, probability, expectCrawlerCount, hash, proof  )
 }
 
-func (l *ledger) GetBiddings() (*bl.BiddingList, error) {
+func (l *ledger) GetBiddings() (*BiddingList, error) {
 	log.Debugf("ledger/GetBiddings(10)\n") 
 	return l.biddingList, nil
 }
@@ -103,7 +103,7 @@ func (l *ledger) CancelBidding(url string) {
 	l.biddingList.Remove(url)
 }
 
-func (l *ledger) BiddingListContains(url string) (*bl.BiddingEntry, bool) {
+func (l *ledger) BiddingListContains(url string) (*BiddingEntry, bool) {
 	return l.biddingList.Contains(url)
 }
 

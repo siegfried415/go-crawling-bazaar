@@ -168,7 +168,7 @@ func (z *RequestHeader) MarshalHash() (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *RequestHeader) Msgsize() (s int) {
-	s = 1 + 11 + hsp.Uint64Size + 13 + hsp.Uint64Size + 11 + z.DomainID.Msgsize() + 7 + z.NodeID.Msgsize() + 12 + z.QueriesHash.Msgsize() + 10 + hsp.Int32Size + 6 + hsp.Uint64Size + 10 + hsp.TimeSize
+	s = 1 + 11 + hsp.Uint64Size + 13 + hsp.Uint64Size + 9 + z.DomainID.Msgsize() + 7 + z.NodeID.Msgsize() + 12 + z.QueriesHash.Msgsize() + 10 + hsp.Int32Size + 6 + hsp.Uint64Size + 10 + hsp.TimeSize
 	return
 }
 

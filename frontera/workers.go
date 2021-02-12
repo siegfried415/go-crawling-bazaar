@@ -62,8 +62,8 @@ func (f *Frontera) taskWorker(ctx context.Context, id int) {
 		//log.Event(ctx, "Bitswap.TaskWorker.Loop", idmap)
 		log.Debugf("Frontera/taskWorker(10), enter loop\n") 
 		select {
-		case bidMsg, ok := <-f.engine.Outbox():
-			log.Debugf("Frontera/taksWorker(20), f.engine.Outbix fired!\n")
+		case bidMsg, ok := <-f.bs.Outbox():
+			log.Debugf("Frontera/taksWorker(20), f.bs.Outbix fired!\n")
 
 			//select {
 			//case envelope, ok := <-nextEnvelope:
@@ -94,7 +94,7 @@ func (f *Frontera) taskWorker(ctx context.Context, id int) {
 				*/
 
 				log.Debugf("Frontera/taksWorker(30)\n")
-				f.wm.SendBids(ctx, bidMsg )
+				f.bc.SendBids(ctx, bidMsg )
 				log.Debugf("Frontera/taksWorker(40)\n")
 
 				/*

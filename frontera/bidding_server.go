@@ -1,24 +1,32 @@
 // package decision implements the decision engine for the bitswap service.
-package decision
+package frontera 
 
 import (
 	"context"
 	"sync"
 	"time"
 	//"fmt" 
+	"math/big" 
+
+	//wyong, 20210202
+	"crypto/ecdsa"
 
 	//wyong, 20200827 
 	//bsmsg "github.com/siegfried415/gdf-rebuild/frontera/message"
 
-	bl "github.com/siegfried415/gdf-rebuild/frontera/biddinglist"
+	//bl "github.com/siegfried415/gdf-rebuild/frontera/biddinglist"
 	//bidlist "github.com/siegfried415/gdf-rebuild/frontera/bidlist"
 	"github.com/siegfried415/gdf-rebuild/proto"
+
+	//wyong, 20210202 
+        //"github.com/siegfried415/gdf-rebuild/crypto/asymmetric"
+        "github.com/siegfried415/gdf-rebuild/kms"
 
 	//wyong, 20200827 
         "github.com/siegfried415/gdf-rebuild/types"
 
 	cid "github.com/ipfs/go-cid"
-	bstore "github.com/ipfs/go-ipfs-blockstore"
+	//bstore "github.com/ipfs/go-ipfs-blockstore"
 	//blocks "github.com/ipfs/go-block-format"
 	//peer "github.com/libp2p/go-libp2p-peer"
 	//logging "github.com/ipfs/go-log"
@@ -27,7 +35,7 @@ import (
         log "github.com/siegfried415/gdf-rebuild/utils/log"
 	
 	//wyong, 20210118 
-	ecvrf github.com/vechain/go-ecvrf
+	ecvrf "github.com/vechain/go-ecvrf"
 )
 
 
@@ -72,6 +80,20 @@ const (
 )
 
 
+var (
+        MaxChallengeTicket *big.Int
+)
+
+//wyong, 20210202 
+func init() {
+        MaxChallengeTicket = &big.Int{}
+        // The size of the challenge must equal the size of the Signature (ticket) generated.
+        // Currently this is a secp256k1.Sign signature, which is 65 bytes.
+        MaxChallengeTicket.Exp(big.NewInt(2), big.NewInt(65*8), nil)
+        MaxChallengeTicket.Sub(MaxChallengeTicket, big.NewInt(1))
+}
+
+
 /* no need anymore, wyong, 20200827 
 // Envelope contains a message for a Peer
 type Envelope struct {
@@ -86,7 +108,10 @@ type Envelope struct {
 }
 */
 
-type Engine struct {
+type BiddingServer struct {
+	//wyong, 20210203 
+	f *Frontera 
+
 	// peerRequestQueue is a priority queue of requests received from peers.
 	// Requests are popped from the queue, packaged up, and placed in the
 	// outbox.
@@ -103,7 +128,7 @@ type Engine struct {
 	// taskWorker goroutine
 	outbox chan *types.UrlBidMessage	//*Envelope, wyong, 20200827 
 
-	bs bstore.Blockstore
+	//bs bstore.Blockstore
 
 	lock sync.Mutex // protects the fields immediatly below
 	// ledgerMap lists Ledgers by their Partner key.
@@ -113,11 +138,12 @@ type Engine struct {
 
 	//wyong, 20190118
 	nodeid  proto.NodeID
+
 }
 
 //add nodeid, wyong, 20190118
-func NewEngine(ctx context.Context, nodeid proto.NodeID /* , bs bstore.Blockstore */ ) *Engine {
-	e := &Engine{
+func NewBiddingServer (ctx context.Context, nodeid proto.NodeID) *BiddingServer {
+	bs := &BiddingServer{
 		ledgerMap:        make(map[proto.NodeID]*ledger),
 		nodeid:		  nodeid, 	//wyong, 20190118
 		//bs:               bs,		//wyong, 20200813 
@@ -127,23 +153,23 @@ func NewEngine(ctx context.Context, nodeid proto.NodeID /* , bs bstore.Blockstor
 		ticker:           time.NewTicker(time.Millisecond * 100),
 	}
 	//go e.taskWorker(ctx)
-	return e
+	return bs  
 }
 
-func (e *Engine) BiddinglistForPeer(p proto.NodeID) (out []*bl.BiddingEntry) {
-	partner := e.findOrCreate(p)
+func (bs *BiddingServer) BiddinglistForPeer(p proto.NodeID) (out []*BiddingEntry) {
+	partner := bs.findOrCreate(p)
 	partner.lk.Lock()
 	defer partner.lk.Unlock()
 	return partner.biddingList.SortedBiddingEntries()
 }
 
 //wyong, 20190118
-func(e *Engine) GetNodeId() proto.NodeID {
-	return e.nodeid
+func(bs *BiddingServer) GetNodeId() proto.NodeID {
+	return bs.nodeid
 }
 
-func (e *Engine) LedgerForPeer(p proto.NodeID) *Receipt {
-	ledger := e.findOrCreate(p)
+func (bs *BiddingServer) LedgerForPeer(p proto.NodeID) *Receipt {
+	ledger := bs.findOrCreate(p)
 
 	ledger.lk.Lock()
 	defer ledger.lk.Unlock()
@@ -160,53 +186,53 @@ func (e *Engine) LedgerForPeer(p proto.NodeID) *Receipt {
 
 /* wyong, 20190116 
 //TODO, get bid from ledger, wyong, 20181222
-func (e *Engine) getBid( p proto.NodeID) (*bidlist.Bidlist, error) {
-	l := e.findOrCreate(p)
+func (bs *BiddingServer) getBid( p proto.NodeID) (*bidlist.Bidlist, error) {
+	l := bs.findOrCreate(p)
 	return l.GetBids()
 }
 */
 
 //TODO, wyong, 20181221
-func(e *Engine) PutBid(ctx context.Context, url string, cid cid.Cid) {
+func(bs *BiddingServer) PutBid(ctx context.Context, url string, cid cid.Cid) {
 	log.Debugf("Engine/PutBid(10), url=%s, cid = %s\n", url, cid )
 
 	//wyong, 20210126 
 	//wyong, 20200827
-        d, exist := e.f.DomainForUrl(url)
+        d, exist := bs.f.DomainForUrl(url)
         if exist != true {
 		return 
         }
 
 	//write url<-->cid to domain.UrlCidsCache and url chain, wyong, 20210126  
-	d.SetCid(url, c, ... )
+	d.SetCid(url, cid )
 
-	bidMsg, err := e.createUrlBidMessage(ctx, /* d.domainID,*/  url, cid )
+	bidMsg, err := bs.createUrlBidMessage(ctx, /* d.domainID,*/  url, cid )
 	if err != nil {
 		log.Debugf("Engine/PutBid(15), err = %s\n", err.Error())
 		return // ctx cancelled
 	}
 
 	log.Debugf("Engine/PutBid(20)\n")
-	e.outbox <- bidMsg  
+	bs.outbox <- bidMsg  
 	log.Debugf("Engine/PutBid(30)\n")
 }
 
 /*TODO, taskWorker is unnecessary, wyong, 20181221
-func (e *Engine) taskWorker(ctx context.Context) {
+func (bs *BiddingServer) taskWorker(ctx context.Context) {
 	log.Debugf("taskWorker called")
-	defer close(e.outbox) // because taskWorker uses the channel exclusively
+	defer close(bs.outbox) // because taskWorker uses the channel exclusively
 	for {
 		oneTimeUse := make(chan *Envelope, 1) // buffer to prevent blocking
 		select {
 		case <-ctx.Done():
 			log.Debugf("taskWorker, ctx.Done fired")
 			return
-		case e.outbox <- oneTimeUse:
+		case bs.outbox <- oneTimeUse:
 			log.Debugf("taskWorker, oneTimeUse fired")
 		}
 		// receiver is ready for an outoing envelope. let's prepare one. first,
 		// we must acquire a task from the PQ...
-		envelope, err := e.nextEnvelope(ctx)
+		envelope, err := bs.nextEnvelope(ctx)
 		if err != nil {
 			close(oneTimeUse)
 			return // ctx cancelled
@@ -218,17 +244,28 @@ func (e *Engine) taskWorker(ctx context.Context) {
 */
 
 //TODO,wyong, 20181221
-func(e *Engine)createUrlBidMessage(ctx context.Context, url string, c cid.Cid) (*types.UrlBidMessage, error) {
+func(bs *BiddingServer)createUrlBidMessage(ctx context.Context, url string, c cid.Cid) (*types.UrlBidMessage, error) {
 	log.Debugf("Engine/createUrlBidMessage(10), url=%s, cid = %s\n", url, c )
 	var target proto.NodeID 	
-	for _, l := range e.ledgerMap {
+
+	//wyong, 20210205 
+	var hash []byte
+	var proof []byte
+
+	//todo, Need a better way to find bidding,  wyong, 20210205 
+	for _, l := range bs.ledgerMap {
 		//l.lk.Lock()
-		if _, ok := l.BiddingListContains(url); ok {
-			//e.peerRequestQueue.Push(l.Partner, entry)
+		if bidding, ok := l.BiddingListContains(url); ok {
+			//bs.peerRequestQueue.Push(l.Partner, entry)
 			//work = true
 			//TODO, get a target 
 			target = l.Partner
 			log.Debugf("Engine/createUrlBidMessage(20), found target %s\n", target ) 
+
+			//todo, wyong, 20210205 
+			hash = bidding.Hash
+			proof = bidding.Proof 
+			
 			break
 		}
 		//l.lk.Unlock()
@@ -236,7 +273,7 @@ func(e *Engine)createUrlBidMessage(ctx context.Context, url string, c cid.Cid) (
 
 	log.Debugf("Engine/createUrlBidMessage(30)\n")
 	// with a task in hand, we're ready to prepare the envelope...
-	//msg := bsmsg.New(true,string(e.nodeid))
+	//msg := bsmsg.New(true,string(bs.nodeid))
 	
 	//wyong, 20190115 
 	//bid, err := bsmsg.NewBid(url, cid)
@@ -247,7 +284,7 @@ func(e *Engine)createUrlBidMessage(ctx context.Context, url string, c cid.Cid) (
 	//TODO, don't forget set from by current node's id,  wyong, 20190118
 	//cids := make(map[proto.NodeID]cid.Cid )
 	//cids[from] = cid 
-	from := e.GetNodeId()
+	from := bs.GetNodeId()
 	//cids := map[proto.NodeID]cid.Cid{from : c} 
 	//msg.AddBidding(url, 0, cids )
 
@@ -260,13 +297,20 @@ func(e *Engine)createUrlBidMessage(ctx context.Context, url string, c cid.Cid) (
 	//		//TODO, wyong, 20181222
 	//		//nextTask.Done(nextTask.Entries)
 	//		//select {
-	//		//case e.workSignal <- struct{}{}:
+	//		//case bs.workSignal <- struct{}{}:
 	//		//	// work completing may mean that our queue will provide new
 	//		//	// work to be done.
 	//		//default:
 	//		//}
 	//	},
 	//}, nil
+	bid := types.UrlBid {
+		Url  : url, 
+		Cid  : c.String(), 
+		Hash : hash, 
+		Proof: proof, 
+
+	}
 
 	//build bidding message, wyong, 20200827
 	bidMsg := &types.UrlBidMessage{
@@ -284,7 +328,7 @@ func(e *Engine)createUrlBidMessage(ctx context.Context, url string, c cid.Cid) (
                          },
                  },
                  Payload: types.UrlBidPayload{
-                         Cids : map[string]string { url : c.String() },
+                         Bids : []types.UrlBid { bid },
                  },
         }
 
@@ -295,26 +339,26 @@ func(e *Engine)createUrlBidMessage(ctx context.Context, url string, c cid.Cid) (
 /* nunecessary, wyong, 20181221
 // nextEnvelope runs in the taskWorker goroutine. Returns an error if the
 // context is cancelled before the next Envelope can be created.
-func (e *Engine) nextEnvelope(ctx context.Context) (*Envelope, error) {
+func (bs *BiddingServer) nextEnvelope(ctx context.Context) (*Envelope, error) {
 	log.Debugf("nextEnvelope called")
 	for {
-		nextTask := e.peerRequestQueue.Pop()
+		nextTask := bs.peerRequestQueue.Pop()
 		for nextTask == nil {
 			select {
 			case <-ctx.Done():
 				return nil, ctx.Err()
-			case <-e.workSignal:
+			case <-bs.workSignal:
 				nextTask = e.peerRequestQueue.Pop()
-			case <-e.ticker.C:
-				e.peerRequestQueue.thawRound()
-				nextTask = e.peerRequestQueue.Pop()
+			case <-bs.ticker.C:
+				bs.peerRequestQueue.thawRound()
+				nextTask = bs.peerRequestQueue.Pop()
 			}
 		}
 
 		// with a task in hand, we're ready to prepare the envelope...
 		msg := bsmsg.New(true)
 		for _, entry := range nextTask.Entries {
-			block, err := e.bs.Get(entry.Url)
+			block, err := bs.bs.Get(entry.Url)
 			if err != nil {
 				log.Errorf("tried to execute a task and errored fetching block: %s", err)
 				continue
@@ -335,7 +379,7 @@ func (e *Engine) nextEnvelope(ctx context.Context) (*Envelope, error) {
 			Sent: func() {
 				nextTask.Done(nextTask.Entries)
 				select {
-				case e.workSignal <- struct{}{}:
+				case bs.workSignal <- struct{}{}:
 					// work completing may mean that our queue will provide new
 					// work to be done.
 				default:
@@ -349,35 +393,35 @@ func (e *Engine) nextEnvelope(ctx context.Context) (*Envelope, error) {
 */
 
 // Outbox returns a channel of one-time use Envelope channels.
-func (e *Engine) Outbox() <-chan *types.UrlBidMessage {
-	return e.outbox
+func (bs *BiddingServer) Outbox() <-chan *types.UrlBidMessage {
+	return bs.outbox
 }
 
 // Returns a slice of Peers with whom the local node has active sessions
-func (e *Engine) Peers() []proto.NodeID {
-	e.lock.Lock()
-	defer e.lock.Unlock()
+func (bs *BiddingServer) Peers() []proto.NodeID {
+	bs.lock.Lock()
+	defer bs.lock.Unlock()
 
-	response := make([]proto.NodeID, 0, len(e.ledgerMap))
+	response := make([]proto.NodeID, 0, len(bs.ledgerMap))
 
-	for _, ledger := range e.ledgerMap {
+	for _, ledger := range bs.ledgerMap {
 		response = append(response, ledger.Partner)
 	}
 	return response
 }
 
 //TODO, wyong, 20181222
-func(e *Engine) GetBidding(/* wyong, 20181227 p proto.NodeID */ ) (*bl.BiddingList, error) {
+func(bs *BiddingServer) GetBidding(/* wyong, 20181227 p proto.NodeID */ ) (*BiddingList, error) {
 	log.Debugf("Engine/GetBidding(10)\n")
 
 	/* wyong, 20181227 
 	//TODO, get biddings from ledger
-	l := e.findOrCreate(p)
+	l := bs.findOrCreate(p)
 	return l.GetBiddings()
 	*/
 
 	//TODO, wyong, 20181227 
-	for _, ledger := range e.ledgerMap {
+	for _, ledger := range bs.ledgerMap {
 		log.Debugf("Engine/GetBidding(20)\n")
 		return ledger.GetBiddings() 
 	}
@@ -388,32 +432,26 @@ func(e *Engine) GetBidding(/* wyong, 20181227 p proto.NodeID */ ) (*bl.BiddingLi
 
 //todo, wyong, 20210118 
 // IsWinner returns true if the input challengeTicket wins the election
-func (e *Engine) IsWinner(challengeTicket []byte, /* minerPower, networkPower abi.StoragePower*/ expectCrawlerCount int , totalPeersCount int ) bool {
+func (bs *BiddingServer) IsWinner(challengeTicket []byte, expectCrawlerCount int64 , totalPeersCount int64 ) bool {
 
-	//todo, wyong, 20210127 
-        // (ChallengeTicket / MaxChallengeTicket) < ExpectedLeadersPerEpoch * (MinerPower / NetworkPower)
-        // ->
-        // ChallengeTicket * NetworkPower < ExpectedLeadersPerEpoch * MinerPower * MaxChallengeTicket
-	//
-	//--> 
-	//
+	//wyong, 20210127 
         // (ChallengeTicket / MaxChallengeTicket) < (ExpectedCrawlerCount / totalPeersCount )
         // ->
         // ChallengeTicket * totalPeersCount < ExpectedCrawlerCount * MaxChallengeTicket
 	
+	//wyong, 20210202 
+        lhs := &big.Int{}
+        lhs.SetBytes(challengeTicket[:])
+	lhs.Mul(lhs, big.NewInt(totalPeersCount)) 
 
-        lhs := big.PositiveFromUnsignedBytes(challengeTicket[:])
-        lhs = big.Mul(lhs, /* networkPower*/ totalPeersCount )
+	rhs := big.NewInt(expectCrawlerCount)
+	rhs.Mul(rhs, MaxChallengeTicket ) 
 
-        rhs := big.Lsh(/*minerPower,*/ challengeBits)
-        rhs = big.Mul(rhs, big.NewInt( /* expectedLeadersPerEpoch */ expectCrawlingCount ))
-
-        return big.Cmp(lhs, rhs) < 0
+	return lhs.Cmp(rhs) < 0 
 }
 
 //split UrlBiddingMessageReceived to 2 functions, wyong, 20210117 
-func (e *Engine) UrlBiddingMessageReceived( ctx context.Context,  m *types.UrlBiddingMessage ) error {
-
+func (bs *BiddingServer) UrlBiddingMessageReceived( ctx context.Context,  m *types.UrlBiddingMessage ) error {
 	log.Debugf("Engine/UrlBiddingMessageReceived called(10)\n")
 	if m.Empty() {
 		log.Debugf("Engine/UrlBiddingMessageReceived(15), received empty message\n")
@@ -422,47 +460,20 @@ func (e *Engine) UrlBiddingMessageReceived( ctx context.Context,  m *types.UrlBi
 	p := m.Header.UrlBiddingHeader.NodeID 
 	log.Debugf("Engine/UrlBiddingMessageReceived called(20), from=%s\n", p )
 
-	//todo, only node successfully in competeting has the right to crawl the url in bidding
-	//wyong, 20210117 
-
-	// `beta`: the VRF hash output
-	// `pi`: the VRF proof
-	beta, pi, err := ecvrf.NewSecp256k1Sha256Tai().Prove(sk, []byte(url))
-	if err != nil {
-	    // something wrong.
-	    // most likely sk is not properly loaded.
-	    return
-	}
-
-	//todo, save hash(beta) & proof(pi) with bidding, wyong, 20200118 
-	//entry.Hash = beta 
-	//entry.VRFProof = pi 
-
-	//wyong, 20210127 
-        IDs, err := kms.GetAllNodeID()
-        if err != nil {
-                log.WithError(err).Error("get all node id failed")
-                return
-        }
-
-	//20210127 
-	if IsWinner(beta, expectCrawlerCount, len(IDs)) {
-		e.UrlBiddingReceived(ctx, p, m.Payload.Requests ) 
-	}
-
+	return bs.UrlBiddingReceived(ctx, p,  m.Payload.Requests ) 
 }
 
 // MessageReceived performs book-keeping. Returns error if passed invalid arguments.
-func (e *Engine) UrlBiddingReceived( ctx context.Context,  requests []types.UrlBidding) error {
+func (bs *BiddingServer) UrlBiddingReceived( ctx context.Context, p proto.NodeID,  requests []types.UrlBidding) error {
 
 	newWorkExists := false
 	defer func() {
 		if newWorkExists {
-			e.signalNewWork()
+			bs.signalNewWork()
 		}
 	}()
 
-	l := e.findOrCreate(p)
+	l := bs.findOrCreate(p)
 	l.lk.Lock()
 	defer l.lk.Unlock()
 
@@ -473,21 +484,58 @@ func (e *Engine) UrlBiddingReceived( ctx context.Context,  requests []types.UrlB
 	}
 	*/
 
+	//wyong, 20210205 
+        //var privateKey *asymmetric.PrivateKey
+        privateKey, err := kms.GetLocalPrivateKey()
+	if err != nil {
+                return err 
+        }
+	sk := (*ecdsa.PrivateKey)(privateKey)
+
+	//wyong, 20210127 
+	IDs, err := kms.GetAllNodeID()
+	if err != nil {
+		log.WithError(err).Error("get all node id failed")
+		return err 
+	}
+	peersCount := int64(len(IDs)) 
+
 	//var msgSize int
 	//var activeEntries []*bl.BiddingEntry
 
-	for _, entry := range requests {
-		log.Debugf("Engine/UrlBiddingMessageReceived called(40), entry.Url=%s\n", entry.Url )
-		if entry.Cancel {
-			log.Debugf("Engine/UrlBiddingMessageReceived(50), cancel %s", entry.Url)
-			l.CancelBidding(entry.Url)
-			//e.peerRequestQueue.Remove(entry.Url, p)
+	for _, bidding := range requests {
+		log.Debugf("Engine/UrlBiddingMessageReceived called(40), bidding.Url=%s\n", bidding.Url )
+		if bidding.Cancel {
+			log.Debugf("Engine/UrlBiddingMessageReceived(50), cancel %s", bidding.Url)
+			l.CancelBidding(bidding.Url)
+			//bs.peerRequestQueue.Remove(entry.Url, p)
 		} else {
-			log.Debugf("Engine/UrlBiddingMessageReceived(60), wants %s with probability %f\n", entry.Url, entry.Probability)
-			l.AddBidding(entry.Url, entry.Probability)
+			log.Debugf("Engine/UrlBiddingMessageReceived(60), wants %s with probability %f\n", bidding.Url, bidding.Probability)
+			// `beta`: the VRF hash output
+			// `pi`: the VRF proof
+			beta, pi, err := ecvrf.NewSecp256k1Sha256Tai().Prove(sk,  []byte(bidding.Url))
+			if err != nil {
+				// something wrong.
+				// most likely sk is not properly loaded.
+				//return err 
+				continue 
+			}
+
+			//todo, only node successfully in competeting has the right to crawl the url in bidding
+			//wyong, 20210117 
+			if bs.IsWinner(beta, int64(bidding.ExpectCrawlerCount), peersCount ) {
+				//todo, save hash(beta) & proof(pi) with bidding, wyong, 20200118 
+				//entry.Hash = beta 
+				//entry.VRFProof = pi 
+				//winBiddings = append (winBiddings, bidding) 
+
+				//wyong, 20210205 
+				l.AddBidding(bidding.Url, bidding.ParentUrl, bidding.Probability, bidding.ExpectCrawlerCount, beta, pi )
+			}
+
 
 			/*TODO,wyong, 20181221
-			blockSize, err := e.bs.GetSize(entry.Url)
+			blockSize, err := bs.bs.GetSize(entry.Url)
 			if err != nil {
 				if err == bstore.ErrNotFound {
 					continue
@@ -497,8 +545,8 @@ func (e *Engine) UrlBiddingReceived( ctx context.Context,  requests []types.UrlB
 				// we have the block
 				newWorkExists = true
 				if msgSize+blockSize > maxMessageSize {
-					e.peerRequestQueue.Push(p, activeEntries...)
-					activeEntries = []*bl.BiddingEntry{}
+					bs.peerRequestQueue.Push(p, activeEntries...)
+					activeEntries = []*BiddingEntry{}
 					msgSize = 0
 				}
 				activeEntries = append(activeEntries, entry.BiddingEntry)
@@ -510,7 +558,7 @@ func (e *Engine) UrlBiddingReceived( ctx context.Context,  requests []types.UrlB
 
 	/*
 	if len(activeEntries) > 0 {
-		e.peerRequestQueue.Push(p, activeEntries...)
+		bs.peerRequestQueue.Push(p, activeEntries...)
 	}
 	*/
 
@@ -526,30 +574,30 @@ func (e *Engine) UrlBiddingReceived( ctx context.Context,  requests []types.UrlB
 }
 
 /*
-func (e *Engine) addBid(bid bsmsg.BidEntry ) {
+func (bs *BiddingServer) addBid(bid bsmsg.BidEntry ) {
 	log.Debugf("addBid called")
 	work := false
 
-	for _, l := range e.ledgerMap {
+	for _, l := range bs.ledgerMap {
 		l.lk.Lock()
 		if entry, ok := l.BiddingListContains(bid.Url); ok {
-			e.peerRequestQueue.Push(l.Partner, entry)
+			bs.peerRequestQueue.Push(l.Partner, entry)
 			work = true
 		}
 		l.lk.Unlock()
 	}
 
 	if work {
-		e.signalNewWork()
+		bs.signalNewWork()
 	}
 }
 
-func (e *Engine) AddBid(bid bsmsg.BidEntry ) {
+func (bs *BiddingServer) AddBid(bid bsmsg.BidEntry ) {
 	log.Debugf("AddBid called")
-	e.lock.Lock()
-	defer e.lock.Unlock()
+	bs.lock.Lock()
+	defer bs.lock.Unlock()
 
-	e.addBid(bid)
+	bs.addBid(bid)
 }
 */
 
@@ -561,16 +609,16 @@ func (e *Engine) AddBid(bid bsmsg.BidEntry ) {
 // inconsistent. Would need to ensure that Sends and acknowledgement of the
 // send happen atomically
 
-func (e *Engine) MessageSent(p proto.NodeID, m bsmsg.BiddingMessage) error {
+func (bs *BiddingServer) MessageSent(p proto.NodeID, m bsmsg.BiddingMessage) error {
 	log.Debugf("MessageSend called")
-	l := e.findOrCreate(p)
+	l := bs.findOrCreate(p)
 	l.lk.Lock()
 	defer l.lk.Unlock()
 
 	for _, bid := range m.Bids() {
 		//l.SentBytes(len(bid.RawData()))
 		l.biddingList.Remove(bid.Url())
-		e.peerRequestQueue.Remove(bid.Url(), p)
+		bs.peerRequestQueue.Remove(bid.Url(), p)
 	}
 
 	return nil
@@ -578,23 +626,23 @@ func (e *Engine) MessageSent(p proto.NodeID, m bsmsg.BiddingMessage) error {
 */
 
 
-func (e *Engine) PeerConnected(p proto.NodeID) {
-	e.lock.Lock()
-	defer e.lock.Unlock()
-	l, ok := e.ledgerMap[p]
+func (bs *BiddingServer) PeerConnected(p proto.NodeID) {
+	bs.lock.Lock()
+	defer bs.lock.Unlock()
+	l, ok := bs.ledgerMap[p]
 	if !ok {
 		l = newLedger(p)
-		e.ledgerMap[p] = l
+		bs.ledgerMap[p] = l
 	}
 	l.lk.Lock()
 	defer l.lk.Unlock()
 	l.ref++
 }
 
-func (e *Engine) PeerDisconnected(p proto.NodeID) {
-	e.lock.Lock()
-	defer e.lock.Unlock()
-	l, ok := e.ledgerMap[p]
+func (bs *BiddingServer) PeerDisconnected(p proto.NodeID) {
+	bs.lock.Lock()
+	defer bs.lock.Unlock()
+	l, ok := bs.ledgerMap[p]
 	if !ok {
 		return
 	}
@@ -602,38 +650,38 @@ func (e *Engine) PeerDisconnected(p proto.NodeID) {
 	defer l.lk.Unlock()
 	l.ref--
 	if l.ref <= 0 {
-		delete(e.ledgerMap, p)
+		delete(bs.ledgerMap, p)
 	}
 }
 
-func (e *Engine) numBytesSentTo(p proto.NodeID) uint64 {
+func (bs *BiddingServer) numBytesSentTo(p proto.NodeID) uint64 {
 	// NB not threadsafe
-	return e.findOrCreate(p).Accounting.BytesSent
+	return bs.findOrCreate(p).Accounting.BytesSent
 }
 
-func (e *Engine) numBytesReceivedFrom(p proto.NodeID) uint64 {
+func (bs *BiddingServer) numBytesReceivedFrom(p proto.NodeID) uint64 {
 	// NB not threadsafe
-	return e.findOrCreate(p).Accounting.BytesRecv
+	return bs.findOrCreate(p).Accounting.BytesRecv
 }
 
 // ledger lazily instantiates a ledger
-func (e *Engine) findOrCreate(p proto.NodeID) *ledger {
+func (bs *BiddingServer) findOrCreate(p proto.NodeID) *ledger {
 	log.Debugf("findOrCreate called") 
-	e.lock.Lock()
-	defer e.lock.Unlock()
-	l, ok := e.ledgerMap[p]
+	bs.lock.Lock()
+	defer bs.lock.Unlock()
+	l, ok := bs.ledgerMap[p]
 	if !ok {
 		log.Debugf("findOrCreate , before call newLedger...") 
 		l = newLedger(p)
-		e.ledgerMap[p] = l
+		bs.ledgerMap[p] = l
 	}
 	return l
 }
 
-func (e *Engine) signalNewWork() {
+func (bs *BiddingServer) signalNewWork() {
 	// Signal task generation to restart (if stopped!)
 	select {
-	case e.workSignal <- struct{}{}:
+	case bs.workSignal <- struct{}{}:
 	default:
 	}
 }

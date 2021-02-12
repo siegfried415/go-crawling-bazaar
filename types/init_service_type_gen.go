@@ -90,18 +90,15 @@ func (z *InitServiceResponseHeader) Msgsize() (s int) {
 func (z *ResourceMeta) MarshalHash() (o []byte, err error) {
 	var b []byte
 	o = hsp.Require(b, z.Msgsize())
-	// map header, size 9
-	o = append(o, 0x89)
+	// map header, size 10
+	o = append(o, 0x8a)
 	o = hsp.AppendFloat64(o, z.ConsistencyLevel)
+	o = hsp.AppendString(o, z.Domain)
 	o = hsp.AppendString(o, z.EncryptionKey)
 	o = hsp.AppendInt(o, z.IsolationLevel)
 	o = hsp.AppendFloat64(o, z.LoadAvgPerCPU)
 	o = hsp.AppendUint64(o, z.Memory)
 	o = hsp.AppendUint16(o, z.Node)
-
-	//wyong, 20200816 
-	o = hsp.AppendString(o, z.Domain)
-
 	o = hsp.AppendUint64(o, z.Space)
 	o = hsp.AppendArrayHeader(o, uint32(len(z.TargetMiners)))
 	for za0001 := range z.TargetMiners {
@@ -117,7 +114,7 @@ func (z *ResourceMeta) MarshalHash() (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *ResourceMeta) Msgsize() (s int) {
-	s = 1 + 17 + hsp.Float64Size + 14 + hsp.StringPrefixSize + len(z.EncryptionKey) + 15 + hsp.IntSize + 14 + hsp.Float64Size + 7 + hsp.Uint64Size + 5 + hsp.Uint16Size /* todo, wyong, 20200816 */ +14 + hsp.StringPrefixSize+ len(z.Domain)  + 6 + hsp.Uint64Size + 13 + hsp.ArrayHeaderSize
+	s = 1 + 17 + hsp.Float64Size + 7 + hsp.StringPrefixSize + len(z.Domain) + 14 + hsp.StringPrefixSize + len(z.EncryptionKey) + 15 + hsp.IntSize + 14 + hsp.Float64Size + 7 + hsp.Uint64Size + 5 + hsp.Uint16Size + 6 + hsp.Uint64Size + 13 + hsp.ArrayHeaderSize
 	for za0001 := range z.TargetMiners {
 		s += z.TargetMiners[za0001].Msgsize()
 	}
@@ -164,7 +161,7 @@ func (z *ServiceInstance) MarshalHash() (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *ServiceInstance) Msgsize() (s int) {
-	s = 1 + 11 + z.DomainID.Msgsize() + 13
+	s = 1 + 9 + z.DomainID.Msgsize() + 13
 	if z.GenesisBlock == nil {
 		s += hsp.NilSize
 	} else {

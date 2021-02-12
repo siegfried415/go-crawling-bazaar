@@ -32,20 +32,23 @@ func (z *SignedUrlBiddingHeader) Msgsize() (s int) {
 }
 
 // MarshalHash marshals for hash
-func (z UrlBidding) MarshalHash() (o []byte, err error) {
+func (z *UrlBidding) MarshalHash() (o []byte, err error) {
 	var b []byte
 	o = hsp.Require(b, z.Msgsize())
-	// map header, size 3
-	o = append(o, 0x83)
+	// map header, size 6
+	o = append(o, 0x86)
 	o = hsp.AppendBool(o, z.Cancel)
+	o = hsp.AppendInt(o, z.ExpectCrawlerCount)
+	o = hsp.AppendFloat64(o, z.ParentProbability)
+	o = hsp.AppendString(o, z.ParentUrl)
 	o = hsp.AppendFloat64(o, z.Probability)
 	o = hsp.AppendString(o, z.Url)
 	return
 }
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
-func (z UrlBidding) Msgsize() (s int) {
-	s = 1 + 7 + hsp.BoolSize + 12 + hsp.Float64Size + 4 + hsp.StringPrefixSize + len(z.Url)
+func (z *UrlBidding) Msgsize() (s int) {
+	s = 1 + 7 + hsp.BoolSize + 19 + hsp.IntSize + 18 + hsp.Float64Size + 10 + hsp.StringPrefixSize + len(z.ParentUrl) + 12 + hsp.Float64Size + 4 + hsp.StringPrefixSize + len(z.Url)
 	return
 }
 
@@ -115,11 +118,11 @@ func (z *UrlBiddingMessage) MarshalHash() (o []byte, err error) {
 	o = append(o, 0x81)
 	o = hsp.AppendArrayHeader(o, uint32(len(z.Payload.Requests)))
 	for za0001 := range z.Payload.Requests {
-		// map header, size 3
-		o = append(o, 0x83)
-		o = hsp.AppendString(o, z.Payload.Requests[za0001].Url)
-		o = hsp.AppendFloat64(o, z.Payload.Requests[za0001].Probability)
-		o = hsp.AppendBool(o, z.Payload.Requests[za0001].Cancel)
+		if oTemp, err := z.Payload.Requests[za0001].MarshalHash(); err != nil {
+			return nil, err
+		} else {
+			o = hsp.AppendBytes(o, oTemp)
+		}
 	}
 	return
 }
@@ -128,7 +131,7 @@ func (z *UrlBiddingMessage) MarshalHash() (o []byte, err error) {
 func (z *UrlBiddingMessage) Msgsize() (s int) {
 	s = 1 + 9 + z.Envelope.Msgsize() + 7 + 1 + 17 + z.Header.UrlBiddingHeader.Msgsize() + 28 + z.Header.DefaultHashSignVerifierImpl.Msgsize() + 8 + 1 + 9 + hsp.ArrayHeaderSize
 	for za0001 := range z.Payload.Requests {
-		s += 1 + 4 + hsp.StringPrefixSize + len(z.Payload.Requests[za0001].Url) + 12 + hsp.Float64Size + 7 + hsp.BoolSize
+		s += z.Payload.Requests[za0001].Msgsize()
 	}
 	return
 }
@@ -141,11 +144,11 @@ func (z *UrlBiddingPayload) MarshalHash() (o []byte, err error) {
 	o = append(o, 0x81)
 	o = hsp.AppendArrayHeader(o, uint32(len(z.Requests)))
 	for za0001 := range z.Requests {
-		// map header, size 3
-		o = append(o, 0x83)
-		o = hsp.AppendString(o, z.Requests[za0001].Url)
-		o = hsp.AppendFloat64(o, z.Requests[za0001].Probability)
-		o = hsp.AppendBool(o, z.Requests[za0001].Cancel)
+		if oTemp, err := z.Requests[za0001].MarshalHash(); err != nil {
+			return nil, err
+		} else {
+			o = hsp.AppendBytes(o, oTemp)
+		}
 	}
 	return
 }
@@ -154,7 +157,7 @@ func (z *UrlBiddingPayload) MarshalHash() (o []byte, err error) {
 func (z *UrlBiddingPayload) Msgsize() (s int) {
 	s = 1 + 9 + hsp.ArrayHeaderSize
 	for za0001 := range z.Requests {
-		s += 1 + 4 + hsp.StringPrefixSize + len(z.Requests[za0001].Url) + 12 + hsp.Float64Size + 7 + hsp.BoolSize
+		s += z.Requests[za0001].Msgsize()
 	}
 	return
 }

@@ -32,7 +32,7 @@ func (z *CreateDomain) MarshalHash() (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *CreateDomain) Msgsize() (s int) {
-	s = 1 + 21 + z.CreateDomainHeader.Msgsize() + 28 + z.DefaultHashSignVerifierImpl.Msgsize() + 21 + z.TransactionTypeMixin.Msgsize()
+	s = 1 + 19 + z.CreateDomainHeader.Msgsize() + 28 + z.DefaultHashSignVerifierImpl.Msgsize() + 21 + z.TransactionTypeMixin.Msgsize()
 	return
 }
 
