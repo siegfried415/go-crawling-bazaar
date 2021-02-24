@@ -10,6 +10,13 @@ import (
 	cid "github.com/ipfs/go-cid"
         //peer "github.com/libp2p/go-libp2p-peer"
 	"github.com/siegfried415/gdf-rebuild/proto" 
+
+        //wyong, 20200218
+        "github.com/mfonda/simhash"
+
+        //wyong, 20210220
+        log "github.com/siegfried415/gdf-rebuild/utils/log"
+
 )
 
 
@@ -18,6 +25,8 @@ type BidEntry struct {
 	Cid	cid.Cid 
 	Hash	uint64	//wyong, 20210206 
 	From	proto.NodeID 
+
+	VerifiedCount int //wyong,  20210220 
 }
 
 //wyong, 20190118
@@ -26,6 +35,7 @@ func NewBidEntry(cid cid.Cid, hash uint64, from proto.NodeID ) *BidEntry {
 		Cid:      cid,
 		Hash:	  hash, //wyong, 20210206 
 		From: 	  from,
+		VerifiedCount : 1 , 	//wyong, 20210220
 	}
 }
 
@@ -89,22 +99,72 @@ func (bidding *BiddingEntry) GetUrl() string {
 
 
 //wyong, 20190115 
-func (bidding *BiddingEntry) AddBid(url string, cid cid.Cid, from proto.NodeID ) bool {
+func (bidding *BiddingEntry) AddBid(url string, cid cid.Cid, from proto.NodeID, hash uint64) bool {
 	bidding.Seen = false	//wyong, 20190131 
 
 	if _, ok := bidding.Bids[from]; ok {
 		return false
 	}
 
-	//todo, insert this commit to current revision (of url). 
-	//wyong, 20210117
+	verifiedCount := 1 
+	//Update VerifiedCount of other bids, wyong, 20210220 
+	if len(bidding.Bids) > 0 {
+		for _, bid := range bidding.Bids{
+			//log.Debugf("BiddingClient/NeedCrawlMore(40), j=%d\n", j )
+			if simhash.Compare(hash,  bid.Hash) < 2 {
+				log.Debugf("BiddingClient/NeedCrawlMore(50)\n")
+				verifiedCount ++
+				bid.VerifiedCount++
+			}
+		}
+	}
 
 	bidding.Bids[from] = &BidEntry{
 		Cid:  cid ,
 		From: from, 
+		
+		VerifiedCount : verifiedCount , //wyong, 20210220 
 	}
 
 	return true
+}
+
+//wyong, 20210220 
+func (bidding *BiddingEntry) GetMaxVerifiedBid() ( *BidEntry, error ) {
+	if len(bidding.Bids) == 0 {
+		return nil, nil 
+	}
+
+	maxVerifiedCount := 0 
+	var maxVerifiedNodeID proto.NodeID
+	for k, bid := range bidding.Bids{
+		if bid.VerifiedCount > maxVerifiedCount {
+			maxVerifiedCount = bid.VerifiedCount 
+			maxVerifiedNodeID = k 	
+		}
+	}
+	
+	return bidding.Bids[maxVerifiedNodeID], nil 
+}
+
+//wyong, 20210220 
+func (bidding *BiddingEntry) NeedCrawlMore() (int, error ) {
+	needCrawlCount := bidding.ExpectCrawlerCount 
+	log.Debugf("BiddingEntry/NeedCrawlMore(10), needCrawlCount=%d\n", needCrawlCount )
+
+	if len(bidding.Bids) > 0 {
+		log.Debugf("BiddingEntry/NeedCrawlMore(20), len(bidding.Bids)=%d\n", len(bidding.Bids))
+		maxVerifiedBid, _ := bidding.GetMaxVerifiedBid() 
+			
+		log.Debugf("BiddingEntry/NeedCrawlMore(30), maxVerifiedCount=%d\n", maxVerifiedBid.VerifiedCount )
+		needCrawlCount -= maxVerifiedBid.VerifiedCount 
+		if needCrawlCount < 0 {
+			needCrawlCount = 0 
+		}
+	}
+
+	log.Debugf("BiddingEntry/NeedCrawlMore(40), needCrawlCount=%d\n", needCrawlCount)
+	return needCrawlCount, nil 
 }
 
 //wyong, 20190115 
@@ -122,21 +182,31 @@ func (bidding *BiddingEntry) CountOfBids() int {
 }
 
 //todo, wyong, 20210204
-func(bidding *BiddingEntry) NeedCrawlMore() int {
-	return 0 
-}
+//func(bidding *BiddingEntry) NeedCrawlMore() int {
+//	return 0 
+//}
 
 //wyong, 20200828 
-func(bidding *BiddingEntry) GetCid() cid.Cid {
-	c := cid.Cid{}
-	for _, bid := range bidding.Bids{
-		if c == cid.Undef { 
-			c = bid.Cid 
-		} else if c != bid.Cid {
-			return cid.Cid{}
-		}
+//func(bidding *BiddingEntry) GetCid() cid.Cid {
+//	c := cid.Cid{}
+//	for _, bid := range bidding.Bids{
+//		if c == cid.Undef { 
+//			c = bid.Cid 
+//		} else if c != bid.Cid {
+//			return cid.Cid{}
+//		}
+//	}
+//	return c
+//}
+
+//wyong, 20210220 
+func(bidding *BiddingEntry) GetCid() (cid.Cid, error) {
+	maxVerifiedBid, err := bidding.GetMaxVerifiedBid() 
+	if err != nil {
+		return cid.Cid{}, err 
 	}
-	return c
+
+	return maxVerifiedBid.Cid, nil 
 }
 
 type entrySlice []*BiddingEntry

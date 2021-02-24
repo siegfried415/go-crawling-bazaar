@@ -7,6 +7,7 @@ import (
 	"time"
 	//"fmt" 
 	"math/big" 
+	"errors" 
 
 	//wyong, 20210202
 	"crypto/ecdsa"
@@ -79,7 +80,6 @@ const (
 	maxMessageSize = 512 * 1024
 )
 
-
 var (
         MaxChallengeTicket *big.Int
 )
@@ -88,8 +88,8 @@ var (
 func init() {
         MaxChallengeTicket = &big.Int{}
         // The size of the challenge must equal the size of the Signature (ticket) generated.
-        // Currently this is a secp256k1.Sign signature, which is 65 bytes.
-        MaxChallengeTicket.Exp(big.NewInt(2), big.NewInt(65*8), nil)
+        // Currently this is a Elliptic Curve VRF, which is 32 bytes. wyong, 20210219 
+        MaxChallengeTicket.Exp(big.NewInt(2), big.NewInt(32*8), nil)
         MaxChallengeTicket.Sub(MaxChallengeTicket, big.NewInt(1))
 }
 
@@ -194,27 +194,28 @@ func (bs *BiddingServer) getBid( p proto.NodeID) (*bidlist.Bidlist, error) {
 
 //TODO, wyong, 20181221
 func(bs *BiddingServer) PutBid(ctx context.Context, url string, cid cid.Cid) {
-	log.Debugf("Engine/PutBid(10), url=%s, cid = %s\n", url, cid )
+	log.Debugf("BiddingServer/PutBid(10), url=%s, cid = %s\n", url, cid )
 
-	//wyong, 20210126 
+	//wyong, 20210220 
 	//wyong, 20200827
-        d, exist := bs.f.DomainForUrl(url)
-        if exist != true {
-		return 
-        }
+        //d, exist := bs.f.DomainForUrl(url)
+        //if exist != true {
+	//	return 
+        //}
 
 	//write url<-->cid to domain.UrlCidsCache and url chain, wyong, 20210126  
-	d.SetCid(url, cid )
+	//move this to BiddingClient side, wyong, 20210220 
+	//d.SetCid(url, cid )
 
 	bidMsg, err := bs.createUrlBidMessage(ctx, /* d.domainID,*/  url, cid )
 	if err != nil {
-		log.Debugf("Engine/PutBid(15), err = %s\n", err.Error())
+		log.Debugf("BiddingServer/PutBid(15), err = %s\n", err.Error())
 		return // ctx cancelled
 	}
 
-	log.Debugf("Engine/PutBid(20)\n")
+	log.Debugf("BiddingServer/PutBid(20)\n")
 	bs.outbox <- bidMsg  
-	log.Debugf("Engine/PutBid(30)\n")
+	log.Debugf("BiddingServer/PutBid(30)\n")
 }
 
 /*TODO, taskWorker is unnecessary, wyong, 20181221
@@ -245,7 +246,7 @@ func (bs *BiddingServer) taskWorker(ctx context.Context) {
 
 //TODO,wyong, 20181221
 func(bs *BiddingServer)createUrlBidMessage(ctx context.Context, url string, c cid.Cid) (*types.UrlBidMessage, error) {
-	log.Debugf("Engine/createUrlBidMessage(10), url=%s, cid = %s\n", url, c )
+	log.Debugf("BiddingServer/createUrlBidMessage(10), url=%s, cid = %s\n", url, c )
 	var target proto.NodeID 	
 
 	//wyong, 20210205 
@@ -260,7 +261,7 @@ func(bs *BiddingServer)createUrlBidMessage(ctx context.Context, url string, c ci
 			//work = true
 			//TODO, get a target 
 			target = l.Partner
-			log.Debugf("Engine/createUrlBidMessage(20), found target %s\n", target ) 
+			log.Debugf("BiddingServer/createUrlBidMessage(20), found target %s\n", target ) 
 
 			//todo, wyong, 20210205 
 			hash = bidding.Hash
@@ -271,7 +272,7 @@ func(bs *BiddingServer)createUrlBidMessage(ctx context.Context, url string, c ci
 		//l.lk.Unlock()
 	}
 
-	log.Debugf("Engine/createUrlBidMessage(30)\n")
+	log.Debugf("BiddingServer/createUrlBidMessage(30)\n")
 	// with a task in hand, we're ready to prepare the envelope...
 	//msg := bsmsg.New(true,string(bs.nodeid))
 	
@@ -288,7 +289,7 @@ func(bs *BiddingServer)createUrlBidMessage(ctx context.Context, url string, c ci
 	//cids := map[proto.NodeID]cid.Cid{from : c} 
 	//msg.AddBidding(url, 0, cids )
 
-	log.Debugf("Engine/createUrlBidMessage(40), from=%s\n", from )
+	log.Debugf("BiddingServer/createUrlBidMessage(40), from=%s\n", from )
 
 	//return &Envelope{
 	//	Peer:    target,
@@ -332,7 +333,7 @@ func(bs *BiddingServer)createUrlBidMessage(ctx context.Context, url string, c ci
                  },
         }
 
-	log.Debugf("Engine/createUrlBidMessage(50), msg=%s\n", bidMsg )
+	log.Debugf("BiddingServer/createUrlBidMessage(50), msg=%s\n", bidMsg )
 	return bidMsg, nil 
 }
 
@@ -412,7 +413,7 @@ func (bs *BiddingServer) Peers() []proto.NodeID {
 
 //TODO, wyong, 20181222
 func(bs *BiddingServer) GetBidding(/* wyong, 20181227 p proto.NodeID */ ) (*BiddingList, error) {
-	log.Debugf("Engine/GetBidding(10)\n")
+	log.Debugf("BiddingServer/GetBidding(10)\n")
 
 	/* wyong, 20181227 
 	//TODO, get biddings from ledger
@@ -422,13 +423,28 @@ func(bs *BiddingServer) GetBidding(/* wyong, 20181227 p proto.NodeID */ ) (*Bidd
 
 	//TODO, wyong, 20181227 
 	for _, ledger := range bs.ledgerMap {
-		log.Debugf("Engine/GetBidding(20)\n")
+		log.Debugf("BiddingServer/GetBidding(20)\n")
 		return ledger.GetBiddings() 
 	}
 
-	log.Debugf("Engine/GetBidding(30)\n")
+	log.Debugf("BiddingServer/GetBidding(30)\n")
 	return nil, nil 
 }
+
+//wyong, 20210219
+//func(bs *BiddingServer) getMaxChallengeTicket(challengeTicket []byte) *big.Int {
+//	numTickets := len(challengeTicket)
+//	log.Debugf("BiddingServer/getMaxChallengeTicket(10), numTickets=%d\n", numTickets )
+//
+//      MaxChallengeTicket := &big.Int{}
+//      // The size of the challenge must equal the size of the Signature (ticket) generated.
+//        // Currently this is a secp256k1.Sign signature, which is 65 bytes.
+//        MaxChallengeTicket.Exp(big.NewInt(2), big.NewInt(int64(numTickets*8)), nil)
+//        MaxChallengeTicket.Sub(MaxChallengeTicket, big.NewInt(1))
+//
+//	return MaxChallengeTicket 
+//}
+
 
 //todo, wyong, 20210118 
 // IsWinner returns true if the input challengeTicket wins the election
@@ -442,29 +458,40 @@ func (bs *BiddingServer) IsWinner(challengeTicket []byte, expectCrawlerCount int
 	//wyong, 20210202 
         lhs := &big.Int{}
         lhs.SetBytes(challengeTicket[:])
+	log.Debugf("BiddingServer/IsWinner(10), lhs=%s\n", lhs.String())
 	lhs.Mul(lhs, big.NewInt(totalPeersCount)) 
+	log.Debugf("BiddingServer/IsWinner(20), lhs=%s\n", lhs.String())
 
 	rhs := big.NewInt(expectCrawlerCount)
+	log.Debugf("BiddingServer/IsWinner(30), rhs=%s\n", rhs.String())
+
+	//wyong, 20210219 
+	//MaxChallengeTicket := bs.getMaxChallengeTicket(challengeTicket )
+	//log.Debugf("BiddingServer/IsWinner(40), MaxChallengeTicket=%s\n", MaxChallengeTicket.String())
 	rhs.Mul(rhs, MaxChallengeTicket ) 
+	log.Debugf("BiddingServer/IsWinner(50), rhs=%s\n", rhs.String())
 
 	return lhs.Cmp(rhs) < 0 
 }
 
 //split UrlBiddingMessageReceived to 2 functions, wyong, 20210117 
 func (bs *BiddingServer) UrlBiddingMessageReceived( ctx context.Context,  m *types.UrlBiddingMessage ) error {
-	log.Debugf("Engine/UrlBiddingMessageReceived called(10)\n")
+	log.Debugf("BiddingServer/UrlBiddingMessageReceived called(10)\n")
 	if m.Empty() {
-		log.Debugf("Engine/UrlBiddingMessageReceived(15), received empty message\n")
+		log.Debugf("BiddingServer/UrlBiddingMessageReceived(15), received empty message\n")
 	}
 
 	p := m.Header.UrlBiddingHeader.NodeID 
-	log.Debugf("Engine/UrlBiddingMessageReceived called(20), from=%s\n", p )
+	log.Debugf("BiddingServer/UrlBiddingMessageReceived called(20), from=%s\n", p )
 
-	return bs.UrlBiddingReceived(ctx, p,  m.Payload.Requests ) 
+	//wyong, 20210218 
+	domainID := m.Header.DomainID
+
+	return bs.UrlBiddingReceived(ctx, p, domainID,  m.Payload.Requests ) 
 }
 
 // MessageReceived performs book-keeping. Returns error if passed invalid arguments.
-func (bs *BiddingServer) UrlBiddingReceived( ctx context.Context, p proto.NodeID,  requests []types.UrlBidding) error {
+func (bs *BiddingServer) UrlBiddingReceived( ctx context.Context, p proto.NodeID, domainID proto.DomainID,  requests []types.UrlBidding) error {
 
 	newWorkExists := false
 	defer func() {
@@ -477,7 +504,7 @@ func (bs *BiddingServer) UrlBiddingReceived( ctx context.Context, p proto.NodeID
 	l.lk.Lock()
 	defer l.lk.Unlock()
 
-	log.Debugf("Engine/UrlBiddingMessageReceived called(30)\n")
+	log.Debugf("BiddingServer/UrlBiddingMessageReceived called(10)\n")
 	/*todo, wyong, 20200827 
 	if m.Full() {
 		l.biddingList = bl.New()
@@ -492,25 +519,43 @@ func (bs *BiddingServer) UrlBiddingReceived( ctx context.Context, p proto.NodeID
         }
 	sk := (*ecdsa.PrivateKey)(privateKey)
 
+	log.Debugf("BiddingServer/UrlBiddingMessageReceived(20)\n" )
+
 	//wyong, 20210127 
-	IDs, err := kms.GetAllNodeID()
-	if err != nil {
-		log.WithError(err).Error("get all node id failed")
-		return err 
+	//IDs, err := kms.GetAllNodeID()
+	//if err != nil {
+	//	log.WithError(err).Error("get all node id failed")
+	//	return err 
+	//}
+	//peersCount := int64(len(IDs)) 
+
+	//get count of crawlers in this domain, wyong, 20210219 
+        domain, exist := bs.f.DomainForID(domainID)
+        if exist != true {
+                err = errors.New("domain not exist")
+                return err 
+        }
+
+	peersCount := int64(len(domain.activePeers)) 
+	if _, ok := domain.activePeers[bs.nodeid]; ok {
+		//does not take myself to account, wyong, 20210219 
+		peersCount-- 
 	}
-	peersCount := int64(len(IDs)) 
+
+
+	log.Debugf("BiddingServer/UrlBiddingMessageReceived(30), peersCount=%d\n", peersCount )
 
 	//var msgSize int
 	//var activeEntries []*bl.BiddingEntry
 
 	for _, bidding := range requests {
-		log.Debugf("Engine/UrlBiddingMessageReceived called(40), bidding.Url=%s\n", bidding.Url )
+		log.Debugf("BiddingServer/UrlBiddingMessageReceived called(40), bidding.Url=%s\n", bidding.Url )
 		if bidding.Cancel {
-			log.Debugf("Engine/UrlBiddingMessageReceived(50), cancel %s", bidding.Url)
+			log.Debugf("BiddingServer/UrlBiddingMessageReceived(50), cancel %s", bidding.Url)
 			l.CancelBidding(bidding.Url)
 			//bs.peerRequestQueue.Remove(entry.Url, p)
 		} else {
-			log.Debugf("Engine/UrlBiddingMessageReceived(60), wants %s with probability %f\n", bidding.Url, bidding.Probability)
+			log.Debugf("BiddingServer/UrlBiddingMessageReceived(60), wants %s with probability %f\n", bidding.Url, bidding.Probability)
 			// `beta`: the VRF hash output
 			// `pi`: the VRF proof
 			beta, pi, err := ecvrf.NewSecp256k1Sha256Tai().Prove(sk,  []byte(bidding.Url))
@@ -521,6 +566,7 @@ func (bs *BiddingServer) UrlBiddingReceived( ctx context.Context, p proto.NodeID
 				continue 
 			}
 
+			log.Debugf("BiddingServer/UrlBiddingMessageReceived(70)\n" )
 			//todo, only node successfully in competeting has the right to crawl the url in bidding
 			//wyong, 20210117 
 			if bs.IsWinner(beta, int64(bidding.ExpectCrawlerCount), peersCount ) {
@@ -529,10 +575,12 @@ func (bs *BiddingServer) UrlBiddingReceived( ctx context.Context, p proto.NodeID
 				//entry.VRFProof = pi 
 				//winBiddings = append (winBiddings, bidding) 
 
+				log.Debugf("BiddingServer/UrlBiddingMessageReceived(80)\n" )
 				//wyong, 20210205 
 				l.AddBidding(bidding.Url, bidding.ParentUrl, bidding.Probability, bidding.ExpectCrawlerCount, beta, pi )
 			}
 
+			log.Debugf("BiddingServer/UrlBiddingMessageReceived(90)\n" )
 
 			/*TODO,wyong, 20181221
 			blockSize, err := bs.bs.GetSize(entry.Url)
@@ -554,6 +602,9 @@ func (bs *BiddingServer) UrlBiddingReceived( ctx context.Context, p proto.NodeID
 			}
 			*/
 		}
+
+		log.Debugf("BiddingServer/UrlBiddingMessageReceived(100)\n" )
+
 	}
 
 	/*
@@ -561,6 +612,8 @@ func (bs *BiddingServer) UrlBiddingReceived( ctx context.Context, p proto.NodeID
 		bs.peerRequestQueue.Push(p, activeEntries...)
 	}
 	*/
+
+	log.Debugf("BiddingServer/UrlBiddingMessageReceived(110)\n" )
 
 	/*wyong, 20190118
 	for _, bid := range m.Bids() {

@@ -1164,7 +1164,7 @@ func (f *Frontera) UrlBidMessageReceived(ctx context.Context, req *types.UrlBidM
 				return 
 			}
 
-                        if err := f.receiveBidFrom(ctx, p, bid.Url, cid, bid.Hash, bid.Proof ); err != nil {
+                        if err := f.receiveBidFrom(ctx, p, bid.Url, cid, bid.Hash, bid.Proof, bid.SimHash ); err != nil {
                                 log.Warningf("ReceiveMessage recvBidFrom error: %s", err)
                         }
 
@@ -1184,7 +1184,7 @@ func (f *Frontera) UrlBidMessageReceived(ctx context.Context, req *types.UrlBidM
 // from the user, not when receiving it from the network.
 // In case you run `git blame` on this comment, I'll save you some time: ask
 // @whyrusleeping, I don't know the answers you seek.
-func (f *Frontera) receiveBidFrom(ctx context.Context,  from proto.NodeID, url string, c cid.Cid, hash []byte, proof []byte ) error {
+func (f *Frontera) receiveBidFrom(ctx context.Context,  from proto.NodeID, url string, c cid.Cid, hash []byte, proof []byte , simhash uint64 ) error {
 	select {
 	case <-f.process.Closing():
 		return errors.New("biddingsys is closed")
@@ -1216,7 +1216,7 @@ func (f *Frontera) receiveBidFrom(ctx context.Context,  from proto.NodeID, url s
 	d, exist := f.DomainForUrl(url) 
 	if exist == true {
 		log.Debugf("Frontera/receiveBidFrom(20)\n")
-		if (f.bc.ReceiveBidForBiddings(ctx, url, c, from, d.domainID, hash, proof )) {
+		if (f.bc.ReceiveBidForBiddings(ctx, url, c, from, d.domainID, hash, proof , simhash )) {
 			//wait until bc have processed the incoming bid. 
 			//if we have received two bids, remove bidding from domain.
 			//wyong, 20200831
@@ -1261,7 +1261,7 @@ func (f *Frontera) DomainForID(id proto.DomainID ) (domain *Domain, exists bool 
 	}
 
 	domain = rawDomain.(*Domain)
-	log.Debugf("Frontera/DomainForID(45), found domain=%s\n", domain.domainID ) 
+	log.Debugf("Frontera/DomainForID(40), found domain=%s\n", domain.domainID ) 
 	return
 }
 
@@ -1294,7 +1294,7 @@ func (f *Frontera) DomainForUrl(urlstring string) (domain *Domain, exists bool )
 	}
 
 	domain = rawDomain.(*Domain)
-	log.Debugf("Frontera/DomainForUrl(30), domain=%s\n", domain) 
+	//log.Debugf("Frontera/DomainForUrl(30), domain=%s\n", domain) 
 
 	return
 }
@@ -1351,7 +1351,7 @@ func(f *Frontera) PutBid(ctx context.Context, url string, cid cid.Cid) error {
 
 //wyong, 20200817
 func(f *Frontera) RetriveUrlCid(ctx context.Context, req *types.UrlCidRequestMessage ) (res *types.UrlCidResponse, err error) {
-	log.Debugf("Frontera/GetCid(10), domainID =%s\n", req.Header.DomainID ) 
+	log.Debugf("Frontera/RetriveUrlCid(10), domainID =%s\n", req.Header.DomainID ) 
 
 	//wyong, 20200820 
 	domain, exist := f.DomainForID(req.Header.DomainID) 
@@ -1360,22 +1360,22 @@ func(f *Frontera) RetriveUrlCid(ctx context.Context, req *types.UrlCidRequestMes
 		return 
 	}
 
-	log.Debugf("Frontera/GetCid(20), domain.domainID =%s\n", string(domain.domainID)) 
+	log.Debugf("Frontera/RetriveUrlCid(20), domain.domainID =%s\n", string(domain.domainID)) 
 	var cids []string
 	for _, r := range req.Payload.Requests {
 		var c cid.Cid 
 		c, err = domain.RetriveUrlCid(ctx, r.ParentUrl,  r.Url) 
-		log.Debugf("Frontera/GetCid(30), r.Url=%s\n", r.Url ) 
+		log.Debugf("Frontera/RetriveUrlCid(30), r.Url=%s\n", r.Url ) 
 		if err != nil {
 			break 	
 		}
-		log.Debugf("Frontera/GetCid(40), cid=%s\n", c.String()) 
+		log.Debugf("Frontera/RetriveUrlCid(40), cid=%s\n", c.String()) 
 
 		//apend this cid to cids, wyong, 20200820
 		cids = append(cids, c.String()) 
 	}
 
-	log.Debugf("Frontera/GetCid(50)\n") 
+	log.Debugf("Frontera/RetriveUrlCid(50)\n") 
 	res = &types.UrlCidResponse{
                 Header: types.UrlCidSignedResponseHeader{
                         UrlCidResponseHeader: types.UrlCidResponseHeader{
@@ -1395,7 +1395,7 @@ func(f *Frontera) RetriveUrlCid(ctx context.Context, req *types.UrlCidRequestMes
                 },
         }
 
-	log.Debugf("Frontera/GetCid(60)\n") 
+	log.Debugf("Frontera/RetriveUrlCid(60)\n") 
 	return 
 }
 

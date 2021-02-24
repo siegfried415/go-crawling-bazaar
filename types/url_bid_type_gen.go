@@ -10,18 +10,19 @@ import (
 func (z *UrlBid) MarshalHash() (o []byte, err error) {
 	var b []byte
 	o = hsp.Require(b, z.Msgsize())
-	// map header, size 4
-	o = append(o, 0x84)
+	// map header, size 5
+	o = append(o, 0x85)
 	o = hsp.AppendString(o, z.Cid)
 	o = hsp.AppendBytes(o, z.Hash)
 	o = hsp.AppendBytes(o, z.Proof)
+	o = hsp.AppendUint64(o, z.SimHash)
 	o = hsp.AppendString(o, z.Url)
 	return
 }
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *UrlBid) Msgsize() (s int) {
-	s = 1 + 4 + hsp.StringPrefixSize + len(z.Cid) + 5 + hsp.BytesPrefixSize + len(z.Hash) + 6 + hsp.BytesPrefixSize + len(z.Proof) + 4 + hsp.StringPrefixSize + len(z.Url)
+	s = 1 + 4 + hsp.StringPrefixSize + len(z.Cid) + 5 + hsp.BytesPrefixSize + len(z.Hash) + 6 + hsp.BytesPrefixSize + len(z.Proof) + 8 + hsp.Uint64Size + 4 + hsp.StringPrefixSize + len(z.Url)
 	return
 }
 

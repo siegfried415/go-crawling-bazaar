@@ -43,6 +43,8 @@ type UrlBid struct {
 	
 	Hash	[]byte	//wyong, 20210203
 	Proof 	[]byte 	//wyong, 20210203
+
+	SimHash uint64	//wyong, 20210220 
 }
 
 // ResponsePayload defines column names and rows of query response.

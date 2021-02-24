@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 	//"fmt"
-	"sort"
+	//"sort"
 
         //wyong, 20210203
         "crypto/ecdsa"
@@ -60,7 +60,7 @@ import (
         ecvrf "github.com/vechain/go-ecvrf"
 
         //wyong, 20200218
-        "github.com/mfonda/simhash"
+        //"github.com/mfonda/simhash"
 
 )
 
@@ -156,7 +156,7 @@ func (bc *BiddingClient) waitBidResult(ctx context.Context, dc chan bool ) bool 
 }
 
 //wyong, 20190119  
-func (bc *BiddingClient) ReceiveBidForBiddings(ctx context.Context, url string, c cid.Cid,  from proto.NodeID,  domain proto.DomainID , hash []byte, proof []byte ) bool {
+func (bc *BiddingClient) ReceiveBidForBiddings(ctx context.Context, url string, c cid.Cid,  from proto.NodeID,  domain proto.DomainID , hash []byte, proof []byte , simhash uint64 ) bool {
 	var dc chan bool = make(chan bool) 	
 	select {
 	case bc.bidIncoming <- &bidSet{	url: url, 
@@ -168,6 +168,8 @@ func (bc *BiddingClient) ReceiveBidForBiddings(ctx context.Context, url string, 
 	
 					hash: hash,	//wyong, 20210203 
 					proof: proof, 	//wyong, 20210203 
+
+					simhash: simhash, //wyong, 20210220 
 				}:
 		log.Debugf("BiddingClient/receiveBidForBiddings, bc.bidIncoming <- &bidSet\n")
 	case <-bc.ctx.Done():
@@ -194,6 +196,8 @@ type bidSet struct {
 
 	hash	[]byte 	//wyong, 20210203 	
 	proof 	[]byte	//wyong, 20210203 
+
+	simhash uint64	//wyong, 20210220 
 }
 
 // AddBiddings adds the given cids to the biddinglist, tracked by the given domain 
@@ -229,7 +233,7 @@ type biddingSet struct {
 }
 
 func (bc *BiddingClient) addBiddings(ctx context.Context, biddings []types.UrlBidding, targets []proto.NodeID, cancel bool, domain proto.DomainID) {
-	log.Debugf("BiddingClient/addBiddings(0)\n")
+	log.Debugf("BiddingClient/addBiddings(10), biddings = %s, targets = %s, cancel =%b, domain=%s\n", biddings, targets, cancel, string(domain))
 
 	//biddings := make([]types.UrlBidding , 0, len(urls))
 	//for _, url := range urls {
@@ -306,13 +310,14 @@ func (bc *BiddingClient) SendBids(ctx context.Context, msg *types.UrlBidMessage 
 		return
 	}
 
-	log.Debugf("BiddingClient/SendBids(20), target=%s\n", target )
+	log.Debugf("BiddingClient/SendBids(20)\n")
 	//caller = mux.NewPersistentCaller(target) 
 	s, err := bc.host.NewStreamExt(ctx, target, protocol.ID("FRT.Bid"))
 	if err != nil {
                 return 
         }
 
+	log.Debugf("BiddingClient/SendBids(30)\n")
         //var response types.Response
 	//err := caller.Call(route.FronteraBid.String(), msg, &response ) 
 	//if err == nil {
@@ -325,7 +330,7 @@ func (bc *BiddingClient) SendBids(ctx context.Context, msg *types.UrlBidMessage 
                 return 
         }
 
-	log.Debugf("BiddingClient/SendBids(30)\n")
+	log.Debugf("BiddingClient/SendBids(40)\n")
 
 	//todo, wyong, 20200925 
 
@@ -448,67 +453,95 @@ func (bc *BiddingClient) GetUncompletedBiddings() ([]*BiddingEntry, error) {
 	return bc.bl.Entries(), nil 
 }
 
+
+/* move this code to BiddingEntry, wyong, 20210220 
 //wyong, 20210206 
 func (bc *BiddingClient) NeedCrawlMore(bidding *BiddingEntry) (int, error ) {
+	log.Debugf("BiddingClient/NeedCrawlMore(10), bidding=%s, bidding.ExpectCrawlerCount=%d\n", bidding, bidding.ExpectCrawlerCount )
 	needCrawlCount := bidding.ExpectCrawlerCount  
 	bids := bidding.GetBids() 
 	if len(bids) == 0 {
 		return needCrawlCount, nil 
 	}
 
-	bidCounts := make ([]int, 0, len(bids))
+	log.Debugf("BiddingClient/NeedCrawlMore(20), len(bids)=%d\n", len(bids))
+	bidCounts := make ([]int, len(bids))
+	for k :=0; k<len(bidCounts); k++ {
+		//initialize every count to 1, wyong, 20210220 
+		bidCounts[k] = 1 
+	}
+ 
 	for i :=0; i < len(bids) ; i++ {
-		for j := i+1 ; j< len(bids); j++ {
+		log.Debugf("BiddingClient/NeedCrawlMore(30), i=%d\n", i )
+		for j := i + 1 ; j< len(bids); j++ {
+			log.Debugf("BiddingClient/NeedCrawlMore(40), j=%d\n", j )
 			if simhash.Compare(bids[i].Hash,  bids[j].Hash) < 2 {
+				log.Debugf("BiddingClient/NeedCrawlMore(50)\n")
 				bidCounts[i]++
 				bidCounts[j]++
 			}
 		}
 	}
 
+	log.Debugf("BiddingClient/NeedCrawlMore(60)\n")
         sort.Slice(bidCounts, func(i, j int) bool {
                 return bidCounts[i] < bidCounts[j]
         })
 
-	if MinCrawlersExpected > bidCounts[0]{
-		needCrawlCount = MinCrawlersExpected - bidCounts[0]
+	log.Debugf("BiddingClient/NeedCrawlMore(70), bidCounts=%s\n", bidCounts[0] )
+	needCrawlCount = bidding.ExpectCrawlerCount - bidCounts[0]
+	if needCrawlCount < 0 {
+		needCrawlCount = 0 
 	}
 
+	log.Debugf("BiddingClient/NeedCrawlMore(80), needCrawlCount=%d\n", needCrawlCount)
 	return needCrawlCount, nil 
 }
+*/
 
 //wyong, 20210203 
 func (bc *BiddingClient) GetUnAckedPeers (bidding *BiddingEntry) ([]proto.NodeID, error ) {
+	log.Debugf("BiddingClient/GetUnAckedPeers(10), bidding=%s\n", bidding)
 	domain, exist := bc.f.DomainForID(bidding.DomainID)
 	if exist != true {
 		err := errors.New("domain not exist")
 		return []proto.NodeID{}, err 	
 	}
 
+	log.Debugf("BiddingClient/GetUnAckedPeers(20)\n")
 	bids := bidding.GetBids()
 	if bids == nil || len(bids)==0 {
+		log.Debugf("BiddingClient/GetUnAckedPeers(25), domain.activePeersArr=%s\n", domain.activePeersArr )
 		return domain.activePeersArr, nil 
 	}
 
-	peers := make([]proto.NodeID, 0, len(domain.activePeersArr)) 
+	log.Debugf("BiddingClient/GetUnAckedPeers(30)\n")
+	peers := make([]proto.NodeID, 0, len(domain.activePeers)) 
 	for _, peer := range domain.activePeersArr {
-		acked := true 
+		log.Debugf("BiddingClient/GetUnAckedPeers(40), peer=%s\n", peer )
+		acked := false  
 		for _, bid := range bids {
+			log.Debugf("BiddingClient/GetUnAckedPeers(50), bid.From=%s\n", bid.From)
 			if peer == bid.From {
+				log.Debugf("BiddingClient/GetUnAckedPeers(60), acked = true\n")
 				acked = true  
 				break 
 			}
 		}
-		if !acked {
+		log.Debugf("BiddingClient/GetUnAckedPeers(70), acked =%b\n", acked )
+		if !acked  {
+			log.Debugf("BiddingClient/GetUnAckedPeers(80), acked = true\n")
 			peers = append(peers, peer) 
 		}
 	}
 	
+	log.Debugf("BiddingClient/GetUnAckedPeers(90), peers = %s\n", peers )
 	return peers, nil 
 }
 
 //wyong, 20210204
 func (bc *BiddingClient) recrawlBidding(bidding *BiddingEntry, recrawlCount int ) error {
+	log.Debugf("BiddingClient/recrawlBidding(10), bidding=%s, recrrawlCount = %d\n", bidding, recrawlCount )
 	newBidding := types.UrlBidding {
 		Url : bidding.Url, 
 		Probability : bidding.Probability,
@@ -523,19 +556,21 @@ func (bc *BiddingClient) recrawlBidding(bidding *BiddingEntry, recrawlCount int 
 		return err 	
 	}
 
+	log.Debugf("BiddingClient/recrawlBidding(20), peers =%s\n", peers )
 	bc.addBiddings(context.Background(), 
 			[]types.UrlBidding { newBidding }, 
 				peers,	//wyong, 20210203 
 				false, 		//wyong, 20210203 
 			bidding.DomainID ) 
 
+	log.Debugf("BiddingClient/recrawlBidding(30)\n")
 	return nil 
 
 }
 
 // TODO: use goprocess here once i trust it
 func (bc *BiddingClient) Run() {
-	log.Debugf("BiddingClient/Run(10)\n")
+	log.Debugf("BiddingClient/Run start...\n")
 
 	//wyong, 20210204 
         bc.tick = time.NewTimer(MainCycleInterval )
@@ -545,7 +580,7 @@ func (bc *BiddingClient) Run() {
 	for {
 		select {
 		case ws := <-bc.biddingIncoming:
-			log.Debugf("BiddingClient/Run(30), ws : <- bc.biddingIncoming\n")
+			log.Debugf("BiddingClient/Run(10), ws : <- bc.biddingIncoming\n")
 
 			// todo, wyong, 20201217 
 			//// is this a broadcast or not?
@@ -579,35 +614,36 @@ func (bc *BiddingClient) Run() {
 				}
 			}
 
-			log.Debugf("BiddingClient/Run(40)\n")
+			log.Debugf("BiddingClient/Run(20)\n")
 			// broadcast those biddinglist changes
-			if len(ws.targets) == 0 {
-				log.Debugf("BiddingClient/Run(50) ")
-				for id, p := range bc.peers {
-					log.Debugf("BiddingClient/Run(60), peer=%s\n", id )
-					p.addBiddingMessage(ws.biddings, ws.domain , bc.nodeID )
-				}
-			} else {
-				log.Debugf("BiddingClient/Run(70)\n")
+			//if len(ws.targets) == 0 {
+			//	log.Debugf("BiddingClient/Run(30) ")
+			//	for id, p := range bc.peers {
+			//		log.Debugf("BiddingClient/Run(40), peer=%s\n", id )
+			//		p.addBiddingMessage(ws.biddings, ws.domain , bc.nodeID )
+			//	}
+			//} else {
+				log.Debugf("BiddingClient/Run(50)\n")
 				for _, t := range ws.targets {
-					log.Debugf("BiddingClient/Run(80), target_node_id=%s\n", t)
+					log.Debugf("BiddingClient/Run(60), target_node_id=%s\n", t)
 					p, ok := bc.peers[t]
 					if !ok {
 						//todo, wyong, 20200825 
-						log.Debugf("BiddingClient/Run(90)\n")
+						log.Debugf("BiddingClient/Run(70)\n")
 						//log.Debugf("tried sending biddinglist change to non-partner peer: %s\n", t)
 						//continue
 						p = bc.startPeerHandler(t)
 					}
 
-					log.Debugf("BiddingClient/Run(100)\n")
+					log.Debugf("BiddingClient/Run(80)\n")
 					p.addBiddingMessage(ws.biddings, ws.domain, bc.nodeID )
 				}
-				log.Debugf("BiddingClient/Run(110)\n")
-			}
+			//}
+
+			log.Debugf("BiddingClient/Run(90)\n")
 
 		case bs := <-bc.bidIncoming:	//wyong, 20190119 
-			log.Debugf("BiddingClient/Run(20), bs : <- bc.bidIncoming\n")
+			log.Debugf("BiddingClient/Run(100), bs : <- bc.bidIncoming\n")
 
 			url := bs.url 
 			bidding, _ := bc.bl.Contains(url)
@@ -616,6 +652,8 @@ func (bc *BiddingClient) Run() {
 				continue
 			}
 
+			log.Debugf("BiddingClient/Run(110), bidding = %s\n", bidding )
+
 			//wyong, 20210203 
 			pk, err := kms.GetPublicKey(bs.from)
 			if err != nil {
@@ -623,6 +661,7 @@ func (bc *BiddingClient) Run() {
 				continue 
 			}
 
+			log.Debugf("BiddingClient/Run(120)\n")
 			//wyong, 20210118
 			// `pi` is the VRF proof
 			// pk is publick key of bid.From 
@@ -632,6 +671,7 @@ func (bc *BiddingClient) Run() {
 				continue	
 			}
 
+			log.Debugf("BiddingClient/Run(130)\n")
 			//todo, verify if crawler has successfully in competition,  wyong, 20210118
 			//if verify(bs.beta, expectedCrawler, minerPower, networkPower) != ok {
 			//	continue 	
@@ -653,19 +693,21 @@ func (bc *BiddingClient) Run() {
 
 			//todo, wyong, 20201217 
 			//wyong, 20200828 
-			if !bidding.AddBid(url, bs.cid, bs.from ) {
+			if !bidding.AddBid(url, bs.cid, bs.from, bs.simhash ) {
 				bs.done <- false //wyong, 20200831 
 				continue 
 			}
 
+			log.Debugf("BiddingClient/Run(140)\n")
 			if (bidding.CountOfBids() < bidding.ExpectCrawlerCount ) {
 				continue 
 			}
 
+			log.Debugf("BiddingClient/Run(150)\n")
 			//todo, check if cids from every bid match or not. 
 			//if not match, caculate how many more crawling are needed. 
 			//bids := bidding.GetBids() 
-			need_crawl_more, err := bc.NeedCrawlMore(bidding) 
+			need_crawl_more, err := bidding.NeedCrawlMore() 
 			if need_crawl_more > 0 {
 				//add need_crawl_count to let bidding (in bidding list) can handle more bid, 
 				//this is subtle, wyong, 20210204 
@@ -675,13 +717,17 @@ func (bc *BiddingClient) Run() {
 				continue 
 			}
 
+			log.Debugf("BiddingClient/Run(160)\n")
 			//Crawled succeed 
 			if bc.bl.Remove(url, bs.domain ) {
 				//bc.biddinglistGauge.Dec()
 			}
 		
+			log.Debugf("BiddingClient/Run(170)\n")
 			bc.completed_bl.AddBiddingEntry(bidding, bs.domain ) 
 			bs.done <- true  //wyong, 20200831 
+
+			log.Debugf("BiddingClient/Run(180)\n")
 			continue 
 			
 			//todo, wyong, 20201217
@@ -695,46 +741,53 @@ func (bc *BiddingClient) Run() {
 
 		//wyong, 20210116
 		case <-bc.tick.C:
+			log.Debugf("BiddingClient/Run(200), <-bc.tick.C \n")
 			//todo, rebroadcast bidding when crawling timer timeout, 
 			//wyong, 20210117 
 			for _, bidding := range bc.bl.Entries() {
 
+				log.Debugf("BiddingClient/Run(210), bidding=%s \n", bidding )
 				bidCount := len(bidding.GetBids())
 				if (bidCount >= bidding.ExpectCrawlerCount ) || 
 					(bidCount < bidding.ExpectCrawlerCount && time.Since(bidding.LastBroadcastTime) < CrawlingInterval ) {
 					continue 
 				}
 				
+				log.Debugf("BiddingClient/Run(220)\n")
 				need_recrawl_more := bidding.ExpectCrawlerCount - bidCount 
 				if need_recrawl_more > 0 {
 					//don't add need_recrawl_more of bidding,
 					//because we don't need bids more then bidding.ExpectCrawlerCount. 
 					//wyong, 20210204 
+					log.Debugf("BiddingClient/Run(230), need_recrawl_more = %d\n", need_recrawl_more )
 					bc.recrawlBidding(bidding, need_recrawl_more ) 
+					log.Debugf("BiddingClient/Run(240)\n")
 				}
+				log.Debugf("BiddingClient/Run(250)\n")
 			}
 
+			log.Debugf("BiddingClient/Run(260)\n")
 			bc.tick.Reset(MainCycleInterval)
 
 		case p := <-bc.connectEvent:
-			log.Debugf("BiddingClient/Run(120), P := <-bc.connectEvent\n")
+			log.Debugf("BiddingClient/Run(300), P := <-bc.connectEvent\n")
 			if p.connect {
-				log.Debugf("BiddingClient/Run(130)\n")
+				log.Debugf("BiddingClient/Run(310)\n")
 				bc.startPeerHandler(p.peer)
 			} else {
-				log.Debugf("BiddingClient/Run(140)\n")
+				log.Debugf("BiddingClient/Run(320)\n")
 				bc.stopPeerHandler(p.peer)
 			}
 		case req := <-bc.peerReqs:
-			log.Debugf("BiddingClient/Run(150), req := <-bc.peerReqs\n")
+			log.Debugf("BiddingClient/Run(400), req := <-bc.peerReqs\n")
 			peers := make([]proto.NodeID, 0, len(bc.peers))
 			for p := range bc.peers {
-				log.Debugf("BiddingClient/Run(160)\n")
+				log.Debugf("BiddingClient/Run(410)\n")
 				peers = append(peers, p)
 			}
 			req <- peers
 		case <-bc.ctx.Done():
-			log.Debugf("BiddingClient/Run(170), <-bc.ctx.Done()\n")
+			log.Debugf("BiddingClient/Run(500), <-bc.ctx.Done()\n")
 			return
 		}
 	}

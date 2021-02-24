@@ -556,85 +556,113 @@ func (domain *Domain) run(ctx context.Context) {
 	for {
 		select {
 		case biddings := <-domain.biddingReqs:	// <-domain.newReqs: 
-			log.Debugf("Domain/run(20), urls := <- domain.biddingReqs\n" )
+			log.Debugf("Domain/run(10), urls := <- domain.biddingReqs\n" )
 
 			//for _, url := range urls {
 			//	log.Debugf("Domain/run(30), add url(%s) into interest\n", url)  
 			//	domain.interest.Add(url, nil)
 			//}
 
-			log.Debugf("Domain/run(40), domain.liveBiddings=%d, activeBiddingsLimit=%d\n", domain.liveBiddings, activeBiddingsLimit )  
+			log.Debugf("Domain/run(20), domain.liveBiddings=%d, activeBiddingsLimit=%d\n", domain.liveBiddings, activeBiddingsLimit )  
 
 			for _, bidding := range biddings { 
 				//when forwad probability of this url is zero, get parent of the node, 
 				//caculate forward probability of this url, 
+
+				log.Debugf("Domain/run(30), check bidding(%s) 's probability \n", bidding.Url )
+
 				if bidding.Probability == 0.0 { 
+					log.Debugf("Domain/run(31), bidding(%s) 's probability is zero\n", bidding.Url )
 					bidding.Probability, _ = domain.GetProbability(bidding.ParentUrl, bidding.ParentProbability,  bidding.Url ) 
+					log.Debugf("Domain/run(32), bidding(%s) 's probability is set to %d\n", bidding.Url, bidding.Probability )
 				}
 			}
+
+			log.Debugf("Domain/run(40)\n")
 
 			//insert bidding in biddings accroding to their probability. 
 			domain.tofetch.FastInserts(biddings) 
 
+			log.Debugf("Domain/run(50)\n")
+
 			//wyong, 20210203 
 			addBiddings := make([]types.UrlBidding, 0, len(biddings))
 
+			log.Debugf("Domain/run(60)\n")
 			for {
-				if (len(domain.liveBiddings) < activeBiddingsLimit) {
+				log.Debugf("Domain/run(70)\n")
+				if (len(domain.liveBiddings) >= activeBiddingsLimit) {
 					break 
 				}
 
+				log.Debugf("Domain/run(80)\n")
 				bidding, err := domain.tofetch.Pop()
 				if  err != nil  {
 					break 
 				}
 
+				log.Debugf("Domain/run(90), Pop bidding(%s)\n", bidding.Url )
 				//currentHeight is int32, wyong, 20210205 	
 				currentHeight := uint32(domain.chain.GetCurrentHeight())
 
+				log.Debugf("Domain/run(100), currentHeigh = %d\n", currentHeight )
 				//get or create url node from url chain
-				urlNode, _ := domain.GetUrlNode(bidding.Url)	
-				if urlNode == nil {
-					urlNode, _ = domain.CreateUrlNode(/* parentUrl, */ bidding.Url, currentHeight, 0, 0, 0 )	
+				urlNode, err := domain.GetUrlNode(bidding.Url)	
+				if err != nil || urlNode == nil {
+					urlNode, err = domain.CreateUrlNode(/* parentUrl, */ bidding.Url, currentHeight, 0, 0, 0 )	
+					if err != nil || urlNode == nil {
+						continue 
+					}
 				}
 
+				log.Debugf("Domain/run(110), urlNode =%s \n", urlNode )
 				//read last requested height, and filter out urls which crawled too fast, 
 				if (urlNode.LastRequestedHeight + IncrementalCrawlingInterval) < currentHeight { 
 					continue 
 				} 
 
+				log.Debugf("Domain/run(120)\n")
 				if bidding.Probability <= MinFrowardProbability { 
 					continue 
 				}
 
+				log.Debugf("Domain/run(130)\n")
 				//todo, increment requested count and save to url chain,wyong, 20210126  
 				domain.SetLastRequestedHeight(bidding.Url, currentHeight)
 
+				log.Debugf("Domain/run(130)\n")
+
 				addBiddings = append(addBiddings, bidding) 
+				log.Debugf("Domain/run(140)\n")
 			}
 
-			log.Debugf("Domain/run(60)\n")  
+			log.Debugf("Domain/run(150)\n")  
 			domain.addBiddings(ctx, addBiddings )
 
-			log.Debugf("Domain/run(80)\n")  
+			log.Debugf("Domain/run(160)\n")  
 
 		case bid := <-domain.bidIncoming:
-			log.Debugf("Domain/run(10), bid := <- s.bidIncoming, bid.url = %s\n", bid.url )
+			log.Debugf("Domain/run(200), bid := <- s.bidIncoming, bid.url = %s\n", bid.url )
 			domain.tick.Stop()
 
 			if bid.from != "" {
 				domain.addActivePeer(bid.from)
 			}
 
+			log.Debugf("Domain/run(210)\n")
 			//wyong, 20200828 
-			_, exist := domain.f.bc.completed_bl.Contains(bid.url) 
+			bidding, exist := domain.f.bc.completed_bl.Contains(bid.url) 
 			if exist == true { 
 				
+				log.Debugf("Domain/run(220)\n")
 				domain.BiddingCompleted(ctx, bid.url )
 
+				//Move back, wyong, 20210220 
 				//this has been moved to crawler side , wyong, 20210129 
-				//domain.SetCid(bidding.GetUrl(), bidding.GetCid())
+				c, _ := bidding.GetCid() 
+				domain.SetCid(bidding.GetUrl(), c )
 
+				log.Debugf("Domain/run(230)\n")
 
 			}
 
@@ -642,7 +670,7 @@ func (domain *Domain) run(ctx context.Context) {
 			//domain.resetTick()
 
 		case biddings := <-domain.cancelBiddings:
-			log.Debugf("domain/run, urls := <- domain.cancelBiddings \n" )
+			log.Debugf("domain/run(300), urls := <- domain.cancelBiddings \n" )
 			domain.cancel(biddings)
 
 		case <-domain.tick.C:
@@ -738,27 +766,36 @@ func (domain *Domain) urlIsWanted(url string) bool {
 
 func (domain *Domain) BiddingCompleted(ctx context.Context, url string ) {
 	//log.Debug("receiveBid called..." )
+	log.Debugf("Domain/BiddingCompleted(10), url=%s\n", url )
 	//url := bid.Url()
 
 	if domain.urlIsWanted(url) {
+		log.Debugf("Domain/BiddingCompleted(20)\n")
 		tval, ok := domain.liveBiddings[url]
 		if ok {
+			log.Debugf("Domain/BiddingCompleted(30)\n")
 			domain.latTotal += time.Since(tval)
 			delete(domain.liveBiddings, url)
 		} else {
+			log.Debugf("Domain/BiddingCompleted(40)\n")
 			domain.tofetch.Remove(url)
 		}
 
+		log.Debugf("Domain/BiddingCompleted(50)\n")
 		urlNode, err := domain.GetUrlNode(url) 
 		if err == nil {
 			currentHeight := uint32(domain.chain.GetCurrentHeight()) 
 			deltaHeight := currentHeight - urlNode.LastCrawledHeight
 			newCrawlInterval := ( urlNode.CrawlInterval / 2 ) + ( deltaHeight / 2 )
+
+			log.Debugf("Domain/BiddingCompleted(60), currentHeight=%d, deltaHeight=%d, newCrawlInterval=%d\n", currentHeight, deltaHeight, newCrawlInterval )
 			domain.SetCrawlInterval(url, newCrawlInterval) 
 
+			log.Debugf("Domain/BiddingCompleted(70)\n")
 			//save last crawled height to url chain.
 			domain.SetLastCrawledHeight(url, currentHeight) 
 
+			log.Debugf("Domain/BiddingCompleted(80)\n")
 			//create a bidding in future for this url and push it to wait queue
 			runtime := time.Now().Add(time.Duration(urlNode.CrawlInterval) * time.Second)
 			domain.waitQueue.Push(runtime, types.UrlBidding {
@@ -766,15 +803,19 @@ func (domain *Domain) BiddingCompleted(ctx context.Context, url string ) {
 							Probability : 1.0,      //todo
 							ExpectCrawlerCount : 1, //todo
 						})
+			log.Debugf("Domain/BiddingCompleted(90)\n")
 
 		}
 
+		log.Debugf("Domain/BiddingCompleted(100)\n")
 		domain.fetchcnt++
 		//domain.notif.Publish(url)
 
 		if next, err  := domain.tofetch.Pop();  err != nil   {
+			log.Debugf("Domain/BiddingCompleted(110)\n")
 			domain.addBiddings(ctx, []types.UrlBidding{next})
 		}
+		log.Debugf("Domain/BiddingCompleted(120)\n")
 
 	}
 
@@ -914,31 +955,35 @@ func (domain *Domain) PutBiddings(ctx context.Context, biddings []types.UrlBiddi
 }
 
 func (domain *Domain) RetriveUrlCid(ctx context.Context, parentUrl string, url string  ) (cid.Cid, error) {
+	log.Debugf("Domain/RetriveUrlCid(10), parentUrl=%s, url=%s\n", parentUrl, url ) 
 	urlNode, err := domain.GetUrlNode(url)
 	if err != nil {
+		log.Debugf("Domain/RetriveUrlCid(15), err=%s\n", err.Error()) 
 		return cid.Cid{}, nil 
 	}
 
-	c, err := domain.GetCid(parentUrl, url) 
+	log.Debugf("Domain/RetriveUrlCid(20), urlNode=%s\n", urlNode ) 
+	c, err := domain.GetCid(url) 
 	if err != nil {
+		log.Debugf("Domain/RetriveUrlCid(25), err=%s\n", err.Error()) 
 		return cid.Cid{}, nil 
 	}
 
+	log.Debugf("Domain/RetriveUrlCid(30), cid =%s\n", c.String() ) 
 	err = domain.SetRetrivedCount(url, urlNode.RetrivedCount + 1 )
 	if err != nil {
+		log.Debugf("Domain/RetriveUrlCid(35), err=%s\n", err.Error()) 
 		return cid.Cid{}, nil 
 	}
 	
-	linksCount, err := domain.GetUrlLinksCount(parentUrl, url ) 
+	log.Debugf("Domain/RetriveUrlCid(40)\n") 
+	// todo, wyong, 20210224 
+	err = domain.AddUrlLinksCount(parentUrl, url ) 
 	if err != nil {
-		//return cid.Cid{}, nil 
-		linksCount = 0 
-	}
-
-	err = domain.SetUrlLinksCount(parentUrl, url, linksCount + 1 ) 
-	if err != nil {
+		log.Debugf("Domain/RetriveUrlCid(45), err=%s\n", err.Error()) 
 		return cid.Cid{}, nil 
 	}
 
+	log.Debugf("Domain/RetriveUrlCid(50)\n") 
 	return c, nil 
 }
