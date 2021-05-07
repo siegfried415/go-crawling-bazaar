@@ -22,10 +22,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/siegfried415/gdf-rebuild/crypto/hash"
-	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/types"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/types"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 // state represents a snapshot of current best chain.

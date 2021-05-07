@@ -22,11 +22,11 @@ import (
 
 	//"github.com/pkg/errors"
 
-	"github.com/siegfried415/gdf-rebuild/kayak"
-	kt "github.com/siegfried415/gdf-rebuild/kayak/types"
-	"github.com/siegfried415/gdf-rebuild/proto"
-	//rpc "github.com/siegfried415/gdf-rebuild/rpc/mux"
-	net "github.com/siegfried415/gdf-rebuild/net"
+	"github.com/siegfried415/go-crawling-bazaar/kayak"
+	kt "github.com/siegfried415/go-crawling-bazaar/kayak/types"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	//rpc "github.com/siegfried415/go-crawling-bazaar/rpc/mux"
+	net "github.com/siegfried415/go-crawling-bazaar/net"
 
 	//wyong, 20201020
 	//"github.com/libp2p/go-libp2p-core/network"
@@ -43,8 +43,8 @@ const (
 	DomainKayakFetchMethodName = "Fetch"
 
 	//wyong, 20200925
-	ProtocolKayakApply	= "/gdf/kayak/apply" 
-	ProtocolKayakFetch	= "/gdf/kayak/fetch" 
+	ProtocolKayakApply	= "/gcb/kayak/apply" 
+	ProtocolKayakFetch	= "/gcb/kayak/fetch" 
 )
 
 // DomainKayakMuxService defines a mux service for sqlchain kayak.

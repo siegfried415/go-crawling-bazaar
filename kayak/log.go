@@ -23,8 +23,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	kt "github.com/siegfried415/gdf-rebuild/kayak/types"
-	"github.com/siegfried415/gdf-rebuild/utils/trace"
+	kt "github.com/siegfried415/go-crawling-bazaar/kayak/types"
+	"github.com/siegfried415/go-crawling-bazaar/utils/trace"
 )
 
 func (r *Runtime) newLog(ctx context.Context, logType kt.LogType, data []byte) (l *kt.Log, err error) {

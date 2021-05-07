@@ -21,7 +21,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 func TestNewLevelDBKey(t *testing.T) {

@@ -25,8 +25,8 @@ import (
 	ec "github.com/btcsuite/btcd/btcec"
 	lru "github.com/hashicorp/golang-lru"
 
-	"github.com/siegfried415/gdf-rebuild/crypto/secp256k1"
-	"github.com/siegfried415/gdf-rebuild/utils"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/secp256k1"
+	"github.com/siegfried415/go-crawling-bazaar/utils"
 )
 
 var (

@@ -13,18 +13,18 @@ import (
 	"crypto/ecdsa"
 
 	//wyong, 20200827 
-	//bsmsg "github.com/siegfried415/gdf-rebuild/frontera/message"
+	//bsmsg "github.com/siegfried415/go-crawling-bazaar/frontera/message"
 
-	//bl "github.com/siegfried415/gdf-rebuild/frontera/biddinglist"
-	//bidlist "github.com/siegfried415/gdf-rebuild/frontera/bidlist"
-	"github.com/siegfried415/gdf-rebuild/proto"
+	//bl "github.com/siegfried415/go-crawling-bazaar/frontera/biddinglist"
+	//bidlist "github.com/siegfried415/go-crawling-bazaar/frontera/bidlist"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
 
 	//wyong, 20210202 
-        //"github.com/siegfried415/gdf-rebuild/crypto/asymmetric"
-        "github.com/siegfried415/gdf-rebuild/kms"
+        //"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
+        "github.com/siegfried415/go-crawling-bazaar/kms"
 
 	//wyong, 20200827 
-        "github.com/siegfried415/gdf-rebuild/types"
+        "github.com/siegfried415/go-crawling-bazaar/types"
 
 	cid "github.com/ipfs/go-cid"
 	//bstore "github.com/ipfs/go-ipfs-blockstore"
@@ -33,7 +33,7 @@ import (
 	//logging "github.com/ipfs/go-log"
 
 	//wyong, 20201215
-        log "github.com/siegfried415/gdf-rebuild/utils/log"
+        log "github.com/siegfried415/go-crawling-bazaar/utils/log"
 	
 	//wyong, 20210118 
 	ecvrf "github.com/vechain/go-ecvrf"

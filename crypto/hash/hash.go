@@ -24,7 +24,7 @@ import (
 
 	hsp "github.com/CovenantSQL/HashStablePack/marshalhash"
 
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 // HashSize of array used to store hashes.  See Hash.

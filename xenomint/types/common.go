@@ -17,8 +17,8 @@
 package types
 
 import (
-	"github.com/siegfried415/gdf-rebuild/crypto/asymmetric"
-	"github.com/siegfried415/gdf-rebuild/crypto/hash"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
 )
 
 //go:generate hsp

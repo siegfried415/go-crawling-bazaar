@@ -9,13 +9,13 @@ import (
 
 	cid "github.com/ipfs/go-cid"
         //peer "github.com/libp2p/go-libp2p-peer"
-	"github.com/siegfried415/gdf-rebuild/proto" 
+	"github.com/siegfried415/go-crawling-bazaar/proto" 
 
         //wyong, 20200218
         "github.com/mfonda/simhash"
 
         //wyong, 20210220
-        log "github.com/siegfried415/gdf-rebuild/utils/log"
+        log "github.com/siegfried415/go-crawling-bazaar/utils/log"
 
 )
 

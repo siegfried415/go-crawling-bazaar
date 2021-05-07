@@ -21,7 +21,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 // Hook are called during 2PC running.

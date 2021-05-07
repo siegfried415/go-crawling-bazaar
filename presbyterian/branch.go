@@ -24,17 +24,17 @@ import (
 
 	"github.com/pkg/errors"
 
-	pi "github.com/siegfried415/gdf-rebuild/presbyterian/interfaces"
-	"github.com/siegfried415/gdf-rebuild/conf"
+	pi "github.com/siegfried415/go-crawling-bazaar/presbyterian/interfaces"
+	"github.com/siegfried415/go-crawling-bazaar/conf"
 
-	ca "github.com/siegfried415/gdf-rebuild/crypto/asymmetric"
-	"github.com/siegfried415/gdf-rebuild/crypto/hash"
+	ca "github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
 
-	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/types"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/types"
 
 	//wyong, 20200612
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 
 )
 

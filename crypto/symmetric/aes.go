@@ -24,8 +24,8 @@ import (
 	"errors"
 	"io"
 
-	"github.com/siegfried415/gdf-rebuild/crypto"
-	"github.com/siegfried415/gdf-rebuild/crypto/hash"
+	"github.com/siegfried415/go-crawling-bazaar/crypto"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
 )
 
 var (

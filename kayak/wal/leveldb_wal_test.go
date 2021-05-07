@@ -23,8 +23,8 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	kt "github.com/siegfried415/gdf-rebuild/kayak/types"
-	"github.com/siegfried415/gdf-rebuild/proto"
+	kt "github.com/siegfried415/go-crawling-bazaar/kayak/types"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
 )
 
 func TestLevelDBWal_Write(t *testing.T) {

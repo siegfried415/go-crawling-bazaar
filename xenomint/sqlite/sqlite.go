@@ -22,9 +22,9 @@ import (
 
 	sqlite3 "github.com/CovenantSQL/go-sqlite3-encrypt"
 
-	"github.com/siegfried415/gdf-rebuild/crypto/symmetric"
-	"github.com/siegfried415/gdf-rebuild/storage"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/symmetric"
+	"github.com/siegfried415/go-crawling-bazaar/storage"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 const (

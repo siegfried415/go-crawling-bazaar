@@ -17,8 +17,8 @@
 package kayak
 
 import (
-	"github.com/siegfried415/gdf-rebuild/proto"
-	//rpc "github.com/siegfried415/gdf-rebuild/rpc/mux"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	//rpc "github.com/siegfried415/go-crawling-bazaar/rpc/mux"
 )
 
 // Caller defines the rpc caller, supports mocks for the default rpc.PersistCaller.

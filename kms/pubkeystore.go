@@ -27,16 +27,16 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/siegfried415/gdf-rebuild/conf"
+	"github.com/siegfried415/go-crawling-bazaar/conf"
 
-	"github.com/siegfried415/gdf-rebuild/crypto/asymmetric"
-	//"github.com/siegfried415/gdf-rebuild/crypto/hash"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
+	//"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
 
-	mine "github.com/siegfried415/gdf-rebuild/pow/cpuminer"
-	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/utils"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
-	xs "github.com/siegfried415/gdf-rebuild/xenomint/sqlite"
+	mine "github.com/siegfried415/go-crawling-bazaar/pow/cpuminer"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/utils"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
+	xs "github.com/siegfried415/go-crawling-bazaar/xenomint/sqlite"
 
         //wyong, 20201116 
         //"github.com/ugorji/go/codec"

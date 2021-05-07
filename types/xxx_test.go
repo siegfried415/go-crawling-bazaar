@@ -23,12 +23,12 @@ import (
 	"testing"
 	"time"
 
-	pi "github.com/siegfried415/gdf-rebuild/presbyterian/interfaces"
-	"github.com/siegfried415/gdf-rebuild/crypto/asymmetric"
-	"github.com/siegfried415/gdf-rebuild/crypto/hash"
-	"github.com/siegfried415/gdf-rebuild/crypto/kms"
-	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	pi "github.com/siegfried415/go-crawling-bazaar/presbyterian/interfaces"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/kms"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 var (

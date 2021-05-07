@@ -20,8 +20,8 @@ package cpuminer
 import (
 	"errors"
 
-	"github.com/siegfried415/gdf-rebuild/crypto/hash"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 // NonceInfo contains nonce and the difficulty to the block.

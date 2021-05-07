@@ -11,8 +11,8 @@ import (
 	//cid "github.com/ipfs/go-cid"
 
 	//wyong, 20200729
-	//client "github.com/siegfried415/gdf-rebuild/client"
-	types "github.com/siegfried415/gdf-rebuild/types" 
+	//client "github.com/siegfried415/go-crawling-bazaar/client"
+	types "github.com/siegfried415/go-crawling-bazaar/types" 
 	"encoding/json" 
 
 	cmds "github.com/ipfs/go-ipfs-cmds"
@@ -20,10 +20,10 @@ import (
 	//logging "github.com/ipfs/go-log"
 
 	//wyong, 20201022 	
-	env "github.com/siegfried415/gdf-rebuild/env" 
+	env "github.com/siegfried415/go-crawling-bazaar/env" 
 
 	//wyong, 20201215 
-	log "github.com/siegfried415/gdf-rebuild/utils/log" 
+	log "github.com/siegfried415/go-crawling-bazaar/utils/log" 
 
 )
 

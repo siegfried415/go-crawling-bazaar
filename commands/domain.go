@@ -16,14 +16,14 @@ import (
 	cmdkit "github.com/ipfs/go-ipfs-cmdkit"
 	//logging "github.com/ipfs/go-log"
 	
-	client "github.com/siegfried415/gdf-rebuild/client" 
-	//conf "github.com/siegfried415/gdf-rebuild/conf"  
+	client "github.com/siegfried415/go-crawling-bazaar/client" 
+	//conf "github.com/siegfried415/go-crawling-bazaar/conf"  
 
 	//wyong, 20201022 
-	env "github.com/siegfried415/gdf-rebuild/env"  
+	env "github.com/siegfried415/go-crawling-bazaar/env"  
 
 	//wyong, 20201215 
-	log "github.com/siegfried415/gdf-rebuild/utils/log"  
+	log "github.com/siegfried415/go-crawling-bazaar/utils/log"  
 
 )
 

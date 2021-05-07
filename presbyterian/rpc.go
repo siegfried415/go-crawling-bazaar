@@ -26,12 +26,12 @@ import (
 	"github.com/libp2p/go-libp2p-core/protocol"
 	//"github.com/libp2p/go-libp2p-core/network"
 
-	pi "github.com/siegfried415/gdf-rebuild/presbyterian/interfaces"
-	"github.com/siegfried415/gdf-rebuild/types"
-	net "github.com/siegfried415/gdf-rebuild/net"
+	pi "github.com/siegfried415/go-crawling-bazaar/presbyterian/interfaces"
+	"github.com/siegfried415/go-crawling-bazaar/types"
+	net "github.com/siegfried415/go-crawling-bazaar/net"
 
 	//wyong, 20201202
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 
 )
 

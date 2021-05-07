@@ -24,7 +24,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/siegfried415/gdf-rebuild/crypto/hash"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
 )
 
 //go:generate hsp

@@ -21,7 +21,7 @@ import (
 
 	"github.com/tchap/go-patricia/patricia"
 
-	"github.com/siegfried415/gdf-rebuild/crypto/hash"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
 )
 
 // Trie is a patricia trie.

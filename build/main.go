@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/siegfried415/gdf-rebuild/utils/version"
+	"github.com/siegfried415/go-crawling-bazaar/utils/version"
 )
 
 var lineBreak = "\n"
@@ -257,13 +257,13 @@ func buildFilecoin() {
 }
 
 //wyong, 20200918 
-func buildGdf() {
-	log.Println("Building gdf...")
+func buildGcb() {
+	log.Println("Building gcb...")
 
 	runCmd(cmd([]string{
 		"go", "build",
-		"-ldflags", fmt.Sprintf("-X github.com/siegfried415/gdf-rebuild/flags.Commit=%s", getCommitSha()),
-		"-v", "-o", "bin/gdf", ".",
+		"-ldflags", fmt.Sprintf("-X github.com/siegfried415/go-crawling-bazaar/flags.Commit=%s", getCommitSha()),
+		"-v", "-o", "bin/gcb", ".",
 	}...))
 }
 
@@ -342,8 +342,8 @@ func main() {
 		buildFilecoin()
 
 	//wyong, 20200918 
-	case "build-gdf":
-		buildGdf()
+	case "build-gcb":
+		buildGcb()
 
 	case "build-gengen":
 		buildGengen()

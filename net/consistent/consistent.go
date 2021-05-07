@@ -41,10 +41,10 @@ import (
 
 	mw "github.com/zserge/metric"
 
-	"github.com/siegfried415/gdf-rebuild/conf"
-	"github.com/siegfried415/gdf-rebuild/crypto/hash"
-	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/conf"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 // NodeKeys is NodeKey array.

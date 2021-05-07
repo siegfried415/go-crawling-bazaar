@@ -20,11 +20,11 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/siegfried415/gdf-rebuild/crypto/asymmetric"
-	//"github.com/siegfried415/gdf-rebuild/crypto/hash"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
+	//"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
 
-	mine "github.com/siegfried415/gdf-rebuild/pow/cpuminer"
-	"github.com/siegfried415/gdf-rebuild/proto"
+	mine "github.com/siegfried415/go-crawling-bazaar/pow/cpuminer"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
 )
 
 // LocalKeyStore is the type hold local private & public key.

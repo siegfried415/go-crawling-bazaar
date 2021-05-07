@@ -14,13 +14,13 @@ import (
         //"github.com/pkg/errors"
 
 	//wyong, 20200803 
-	//client "github.com/siegfried415/gdf-rebuild/client" 
+	//client "github.com/siegfried415/go-crawling-bazaar/client" 
 
 	//wyong, 20201022 	
-	env "github.com/siegfried415/gdf-rebuild/env" 
+	env "github.com/siegfried415/go-crawling-bazaar/env" 
 
 	//wyong, 20201215
-	log "github.com/siegfried415/gdf-rebuild/utils/log" 
+	log "github.com/siegfried415/go-crawling-bazaar/utils/log" 
 
 )
 

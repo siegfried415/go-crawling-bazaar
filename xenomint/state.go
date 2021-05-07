@@ -25,10 +25,10 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/types"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
-	xi "github.com/siegfried415/gdf-rebuild/xenomint/interfaces"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/types"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
+	xi "github.com/siegfried415/go-crawling-bazaar/xenomint/interfaces"
 )
 
 type sqlQuerier interface {

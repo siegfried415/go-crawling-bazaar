@@ -16,10 +16,10 @@ import (
 	//logging "github.com/ipfs/go-log"
 
 	//wyong, 20200802 
-	env "github.com/siegfried415/gdf-rebuild/env" 
+	env "github.com/siegfried415/go-crawling-bazaar/env" 
 
 	//wyong, 20201215
-	log "github.com/siegfried415/gdf-rebuild/utils/log" 
+	log "github.com/siegfried415/go-crawling-bazaar/utils/log" 
 )
 
 

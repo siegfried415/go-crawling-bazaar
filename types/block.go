@@ -21,11 +21,11 @@ import (
 
 	"github.com/pkg/errors"
 
-	ca "github.com/siegfried415/gdf-rebuild/crypto/asymmetric"
-	"github.com/siegfried415/gdf-rebuild/crypto/hash"
-	"github.com/siegfried415/gdf-rebuild/crypto/verifier"
-	"github.com/siegfried415/gdf-rebuild/merkle"
-	"github.com/siegfried415/gdf-rebuild/proto"
+	ca "github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/verifier"
+	"github.com/siegfried415/go-crawling-bazaar/merkle"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
 )
 
 //go:generate hsp

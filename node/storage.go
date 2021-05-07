@@ -25,14 +25,14 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/siegfried415/gdf-rebuild/net/consistent"
-	"github.com/siegfried415/gdf-rebuild/kms"
-	"github.com/siegfried415/gdf-rebuild/proto"
-	//"github.com/siegfried415/gdf-rebuild/route"
-	//rpc "github.com/siegfried415/gdf-rebuild/rpc/mux"
-	"github.com/siegfried415/gdf-rebuild/storage"
-	"github.com/siegfried415/gdf-rebuild/utils"
-	//"github.com/siegfried415/gdf-rebuild/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/net/consistent"
+	"github.com/siegfried415/go-crawling-bazaar/kms"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	//"github.com/siegfried415/go-crawling-bazaar/route"
+	//rpc "github.com/siegfried415/go-crawling-bazaar/rpc/mux"
+	"github.com/siegfried415/go-crawling-bazaar/storage"
+	"github.com/siegfried415/go-crawling-bazaar/utils"
+	//"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 // LocalStorage holds consistent and storage struct.

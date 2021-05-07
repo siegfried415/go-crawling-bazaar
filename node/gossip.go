@@ -16,7 +16,7 @@
 
 package node
 
-import "github.com/siegfried415/gdf-rebuild/proto"
+import "github.com/siegfried415/go-crawling-bazaar/proto"
 
 // GossipRequest defines the gossip request payload.
 type GossipRequest struct {

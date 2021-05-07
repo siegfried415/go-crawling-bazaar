@@ -7,7 +7,7 @@ import (
 	//"time"
 	//"fmt"
 
-	//bsmsg "github.com/siegfried415/gdf-rebuild/frontera/message"
+	//bsmsg "github.com/siegfried415/go-crawling-bazaar/frontera/message"
 
 	//cid "github.com/ipfs/go-cid"
 	process "github.com/jbenet/goprocess"
@@ -16,7 +16,7 @@ import (
 	//logging "github.com/ipfs/go-log"
 
 	//wyong, 20201215
-	log "github.com/siegfried415/gdf-rebuild/utils/log"
+	log "github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 var TaskWorkerCount = 8

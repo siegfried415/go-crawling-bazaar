@@ -23,9 +23,9 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/siegfried415/gdf-rebuild/types"
-	"github.com/siegfried415/gdf-rebuild/utils"
-	x "github.com/siegfried415/gdf-rebuild/xenomint"
+	"github.com/siegfried415/go-crawling-bazaar/types"
+	"github.com/siegfried415/go-crawling-bazaar/utils"
+	x "github.com/siegfried415/go-crawling-bazaar/xenomint"
 )
 
 // Following contains storage related logic extracted from main database instance definition.

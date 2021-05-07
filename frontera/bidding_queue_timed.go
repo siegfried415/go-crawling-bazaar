@@ -6,7 +6,7 @@ import (
 	"time"
 	//"fmt"
 
-        "github.com/siegfried415/gdf-rebuild/types"
+        "github.com/siegfried415/go-crawling-bazaar/types"
 )
 
 //todo, biddingQueue->biddingQueue, wyong, 20210126 

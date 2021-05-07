@@ -7,10 +7,10 @@ import (
 	cmdkit "github.com/ipfs/go-ipfs-cmdkit"
 	cmds "github.com/ipfs/go-ipfs-cmds"
 
-	"github.com/siegfried415/gdf-rebuild/flags"
+	"github.com/siegfried415/go-crawling-bazaar/flags"
 
 	//wyong, 20201215 
-	log "github.com/siegfried415/gdf-rebuild/utils/log"
+	log "github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 type versionInfo struct {

@@ -27,12 +27,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/siegfried415/gdf-rebuild/twopc"
+	"github.com/siegfried415/go-crawling-bazaar/twopc"
 
-	"github.com/siegfried415/gdf-rebuild/crypto/etls"
-	"github.com/siegfried415/gdf-rebuild/rpc"
-	"github.com/siegfried415/gdf-rebuild/rpc/mux"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/etls"
+	"github.com/siegfried415/go-crawling-bazaar/rpc"
+	"github.com/siegfried415/go-crawling-bazaar/rpc/mux"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 type RaftTxState int

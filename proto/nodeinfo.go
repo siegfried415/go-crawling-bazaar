@@ -26,10 +26,10 @@ import (
         libp2pcrypto "github.com/libp2p/go-libp2p-core/crypto"
         peer "github.com/libp2p/go-libp2p-core/peer"
 
-	"github.com/siegfried415/gdf-rebuild/crypto/asymmetric"
-	"github.com/siegfried415/gdf-rebuild/crypto/hash"
-	//mine "github.com/siegfried415/gdf-rebuild/pow/cpuminer"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
+	//mine "github.com/siegfried415/go-crawling-bazaar/pow/cpuminer"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 
 	//wyong, 20200730
 	mh "github.com/multiformats/go-multihash"

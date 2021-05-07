@@ -24,7 +24,7 @@ import (
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 
-	"github.com/siegfried415/gdf-rebuild/proto"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
 )
 
 type fakeTrackerCaller struct {

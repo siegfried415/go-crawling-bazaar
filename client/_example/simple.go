@@ -21,8 +21,8 @@ import (
 	"flag"
 	"fmt"
 
-	_ "github.com/siegfried415/gdf-rebuild/client"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	_ "github.com/siegfried415/go-crawling-bazaar/client"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 func main() {

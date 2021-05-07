@@ -16,18 +16,18 @@ import (
 	"github.com/multiformats/go-multiaddr-net"
 	"github.com/pkg/errors"
 
-	"github.com/siegfried415/gdf-rebuild/paths"
-	"github.com/siegfried415/gdf-rebuild/conf"
-	//"github.com/siegfried415/gdf-rebuild/types"
+	"github.com/siegfried415/go-crawling-bazaar/paths"
+	"github.com/siegfried415/go-crawling-bazaar/conf"
+	//"github.com/siegfried415/go-crawling-bazaar/types"
 
-	env "github.com/siegfried415/gdf-rebuild/env" 
-	gdfnet "github.com/siegfried415/gdf-rebuild/net" 
+	env "github.com/siegfried415/go-crawling-bazaar/env" 
+	gcbnet "github.com/siegfried415/go-crawling-bazaar/net" 
 
 	//wyong, 20201126 
-	"github.com/siegfried415/gdf-rebuild/proto" 
+	"github.com/siegfried415/go-crawling-bazaar/proto" 
 
 	//wyong, 20201215 
-	log "github.com/siegfried415/gdf-rebuild/utils/log" 
+	log "github.com/siegfried415/go-crawling-bazaar/utils/log" 
 )
 
 const (
@@ -280,7 +280,7 @@ func Run(ctx context.Context, args []string, stdin, stdout, stderr *os.File) (in
 
 func buildEnv(ctx context.Context, _ *cmds.Request) (cmds.Environment, error) {
 	log.Debugf("buildEnv(10)\n") 
-	return env.NewClientEnv(ctx, proto.Unknown, gdfnet.RoutedHost{}, nil, nil ), nil
+	return env.NewClientEnv(ctx, proto.Unknown, gcbnet.RoutedHost{}, nil, nil ), nil
 }
 
 type executor struct {

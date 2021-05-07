@@ -30,7 +30,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	xi "github.com/siegfried415/gdf-rebuild/xenomint/interfaces"
+	xi "github.com/siegfried415/go-crawling-bazaar/xenomint/interfaces"
 )
 
 func TestStorage(t *testing.T) {

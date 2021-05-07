@@ -23,17 +23,17 @@ import (
 	"github.com/pkg/errors"
 
 	//wyong, 20201003 
-	"github.com/siegfried415/gdf-rebuild/conf"
+	"github.com/siegfried415/go-crawling-bazaar/conf"
 
-	//"github.com/siegfried415/gdf-rebuild/consensus"
-	node "github.com/siegfried415/gdf-rebuild/node"
-	"github.com/siegfried415/gdf-rebuild/paths"
-	"github.com/siegfried415/gdf-rebuild/proto"
-	utils "github.com/siegfried415/gdf-rebuild/utils" 
-	env "github.com/siegfried415/gdf-rebuild/env" 
+	//"github.com/siegfried415/go-crawling-bazaar/consensus"
+	node "github.com/siegfried415/go-crawling-bazaar/node"
+	"github.com/siegfried415/go-crawling-bazaar/paths"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	utils "github.com/siegfried415/go-crawling-bazaar/utils" 
+	env "github.com/siegfried415/go-crawling-bazaar/env" 
 
 	//wyong, 20201202 
-        "github.com/siegfried415/gdf-rebuild/utils/log"
+        "github.com/siegfried415/go-crawling-bazaar/utils/log"
 
 )
 
@@ -91,7 +91,7 @@ func daemonRun(req *cmds.Request, re cmds.ResponseEmitter) error {
 	}
 
 	if repoDir == "" {
-		repoDir = utils.HomeDirExpand("~/.gdf")
+		repoDir = utils.HomeDirExpand("~/.gcb")
 	}
 
 	//wyong, 20201027 

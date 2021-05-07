@@ -20,14 +20,14 @@ import (
 	"database/sql"
 	"time"
 
-	ca "github.com/siegfried415/gdf-rebuild/crypto/asymmetric"
+	ca "github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
 
-	"github.com/siegfried415/gdf-rebuild/kms"
-	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/types"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
-	xi "github.com/siegfried415/gdf-rebuild/xenomint/interfaces"
-	xs "github.com/siegfried415/gdf-rebuild/xenomint/sqlite"
+	"github.com/siegfried415/go-crawling-bazaar/kms"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/types"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
+	xi "github.com/siegfried415/go-crawling-bazaar/xenomint/interfaces"
+	xs "github.com/siegfried415/go-crawling-bazaar/xenomint/sqlite"
 )
 
 // Chain defines the xenomint chain structure.

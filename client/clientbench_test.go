@@ -25,9 +25,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/siegfried415/gdf-rebuild/test"
-	"github.com/siegfried415/gdf-rebuild/utils"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/test"
+	"github.com/siegfried415/go-crawling-bazaar/utils"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 var (

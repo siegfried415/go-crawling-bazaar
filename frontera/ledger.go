@@ -5,16 +5,16 @@ import (
 	"time"
 	//"fmt"
 
-	//bl "github.com/siegfried415/gdf-rebuild/frontera/biddinglist"
-	//bidlist "github.com/siegfried415/gdf-rebuild/frontera/bidlist"
-	"github.com/siegfried415/gdf-rebuild/proto"
+	//bl "github.com/siegfried415/go-crawling-bazaar/frontera/biddinglist"
+	//bidlist "github.com/siegfried415/go-crawling-bazaar/frontera/bidlist"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
 
 	//cid "github.com/ipfs/go-cid"
 	//peer "github.com/libp2p/go-libpproto2p-peer"
 	//logging "github.com/ipfs/go-log"
 
 	//wyong, 20201214 
-	log "github.com/siegfried415/gdf-rebuild/utils/log"
+	log "github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 //var log = logging.Logger("ledger")

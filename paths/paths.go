@@ -9,7 +9,7 @@ import (
 
 // node repo path defaults
 const filPathVar = "FIL_PATH"
-const defaultRepoDir = "~/.gdf"
+const defaultRepoDir = "~/.gcb"
 
 // node sector storage path defaults
 const filSectorPathVar = "FIL_SECTOR_PATH"

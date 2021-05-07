@@ -21,10 +21,10 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/siegfried415/gdf-rebuild/utils/trace"
+	"github.com/siegfried415/go-crawling-bazaar/utils/trace"
 
 	//wyong, 20200612
-        "github.com/siegfried415/gdf-rebuild/utils/log"
+        "github.com/siegfried415/go-crawling-bazaar/utils/log"
 
 )
 

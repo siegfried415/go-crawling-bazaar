@@ -24,8 +24,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/siegfried415/gdf-rebuild/crypto/verifier"
-	"github.com/siegfried415/gdf-rebuild/utils"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/verifier"
+	"github.com/siegfried415/go-crawling-bazaar/utils"
 )
 
 func TestHeader_MarshalUnmarshalBinary(t *testing.T) {

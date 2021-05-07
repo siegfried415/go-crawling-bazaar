@@ -19,11 +19,11 @@ package presbyterian
 import (
 	"database/sql"
 
-	pi "github.com/siegfried415/gdf-rebuild/presbyterian/interfaces"
-	"github.com/siegfried415/gdf-rebuild/crypto/hash"
-	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/types"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	pi "github.com/siegfried415/go-crawling-bazaar/presbyterian/interfaces"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/types"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 // This file provides methods set for chain state read/write.

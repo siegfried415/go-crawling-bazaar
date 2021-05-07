@@ -19,12 +19,12 @@ package types
 import (
 	"time"
 
-	"github.com/siegfried415/gdf-rebuild/crypto/asymmetric"
-	"github.com/siegfried415/gdf-rebuild/crypto/hash"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
 
-	"github.com/siegfried415/gdf-rebuild/merkle"
-	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/types"
+	"github.com/siegfried415/go-crawling-bazaar/merkle"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/types"
 )
 
 //go:generate hsp

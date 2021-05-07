@@ -17,7 +17,7 @@
 package sqlchain
 
 import (
-	"github.com/siegfried415/gdf-rebuild/types"
+	"github.com/siegfried415/go-crawling-bazaar/types"
 )
 
 // ChainRPCService defines a sql-chain RPC server.

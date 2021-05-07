@@ -19,7 +19,7 @@ package presbyterian
 import (
 	"fmt"
 
-	"github.com/siegfried415/gdf-rebuild/proto"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
 )
 
 type blockProducerInfo struct {

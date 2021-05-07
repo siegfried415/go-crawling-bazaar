@@ -25,11 +25,11 @@ import (
         protocol "github.com/libp2p/go-libp2p-core/protocol"
         //network "github.com/libp2p/go-libp2p-core/network"
 
-	//"github.com/siegfried415/gdf-rebuild/conf"
-	"github.com/siegfried415/gdf-rebuild/net/consistent"
-	//"github.com/siegfried415/gdf-rebuild/kms"
-	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	//"github.com/siegfried415/go-crawling-bazaar/conf"
+	"github.com/siegfried415/go-crawling-bazaar/net/consistent"
+	//"github.com/siegfried415/go-crawling-bazaar/kms"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 // DHTService is server side RPC implementation.

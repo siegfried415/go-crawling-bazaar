@@ -16,7 +16,7 @@
 
 package types
 
-import "github.com/siegfried415/gdf-rebuild/proto"
+import "github.com/siegfried415/go-crawling-bazaar/proto"
 
 // ApplyRequest defines the apply request entity.
 type ApplyRequest struct {

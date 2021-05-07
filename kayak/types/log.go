@@ -17,7 +17,7 @@
 package types
 
 import (
-	"github.com/siegfried415/gdf-rebuild/proto"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
 )
 
 // LogType defines the log type.

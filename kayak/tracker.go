@@ -26,14 +26,14 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer" 
 	"github.com/libp2p/go-libp2p-core/protocol" 
 
-	kt "github.com/siegfried415/gdf-rebuild/kayak/types"
-	"github.com/siegfried415/gdf-rebuild/proto"
+	kt "github.com/siegfried415/go-crawling-bazaar/kayak/types"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
 
 	//wyong, 20201008
-	//rpc "github.com/siegfried415/gdf-rebuild/rpc/mux"
-	net "github.com/siegfried415/gdf-rebuild/net"
+	//rpc "github.com/siegfried415/go-crawling-bazaar/rpc/mux"
+	net "github.com/siegfried415/go-crawling-bazaar/net"
 
-	"github.com/siegfried415/gdf-rebuild/utils/trace"
+	"github.com/siegfried415/go-crawling-bazaar/utils/trace"
 
         //wyong, 20200928
         //"github.com/ugorji/go/codec"
@@ -116,7 +116,7 @@ func (t *rpcTracker) callSingle(idx int) {
 	//wyong, 20201018 
 	ctx := context.Background()
 
-	//todo, ProtoKayakApply = "/gdf/kayak/apply", wyong, 20200925 
+	//todo, ProtoKayakApply = "/gcb/kayak/apply", wyong, 20200925 
 	s, err := t.r.host.NewStream(ctx, peer.ID(t.nodes[idx]), protocol.ID("ProtoKayakApply"))
 	if err != nil {
 		//log.Debugf("error opening push stream to %s: %s", p, err.Error())

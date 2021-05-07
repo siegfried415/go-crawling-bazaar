@@ -31,32 +31,32 @@ import (
 	peer "github.com/libp2p/go-libp2p-core/peer" 
 
 	//wyong, 20201022
-	"github.com/siegfried415/gdf-rebuild/conf/testnet"
+	"github.com/siegfried415/go-crawling-bazaar/conf/testnet"
 
 	//wyong, 20201005 
-	"github.com/siegfried415/gdf-rebuild/crypto"
-	"github.com/siegfried415/gdf-rebuild/crypto/asymmetric"
+	"github.com/siegfried415/go-crawling-bazaar/crypto"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
 
 	//wyong, 20201022 
-	kms "github.com/siegfried415/gdf-rebuild/kms"
-	proto "github.com/siegfried415/gdf-rebuild/proto"
-        //mine "github.com/siegfried415/gdf-rebuild/pow/cpuminer"
+	kms "github.com/siegfried415/go-crawling-bazaar/kms"
+	proto "github.com/siegfried415/go-crawling-bazaar/proto"
+        //mine "github.com/siegfried415/go-crawling-bazaar/pow/cpuminer"
 
-	//"github.com/siegfried415/gdf-rebuild/address"
-	"github.com/siegfried415/gdf-rebuild/conf"
-	//"github.com/siegfried415/gdf-rebuild/consensus"
-	//"github.com/siegfried415/gdf-rebuild/fixtures"
+	//"github.com/siegfried415/go-crawling-bazaar/address"
+	"github.com/siegfried415/go-crawling-bazaar/conf"
+	//"github.com/siegfried415/go-crawling-bazaar/consensus"
+	//"github.com/siegfried415/go-crawling-bazaar/fixtures"
 
-	//node "github.com/siegfried415/gdf-rebuild/node"
-	"github.com/siegfried415/gdf-rebuild/paths"
+	//node "github.com/siegfried415/go-crawling-bazaar/node"
+	"github.com/siegfried415/go-crawling-bazaar/paths"
 
 	//wyong, 20201027 
-	//"github.com/siegfried415/gdf-rebuild/repo"
+	//"github.com/siegfried415/go-crawling-bazaar/repo"
 
-	//"github.com/siegfried415/gdf-rebuild/types"
+	//"github.com/siegfried415/go-crawling-bazaar/types"
 
 	//wyong, 20201215 
-	log "github.com/siegfried415/gdf-rebuild/utils/log"
+	log "github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 const (
@@ -72,11 +72,11 @@ var initCmd = &cmds.Command{
 Generates private.key and config.yaml for go-decentralized-frontera.
 You can input a passphrase for local encrypt your private key file by set -with-password
 e.g.
-	gdf init 
+	gcb init 
 
 or input a passphrase by
 
-	gdf init -with-password
+	gcb init -with-password
 `,
 	},
 	

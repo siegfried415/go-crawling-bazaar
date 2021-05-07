@@ -24,13 +24,13 @@ import (
 	yaml "gopkg.in/yaml.v2"
 
 	//todo, wyong, 20201028 
-	//"github.com/siegfried415/gdf-rebuild/crypto"
+	//"github.com/siegfried415/go-crawling-bazaar/crypto"
 
-	"github.com/siegfried415/gdf-rebuild/crypto/asymmetric"
-	"github.com/siegfried415/gdf-rebuild/crypto/hash"
-	"github.com/siegfried415/gdf-rebuild/pow/cpuminer"
-	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
+	"github.com/siegfried415/go-crawling-bazaar/pow/cpuminer"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 // these const specify the role of this app, which can be "miner", "blockProducer".

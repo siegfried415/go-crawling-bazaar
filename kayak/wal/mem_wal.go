@@ -21,7 +21,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	kt "github.com/siegfried415/gdf-rebuild/kayak/types"
+	kt "github.com/siegfried415/go-crawling-bazaar/kayak/types"
 )
 
 // MemWal defines a toy wal using memory as storage.

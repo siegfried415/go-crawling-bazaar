@@ -22,7 +22,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	//wyong, 20201214 
-        "github.com/siegfried415/gdf-rebuild/utils/callinfo"
+        "github.com/siegfried415/go-crawling-bazaar/utils/callinfo"
 )
 
 // Entry defines alias for logrus entry.

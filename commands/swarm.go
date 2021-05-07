@@ -10,8 +10,8 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	ma "github.com/multiformats/go-multiaddr"
 
-	"github.com/siegfried415/gdf-rebuild/net"
-	env "github.com/siegfried415/gdf-rebuild/env" 
+	"github.com/siegfried415/go-crawling-bazaar/net"
+	env "github.com/siegfried415/go-crawling-bazaar/env" 
 )
 
 // swarmCmd contains swarm commands.

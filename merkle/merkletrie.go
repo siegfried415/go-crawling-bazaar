@@ -17,7 +17,7 @@
 package merkle
 
 import (
-	"github.com/siegfried415/gdf-rebuild/crypto/hash"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
 )
 
 // Merkle is a merkle tree implementation (https://en.wikipedia.org/wiki/Merkle_tree).

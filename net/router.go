@@ -21,10 +21,10 @@ import (
         protocol "github.com/libp2p/go-libp2p-core/protocol"
 
 
-	"github.com/siegfried415/gdf-rebuild/conf"
-	//"github.com/siegfried415/gdf-rebuild/kms"
-	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/conf"
+	//"github.com/siegfried415/go-crawling-bazaar/kms"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 // This struct wraps the filecoin nodes router.  This router is a

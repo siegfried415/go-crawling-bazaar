@@ -82,7 +82,7 @@ func Stacks() []string {
                 //log.Debugf("%s:%d %s\n", f.File, f.Line, f.Function)
                 if !foundCaller && strings.HasSuffix(f.File, "callinfo.go") && more {
                         f, _ = frames.Next()
-                        //relFuncName := strings.TrimPrefix(f.Function, "github.com/siegfried415/gdf-rebuild/")
+                        //relFuncName := strings.TrimPrefix(f.Function, "github.com/siegfried415/go-crawling-bazaar/")
                         //caller := fmt.Sprintf("%s:%d %s", filepath.Base(f.File), f.Line, relFuncName)
                         foundCaller = true
                 }
@@ -99,7 +99,7 @@ func Stacks() []string {
 		stacksStr := make([]string, 0, len(stacks))
 		for i, s := range stacks {
 			if s.Line > 0 {
-				fName := strings.TrimPrefix(s.Function, "github.com/siegfried415/gdf-rebuild/")
+				fName := strings.TrimPrefix(s.Function, "github.com/siegfried415/go-crawling-bazaar/")
 				stackStr := fmt.Sprintf("#%d %s@%s:%d     ", i, fName, filepath.Base(s.File), s.Line)
 				stacksStr = append(stacksStr, stackStr)
 			}

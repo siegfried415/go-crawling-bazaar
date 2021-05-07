@@ -62,24 +62,24 @@ import (
         autonatsvc "github.com/libp2p/go-libp2p-autonat-svc"
         circuit "github.com/libp2p/go-libp2p-circuit"
 
-	"github.com/siegfried415/gdf-rebuild/crypto/asymmetric" 
-	net "github.com/siegfried415/gdf-rebuild/net" 
-	dag "github.com/siegfried415/gdf-rebuild/dag" 
-	frontera "github.com/siegfried415/gdf-rebuild/frontera"
-	conf "github.com/siegfried415/gdf-rebuild/conf" 
-	kms "github.com/siegfried415/gdf-rebuild/kms" 
-	proto "github.com/siegfried415/gdf-rebuild/proto" 
-	//route "github.com/siegfried415/gdf-rebuild/route" 
-        pb "github.com/siegfried415/gdf-rebuild/presbyterian"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric" 
+	net "github.com/siegfried415/go-crawling-bazaar/net" 
+	dag "github.com/siegfried415/go-crawling-bazaar/dag" 
+	frontera "github.com/siegfried415/go-crawling-bazaar/frontera"
+	conf "github.com/siegfried415/go-crawling-bazaar/conf" 
+	kms "github.com/siegfried415/go-crawling-bazaar/kms" 
+	proto "github.com/siegfried415/go-crawling-bazaar/proto" 
+	//route "github.com/siegfried415/go-crawling-bazaar/route" 
+        pb "github.com/siegfried415/go-crawling-bazaar/presbyterian"
 
 	//wyong, 20201014 
-        //"github.com/siegfried415/gdf-rebuild/wallet"
+        //"github.com/siegfried415/go-crawling-bazaar/wallet"
 
 	//just for test, wyong, 20201130 
-	crypto "github.com/siegfried415/gdf-rebuild/crypto" 
+	crypto "github.com/siegfried415/go-crawling-bazaar/crypto" 
 
 	//wyong, 20201214 
-        "github.com/siegfried415/gdf-rebuild/utils/log"
+        "github.com/siegfried415/go-crawling-bazaar/utils/log"
 
 )
 
@@ -261,7 +261,7 @@ func (nc *Builder) build(ctx context.Context, repoPath string, role proto.Server
         //bs := bstore.NewBlockstore(ds)
 
 	//wyong, 20200921 
-	network := "gdf"
+	network := "gcb"
 
 	//log.Debugf("dag/BuildDAG(20)\n") 
         //if !nc.OfflineMode {

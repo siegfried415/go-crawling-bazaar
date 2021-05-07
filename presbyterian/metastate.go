@@ -24,16 +24,16 @@ import (
 	"github.com/mohae/deepcopy"
 	"github.com/pkg/errors"
 
-	pi "github.com/siegfried415/gdf-rebuild/presbyterian/interfaces"
-	"github.com/siegfried415/gdf-rebuild/conf"
-	"github.com/siegfried415/gdf-rebuild/crypto"
-	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/types"
-	"github.com/siegfried415/gdf-rebuild/utils"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	pi "github.com/siegfried415/go-crawling-bazaar/presbyterian/interfaces"
+	"github.com/siegfried415/go-crawling-bazaar/conf"
+	"github.com/siegfried415/go-crawling-bazaar/crypto"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/types"
+	"github.com/siegfried415/go-crawling-bazaar/utils"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 
 	//wyong, 20200819 
-        "github.com/siegfried415/gdf-rebuild/crypto/hash"
+        "github.com/siegfried415/go-crawling-bazaar/crypto/hash"
 
 )
 

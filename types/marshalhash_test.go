@@ -20,8 +20,8 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/utils"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/utils"
 )
 
 func TestMarshalHashAccountStable(t *testing.T) {

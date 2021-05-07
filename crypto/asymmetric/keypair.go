@@ -35,8 +35,8 @@ import (
 	hsp "github.com/CovenantSQL/HashStablePack/marshalhash"
 	ec "github.com/btcsuite/btcd/btcec"
 
-	mine "github.com/siegfried415/gdf-rebuild/pow/cpuminer"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	mine "github.com/siegfried415/go-crawling-bazaar/pow/cpuminer"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 
 	//wyong, 20201002 
 	pb "github.com/libp2p/go-libp2p-core/crypto/pb"

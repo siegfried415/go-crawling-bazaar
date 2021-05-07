@@ -25,8 +25,8 @@ import (
 	"github.com/CovenantSQL/sqlparser"
 	"github.com/pkg/errors"
 
-	"github.com/siegfried415/gdf-rebuild/types"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/types"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 var (

@@ -31,14 +31,14 @@ import (
 	"github.com/libp2p/go-libp2p-core/protocol"
 	//"github.com/libp2p/go-libp2p-core/peer"
 
-	kt "github.com/siegfried415/gdf-rebuild/kayak/types"
+	kt "github.com/siegfried415/go-crawling-bazaar/kayak/types"
 
 	//wyong, 20201008
-	//rpc "github.com/siegfried415/gdf-rebuild/rpc/mux"
-	//net "github.com/siegfried415/gdf-rebuild/net"
+	//rpc "github.com/siegfried415/go-crawling-bazaar/rpc/mux"
+	//net "github.com/siegfried415/go-crawling-bazaar/net"
 
-	"github.com/siegfried415/gdf-rebuild/utils/log"
-	"github.com/siegfried415/gdf-rebuild/utils/trace"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/utils/trace"
 
         //wyong, 20200928
         //"github.com/ugorji/go/codec"
@@ -103,7 +103,7 @@ func (i *waitItem) run() {
 	//wyong, 20201018
 	ctx := context.Background()
 
-        //todo, ProtoKayakFetch = "/gdf/kayak/fetch", wyong, 20200925
+        //todo, ProtoKayakFetch = "/gcb/kayak/fetch", wyong, 20200925
         s, err := i.r.host.NewStreamExt(ctx, i.r.peers.Leader, protocol.ID("ProtoKayakFetch"))
         if err != nil {
                 //log.Debugf("error opening push stream to %s: %s", p, err.Error())

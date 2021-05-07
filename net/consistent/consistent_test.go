@@ -26,12 +26,12 @@ import (
 	"testing/quick"
 	"time"
 
-	"github.com/siegfried415/gdf-rebuild/crypto/asymmetric"
-	"github.com/siegfried415/gdf-rebuild/kms"
-	"github.com/siegfried415/gdf-rebuild/pow/cpuminer"
-	. "github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/utils"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
+	"github.com/siegfried415/go-crawling-bazaar/kms"
+	"github.com/siegfried415/go-crawling-bazaar/pow/cpuminer"
+	. "github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/utils"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 const testStorePath = "./test.keystore"

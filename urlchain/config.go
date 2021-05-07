@@ -19,9 +19,9 @@ package sqlchain
 import (
 	"time"
 
-	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/types"
-	"github.com/siegfried415/gdf-rebuild/net"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/types"
+	"github.com/siegfried415/go-crawling-bazaar/net"
 
 	//wyong, 20201014
 	//host "github.com/libp2p/go-libp2p-host" 

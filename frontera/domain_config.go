@@ -19,9 +19,9 @@ package frontera
 import (
 	"time"
 
-	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/urlchain"
-	net "github.com/siegfried415/gdf-rebuild/net"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/urlchain"
+	net "github.com/siegfried415/go-crawling-bazaar/net"
 
 	//wyong, 20201018
 	//"github.com/libp2p/go-libp2p-core/host" 

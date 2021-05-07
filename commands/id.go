@@ -12,8 +12,8 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	ma "github.com/multiformats/go-multiaddr"
 
-	env "github.com/siegfried415/gdf-rebuild/env" 
-	//net "github.com/siegfried415/gdf-rebuild/net"  
+	env "github.com/siegfried415/go-crawling-bazaar/env" 
+	//net "github.com/siegfried415/go-crawling-bazaar/net"  
 )
 
 // IDDetails is a collection of information about a node.

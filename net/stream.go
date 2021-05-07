@@ -20,10 +20,10 @@ import (
 	//"github.com/ugorji/go/codec"
 
 	//wyong, 20201119
-	"github.com/siegfried415/gdf-rebuild/utils"
+	"github.com/siegfried415/go-crawling-bazaar/utils"
 
 	//wyong, 20201202
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 var sendMessageTimeout = time.Minute * 10

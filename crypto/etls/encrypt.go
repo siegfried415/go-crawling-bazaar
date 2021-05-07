@@ -22,7 +22,7 @@ import (
 	"crypto/rand"
 	"io"
 
-	"github.com/siegfried415/gdf-rebuild/crypto/hash"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
 )
 
 // KeyDerivation .according to ANSI X9.63 we should do a key derivation before using

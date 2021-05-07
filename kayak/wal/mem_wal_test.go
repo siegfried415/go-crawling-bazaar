@@ -23,7 +23,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	kt "github.com/siegfried415/gdf-rebuild/kayak/types"
+	kt "github.com/siegfried415/go-crawling-bazaar/kayak/types"
 )
 
 func TestMemWal_Write(t *testing.T) {

@@ -25,7 +25,7 @@ import (
 	"github.com/jmoiron/jsonq"
 	. "github.com/smartystreets/goconvey/convey"
 
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 func parseResponse(resp *http.Response, r error) (result *jsonq.JsonQuery, err error) {

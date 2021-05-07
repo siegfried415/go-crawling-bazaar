@@ -26,17 +26,17 @@ import (
 	//wyong, 20201008
 	//host "github.com/libp2p/go-libp2p-core/host"
 
-	"github.com/siegfried415/gdf-rebuild/presbyterian/interfaces"
-	"github.com/siegfried415/gdf-rebuild/frontera/chainbus"
-	"github.com/siegfried415/gdf-rebuild/proto"
-	//"github.com/siegfried415/gdf-rebuild/route"
+	"github.com/siegfried415/go-crawling-bazaar/presbyterian/interfaces"
+	"github.com/siegfried415/go-crawling-bazaar/frontera/chainbus"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	//"github.com/siegfried415/go-crawling-bazaar/route"
 
 	//wyong, 20201008 
-	//rpc "github.com/siegfried415/gdf-rebuild/rpc/mux"
-	net "github.com/siegfried415/gdf-rebuild/net"
+	//rpc "github.com/siegfried415/go-crawling-bazaar/rpc/mux"
+	net "github.com/siegfried415/go-crawling-bazaar/net"
 
-	"github.com/siegfried415/gdf-rebuild/types"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/types"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 // BusService defines the man chain bus service type.

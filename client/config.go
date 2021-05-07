@@ -24,7 +24,7 @@ import (
 	//wyong, 20201021
 	//host "github.com/libp2p/go-libp2p-core/host" 
 
-	net "github.com/siegfried415/gdf-rebuild/net" 
+	net "github.com/siegfried415/go-crawling-bazaar/net" 
 )
 
 const (

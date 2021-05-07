@@ -20,13 +20,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/siegfried415/gdf-rebuild/proto"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
 
 	//wyong, 20201008
-	//rpc "github.com/siegfried415/gdf-rebuild/rpc/mux"
+	//rpc "github.com/siegfried415/go-crawling-bazaar/rpc/mux"
 
-	"github.com/siegfried415/gdf-rebuild/types"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/types"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 // MuxService defines multiplexing service of xenomint chain.

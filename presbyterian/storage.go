@@ -23,14 +23,14 @@ import (
 
 	"github.com/pkg/errors"
 
-	pi "github.com/siegfried415/gdf-rebuild/presbyterian/interfaces"
-	"github.com/siegfried415/gdf-rebuild/crypto/hash"
-	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/types"
-	"github.com/siegfried415/gdf-rebuild/utils"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
-	xi "github.com/siegfried415/gdf-rebuild/xenomint/interfaces"
-	xs "github.com/siegfried415/gdf-rebuild/xenomint/sqlite"
+	pi "github.com/siegfried415/go-crawling-bazaar/presbyterian/interfaces"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/types"
+	"github.com/siegfried415/go-crawling-bazaar/utils"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
+	xi "github.com/siegfried415/go-crawling-bazaar/xenomint/interfaces"
+	xs "github.com/siegfried415/go-crawling-bazaar/xenomint/sqlite"
 )
 
 var (

@@ -19,16 +19,16 @@ package presbyterian
 import (
 	"time"
 
-	"github.com/siegfried415/gdf-rebuild/proto"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
 
 	//wyong, 20201015
 	//host "github.com/libp2p/go-libp2p-core/host"
 
 	//wyong, 20201008 
-	//rpc "github.com/siegfried415/gdf-rebuild/rpc/mux"
-	net "github.com/siegfried415/gdf-rebuild/net"
+	//rpc "github.com/siegfried415/go-crawling-bazaar/rpc/mux"
+	net "github.com/siegfried415/go-crawling-bazaar/net"
 
-	"github.com/siegfried415/gdf-rebuild/types"
+	"github.com/siegfried415/go-crawling-bazaar/types"
 )
 
 // RunMode defines modes that a bp can run as.

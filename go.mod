@@ -1,4 +1,4 @@
-module gdf-rebuild
+module go-crawling-bazaar
 
 go 1.13
 
@@ -44,7 +44,7 @@ require (
 	github.com/multiformats/go-multihash v0.0.14
 	github.com/pkg/errors v0.9.1
 	github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0
-	github.com/siegfried415/gdf-rebuild v0.0.0-00010101000000-000000000000
+	github.com/siegfried415/go-crawling-bazaar v0.0.0-00010101000000-000000000000
 	github.com/sirupsen/logrus v1.7.0
 	github.com/stretchr/testify v1.6.1
 
@@ -58,7 +58,7 @@ require (
 
 )
 
-replace github.com/siegfried415/gdf-rebuild => ./
+replace github.com/siegfried415/go-crawling-bazaar => ./
 
 //replace github.com/libp2p/go-libp2p => github.com/libp2p/go-libp2p v0.11.0
 

@@ -29,11 +29,11 @@ import (
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 
-	"github.com/siegfried415/gdf-rebuild/crypto/verifier"
-	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/types"
-	xi "github.com/siegfried415/gdf-rebuild/xenomint/interfaces"
-	xs "github.com/siegfried415/gdf-rebuild/xenomint/sqlite"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/verifier"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/types"
+	xi "github.com/siegfried415/go-crawling-bazaar/xenomint/interfaces"
+	xs "github.com/siegfried415/go-crawling-bazaar/xenomint/sqlite"
 )
 
 var (

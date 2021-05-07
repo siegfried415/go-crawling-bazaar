@@ -9,16 +9,16 @@ import (
         //"github.com/pkg/errors"
         //"golang.org/x/crypto/ssh/terminal"
 
-        //"github.com/siegfried415/gdf/api"
-        //pb "github.com/siegfried415/gdf/presbyterian"
-        "github.com/siegfried415/gdf-rebuild/conf"
-        //"github.com/siegfried415/gdf/crypto/kms"
-        "github.com/siegfried415/gdf-rebuild/proto"
-        //"github.com/siegfried415/gdf/route"
-        //rpc "github.com/siegfried415/gdf/rpc/mux"
-        "github.com/siegfried415/gdf-rebuild/types"
-        //"github.com/siegfried415/gdf/utils"
-        //"github.com/siegfried415/gdf/utils/log"
+        //"github.com/siegfried415/go-crawling-bazaar/api"
+        //pb "github.com/siegfried415/go-crawling-bazaar/presbyterian"
+        "github.com/siegfried415/go-crawling-bazaar/conf"
+        //"github.com/siegfried415/go-crawling-bazaar/crypto/kms"
+        "github.com/siegfried415/go-crawling-bazaar/proto"
+        //"github.com/siegfried415/go-crawling-bazaar/route"
+        //rpc "github.com/siegfried415/go-crawling-bazaar/rpc/mux"
+        "github.com/siegfried415/go-crawling-bazaar/types"
+        //"github.com/siegfried415/go-crawling-bazaar/utils"
+        //"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 

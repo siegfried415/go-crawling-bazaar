@@ -19,7 +19,7 @@ package kayak
 import (
 	"encoding/binary"
 
-	kt "github.com/siegfried415/gdf-rebuild/kayak/types"
+	kt "github.com/siegfried415/go-crawling-bazaar/kayak/types"
 )
 
 func (r *Runtime) goFunc(f func()) {

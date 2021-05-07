@@ -20,9 +20,9 @@ import (
 	"database/sql"
 	"flag"
 
-	"github.com/siegfried415/gdf-rebuild/client"
-	"github.com/siegfried415/gdf-rebuild/utils"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/client"
+	"github.com/siegfried415/go-crawling-bazaar/utils"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 func main() {

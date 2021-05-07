@@ -24,16 +24,16 @@ import (
 	//host "github.com/libp2p/go-libp2p-host"
 	//protocol "github.com/libp2p/go-libp2p-core/protocol" 
 
-        "github.com/siegfried415/gdf-rebuild/crypto/hash"
+        "github.com/siegfried415/go-crawling-bazaar/crypto/hash"
 
         //"github.com/siegfried415/go-crawling-market/types"
-        pi "github.com/siegfried415/gdf-rebuild/presbyterian/interfaces"
-        client "github.com/siegfried415/gdf-rebuild/client"
+        pi "github.com/siegfried415/go-crawling-bazaar/presbyterian/interfaces"
+        client "github.com/siegfried415/go-crawling-bazaar/client"
 
-        net "github.com/siegfried415/gdf-rebuild/net"
+        net "github.com/siegfried415/go-crawling-bazaar/net"
 
 	//wyong, 20201215 
-        log "github.com/siegfried415/gdf-rebuild/utils/log"
+        log "github.com/siegfried415/go-crawling-bazaar/utils/log"
 
 )
 

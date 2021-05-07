@@ -28,9 +28,9 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/iterator"
 	"github.com/syndtr/goleveldb/leveldb/util"
 
-	kt "github.com/siegfried415/gdf-rebuild/kayak/types"
-	"github.com/siegfried415/gdf-rebuild/utils"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
+	kt "github.com/siegfried415/go-crawling-bazaar/kayak/types"
+	"github.com/siegfried415/go-crawling-bazaar/utils"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 var (

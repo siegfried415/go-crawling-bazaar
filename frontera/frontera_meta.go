@@ -17,7 +17,7 @@
 package frontera
 
 import (
-	"github.com/siegfried415/gdf-rebuild/proto"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
 )
 
 // FronteraMeta defines the meta structure.

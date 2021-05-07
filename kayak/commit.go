@@ -22,11 +22,11 @@ import (
 
 	"github.com/pkg/errors"
 
-	kt "github.com/siegfried415/gdf-rebuild/kayak/types"
-	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/utils/log"
-	"github.com/siegfried415/gdf-rebuild/utils/timer"
-	"github.com/siegfried415/gdf-rebuild/utils/trace"
+	kt "github.com/siegfried415/go-crawling-bazaar/kayak/types"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/utils/timer"
+	"github.com/siegfried415/go-crawling-bazaar/utils/trace"
 )
 
 func (r *Runtime) leaderCommitResult(ctx context.Context, tm *timer.Timer, reqPayload interface{}, prepareLog *kt.Log) (res *commitFuture) {

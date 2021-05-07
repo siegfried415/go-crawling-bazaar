@@ -17,15 +17,15 @@
 package node
 
 import (
-	"github.com/siegfried415/gdf-rebuild/conf"
+	"github.com/siegfried415/go-crawling-bazaar/conf"
 
 	//wyong, 20201114 
-	//"github.com/siegfried415/gdf-rebuild/crypto/hash"
+	//"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
 
-	"github.com/siegfried415/gdf-rebuild/kms"
-	"github.com/siegfried415/gdf-rebuild/proto"
-	//"github.com/siegfried415/gdf-rebuild/route"
-	//"github.com/siegfried415/gdf-rebuild/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/kms"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	//"github.com/siegfried415/go-crawling-bazaar/route"
+	//"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 func GetPeersFromConf( publicKeystorePath string) (peers *proto.Peers, err error) {

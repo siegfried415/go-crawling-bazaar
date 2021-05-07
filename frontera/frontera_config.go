@@ -19,8 +19,8 @@ package frontera
 import (
 	"time"
 
-	//"github.com/siegfried415/gdf-rebuild/rpc"
-	//"github.com/siegfried415/gdf-rebuild/rpc/mux"
+	//"github.com/siegfried415/go-crawling-bazaar/rpc"
+	//"github.com/siegfried415/go-crawling-bazaar/rpc/mux"
 )
 
 var (

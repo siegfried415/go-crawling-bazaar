@@ -17,10 +17,10 @@
 package types
 
 import (
-	"github.com/siegfried415/gdf-rebuild/presbyterian/interfaces"
-	pi "github.com/siegfried415/gdf-rebuild/presbyterian/interfaces"
-	"github.com/siegfried415/gdf-rebuild/crypto/hash"
-	"github.com/siegfried415/gdf-rebuild/proto"
+	"github.com/siegfried415/go-crawling-bazaar/presbyterian/interfaces"
+	pi "github.com/siegfried415/go-crawling-bazaar/presbyterian/interfaces"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
 )
 
 // AdviseNewBlockReq defines a request of the AdviseNewBlock RPC method.

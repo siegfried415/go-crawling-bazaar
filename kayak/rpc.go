@@ -19,8 +19,8 @@ package kayak
 import (
 	"github.com/pkg/errors"
 
-	kt "github.com/siegfried415/gdf-rebuild/kayak/types"
-	"github.com/siegfried415/gdf-rebuild/proto"
+	kt "github.com/siegfried415/go-crawling-bazaar/kayak/types"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
 )
 
 func (r *Runtime) errorSummary(errs map[proto.NodeID]error) error {

@@ -25,11 +25,11 @@ import (
 	//"github.com/libp2p/go-libp2p-core/network" 
 	//"github.com/libp2p/go-libp2p-core/host" 
 
-	"github.com/siegfried415/gdf-rebuild/proto"
-	"github.com/siegfried415/gdf-rebuild/net"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/net"
 
 	//wyong, 20201008
-	//rpc "github.com/siegfried415/gdf-rebuild/rpc/mux"
+	//rpc "github.com/siegfried415/go-crawling-bazaar/rpc/mux"
 
         //wyong, 20200928
         //"github.com/ugorji/go/codec"
