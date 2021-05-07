@@ -135,6 +135,8 @@ func deps() {
 	}
 }
 
+
+/* wyong, 20210507 
 // lint runs linting using golangci-lint
 func lint(packages ...string) {
 	if len(packages) == 0 {
@@ -145,9 +147,10 @@ func lint(packages ...string) {
 
 	runCmd(cmd("go", "run", "github.com/golangci/golangci-lint/cmd/golangci-lint", "run"))
 }
+*/
 
 func build() {
-	buildFilecoin()
+	buildGcb()
 	buildGengen()
 	buildFaucet()
 	buildGenesisFileServer()
@@ -167,12 +170,12 @@ func forcebuild() {
 }
 
 func forceBuildFC() {
-	log.Println("Force building go-decentralized-frontera...")
+	log.Println("Force building go-crawling-bazaar...")
 
 	runCmd(cmd([]string{
 		"go", "build",
-		"-ldflags", fmt.Sprintf("-X github.com/siegfried415/go-decentralized-frontera/flags.Commit=%s", getCommitSha()),
-		"-a", "-v", "-o", "go-decentralized-frontera", ".",
+		"-ldflags", fmt.Sprintf("-X github.com/siegfried415/go-crawling-bazaar/flags.Commit=%s", getCommitSha()),
+		"-a", "-v", "-o", "gcd", ".",
 	}...))
 }
 
@@ -246,16 +249,6 @@ func generateGenesis() {
 	}...))
 }
 
-func buildFilecoin() {
-	log.Println("Building go-decentralized-frontera...")
-
-	runCmd(cmd([]string{
-		"go", "build",
-		"-ldflags", fmt.Sprintf("-X github.com/siegfried415/go-decentralized-frontera/flags.Commit=%s", getCommitSha()),
-		"-v", "-o", "go-decentralized-frontera", ".",
-	}...))
-}
-
 //wyong, 20200918 
 func buildGcb() {
 	log.Println("Building gcb...")
@@ -288,7 +281,7 @@ func buildGenesisFileServer() {
 func buildMigrations() {
 	log.Println("Building migrations...")
 	runCmd(cmd([]string{
-		"go", "build", "-o", "./tools/migration/go-decentralized-frontera-migrate", "./tools/migration/main.go"}...))
+		"go", "build", "-o", "./tools/migration/go-crawling-bazaar-migrate", "./tools/migration/main.go"}...))
 }
 
 func buildPrereleaseTool() {
@@ -300,7 +293,7 @@ func buildPrereleaseTool() {
 func install() {
 	log.Println("Installing...")
 
-	runCmd(cmd("go", "install", "-ldflags", fmt.Sprintf("-X github.com/siegfried415/go-decentralized-frontera/flags.Commit=%s", getCommitSha())))
+	runCmd(cmd("go", "install", "-ldflags", fmt.Sprintf("-X github.com/siegfried415/go-crawling-bazaar/flags.Commit=%s", getCommitSha())))
 }
 
 // test executes tests and passes along all additional arguments to `go test`.
@@ -336,10 +329,10 @@ func main() {
 	switch cmd {
 	case "deps", "smartdeps":
 		deps()
-	case "lint":
-		lint(args[1:]...)
-	case "build-filecoin":
-		buildFilecoin()
+
+	//wyong, 20210507 
+	//case "lint":
+	//	lint(args[1:]...)
 
 	//wyong, 20200918 
 	case "build-gcb":
@@ -364,7 +357,10 @@ func main() {
 		test(args[1:]...)
 	case "all":
 		deps()
-		lint()
+		
+		//wyong, 20210507 
+		//lint()
+
 		build()
 		test(args[1:]...)
 	default:
