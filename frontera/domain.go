@@ -120,7 +120,10 @@ type Domain struct {
 	//kayakConfig    *kt.RuntimeConfig
 
 	connSeqs       sync.Map
-	connSeqEvictCh chan uint64
+
+	//wyong, 20210528 
+	//connSeqEvictCh chan uint64
+
 	chain          *urlchain.Chain
 	nodeID         proto.NodeID
 
@@ -213,7 +216,8 @@ func NewDomain(cfg *DomainConfig, f *Frontera, peers *proto.Peers, genesis *type
 		//wyong, 20210528 
 		//mux:            cfg.KayakMux,
 
-		connSeqEvictCh: make(chan uint64, 1),
+		//wyong, 20210528 
+		//connSeqEvictCh: make(chan uint64, 1),
 
 		//todo, wyong, 20200930 
 		privateKey:     privateKey,
@@ -404,9 +408,13 @@ func NewDomain(cfg *DomainConfig, f *Frontera, peers *proto.Peers, genesis *type
 	domain.kayakRuntime.Start()
 	*/
 
+
+	/* wyong, 20210528 
 	log.Infof("NewDomain(160)")
 	// init sequence eviction processor
 	go domain.evictSequences()
+	*/
+
 
 	log.Infof("NewDomain(170)")
 	//todo, wyong, 20200806
@@ -463,6 +471,7 @@ func (domain *Domain) Shutdown() (err error) {
 		}
 	}
 
+	/* wyong, 20210528 
 	if domain.connSeqEvictCh != nil {
 		// stop connection sequence evictions
 		select {
@@ -474,6 +483,7 @@ func (domain *Domain) Shutdown() (err error) {
 			close(domain.connSeqEvictCh)
 		}
 	}
+	*/
 
 	return
 }
