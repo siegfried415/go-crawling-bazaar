@@ -18,8 +18,11 @@ package frontera
 
 import (
 	"context"
-	"os"
-	"path/filepath"
+
+	//wyong, 20210528 
+	//"os"
+	//"path/filepath"
+
 	//"sync"
 	"sync/atomic"
 	"time"
@@ -856,20 +859,21 @@ func (domain *Domain) Query(request *types.Request) (response *types.Response, e
 			return
 		}
 	case types.WriteQuery:
-		//todo, we use EventualConsistency only,  wyong, 20210223 
-		if domain.cfg.UseEventualConsistency {
+		//we use EventualConsistency only,  wyong, 20210528 
+		//if domain.cfg.UseEventualConsistency {
 			// reset context
 			request.SetContext(context.Background())
 			if tracker, response, err = domain.chain.Query(request, true); err != nil {
 				err = errors.Wrap(err, "failed to execute with eventual consistency")
 				return
 			}
-		} else {
-			if tracker, response, err = domain.writeQuery(request); err != nil {
-				err = errors.Wrap(err, "failed to execute")
-				return
-			}
-		}
+		//} else {
+		//	if tracker, response, err = domain.writeQuery(request); err != nil {
+		//		err = errors.Wrap(err, "failed to execute")
+		//		return
+		//	}
+		//}
+
 	default:
 		// TODO(xq262144): verbose errors with custom error structure
 		return nil, errors.Wrap(ErrInvalidRequest, "invalid query type")
@@ -894,6 +898,7 @@ func (domain *Domain) Query(request *types.Request) (response *types.Response, e
 	return
 }
 
+/* wyong, 20210528 
 func (domain *Domain) writeQuery(request *types.Request) (tracker *x.QueryTracker, response *types.Response, err error) {
 	// check database size first, wal/kayak/chain database size is not included
 	if domain.cfg.SpaceLimit > 0 {
@@ -931,6 +936,8 @@ func (domain *Domain) writeQuery(request *types.Request) (tracker *x.QueryTracke
 	response = tr.Response
 	return
 }
+*/
+
 
 func (domain *Domain) saveAck(ackHeader *types.SignedAckHeader) (err error) {
         return domain.chain.VerifyAndPushAckedQuery(ackHeader)

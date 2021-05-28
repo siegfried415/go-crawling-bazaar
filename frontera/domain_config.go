@@ -32,7 +32,10 @@ type DomainConfig struct {
 	DomainID             proto.DomainID
 	RootDir                string
 	DataDir                string
-	KayakMux               *DomainKayakMuxService
+
+	//wyong, 20210528 
+	//KayakMux               *DomainKayakMuxService
+
 	ChainMux               *sqlchain.MuxService
 	MaxWriteTimeGap        time.Duration
 	EncryptionKey          string

@@ -28,7 +28,8 @@ import (
 	//wyong, 20210125 
 	//"sort" 
 
-	"github.com/pkg/errors"
+	//wyong, 20210528 
+	//"github.com/pkg/errors"
 
 	//wyong, 20201018
 	//"github.com/libp2p/go-libp2p-core/host"
@@ -42,9 +43,12 @@ import (
 	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
 	"github.com/siegfried415/go-crawling-bazaar/kms"
 
+	/* wyong, 20210528 
 	"github.com/siegfried415/go-crawling-bazaar/kayak"
 	kt "github.com/siegfried415/go-crawling-bazaar/kayak/types"
 	kl "github.com/siegfried415/go-crawling-bazaar/kayak/wal"
+	*/
+
 	"github.com/siegfried415/go-crawling-bazaar/proto"
 	urlchain "github.com/siegfried415/go-crawling-bazaar/urlchain"
 	"github.com/siegfried415/go-crawling-bazaar/storage"
@@ -68,8 +72,9 @@ const (
 	// StorageFileName defines storage file name of database instance.
 	StorageFileName = "storage.db3"
 
+	//wyong, 20210528 
 	// KayakWalFileName defines log pool name of database instance.
-	KayakWalFileName = "kayak.ldb"
+	//KayakWalFileName = "kayak.ldb"
 
 	// SQLChainFileName defines sqlchain storage file name.
 	SQLChainFileName = "chain.db"
@@ -108,9 +113,12 @@ const (
 type Domain struct {
 	cfg            *DomainConfig
 	domainID           proto.DomainID
-	kayakWal       *kl.LevelDBWal
-	kayakRuntime   *kayak.Runtime
-	kayakConfig    *kt.RuntimeConfig
+
+	//wyong, 20210528 
+	//kayakWal       *kl.LevelDBWal
+	//kayakRuntime   *kayak.Runtime
+	//kayakConfig    *kt.RuntimeConfig
+
 	connSeqs       sync.Map
 	connSeqEvictCh chan uint64
 	chain          *urlchain.Chain
@@ -119,7 +127,8 @@ type Domain struct {
 	//wyong, 20201018
 	host 		net.RoutedHost
 
-	mux            *DomainKayakMuxService
+	//wyong, 20210528 
+	//mux            *DomainKayakMuxService
 
 	privateKey     *asymmetric.PrivateKey
 	accountAddr    proto.AccountAddress
@@ -200,7 +209,10 @@ func NewDomain(cfg *DomainConfig, f *Frontera, peers *proto.Peers, genesis *type
 	domain = &Domain{
 		cfg:            cfg,
 		domainID:           cfg.DomainID,
-		mux:            cfg.KayakMux,
+
+		//wyong, 20210528 
+		//mux:            cfg.KayakMux,
+
 		connSeqEvictCh: make(chan uint64, 1),
 
 		//todo, wyong, 20200930 
@@ -261,10 +273,12 @@ func NewDomain(cfg *DomainConfig, f *Frontera, peers *proto.Peers, genesis *type
 	defer func() {
 		// on error recycle all resources
 		if err != nil {
+			/* wyong, 20210528 
 			// stop kayak runtime
 			if domain.kayakRuntime != nil {
 				domain.kayakRuntime.Shutdown()
 			}
+			*/
 
 			// close chain
 			if domain.chain != nil {
@@ -345,6 +359,8 @@ func NewDomain(cfg *DomainConfig, f *Frontera, peers *proto.Peers, genesis *type
 	}
 	*/	
 
+
+	/* wyong, 20210528 
 	log.Infof("NewDomain(120)")
 	// init kayak config
 	kayakWalPath := filepath.Join(cfg.DataDir, KayakWalFileName)
@@ -386,6 +402,7 @@ func NewDomain(cfg *DomainConfig, f *Frontera, peers *proto.Peers, genesis *type
 	log.Infof("NewDomain(150)")
 	// start kayak runtime
 	domain.kayakRuntime.Start()
+	*/
 
 	log.Infof("NewDomain(160)")
 	// init sequence eviction processor
@@ -408,10 +425,12 @@ func (domain *Domain) UpdatePeers(peers *proto.Peers) (err error) {
 		domain.addActivePeer(p)
 	}
 
+	/* wyong, 20210528 
 	log.Debugf("Domain/UpdatePeers(30)\n") 
 	if err = domain.kayakRuntime.UpdatePeers(peers); err != nil {
 		return
 	}
+	*/
 
 	log.Debugf("Domain/UpdatePeers(40)\n") 
 	return domain.chain.UpdatePeers(peers)
@@ -420,6 +439,7 @@ func (domain *Domain) UpdatePeers(peers *proto.Peers) (err error) {
 
 // Shutdown stop database handles and stop service the database.
 func (domain *Domain) Shutdown() (err error) {
+	/* wyong, 20210528 
 	if domain.kayakRuntime != nil {
 		// shutdown, stop kayak
 		if err = domain.kayakRuntime.Shutdown(); err != nil {
@@ -434,6 +454,7 @@ func (domain *Domain) Shutdown() (err error) {
 		// shutdown, stop kayak
 		domain.kayakWal.Close()
 	}
+	*/
 
 	if domain.chain != nil {
 		// stop chain

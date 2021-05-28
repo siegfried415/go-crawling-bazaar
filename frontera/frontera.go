@@ -129,7 +129,10 @@ type counters struct {
 type Frontera struct {
 	cfg        *FronteraConfig
 	domainMap      sync.Map
-	kayakMux   *DomainKayakMuxService
+	
+	//wyong, 20210528 
+	//kayakMux   *DomainKayakMuxService
+
 	chainMux   *sqlchain.MuxService
 	rpc        *FronteraRPCService
 	busService *BusService
@@ -265,11 +268,13 @@ func NewFrontera( cfg *FronteraConfig, peerHost net.RoutedHost  ) (f *Frontera, 
 	f.bs.f  = f 
 	f.bc.f  = f 
 
+	/* wyong, 20210528 
 	// init kayak rpc mux
 	if f.kayakMux, err = NewDomainKayakMuxService(DomainKayakRPCName, peerHost ); err != nil {
 		err = errors.Wrap(err, "register kayak mux service failed")
 		return
 	}
+	*/
 
 	log.Infof("NewFrontera(40)") 
 	// init sql-chain rpc mux
@@ -736,7 +741,10 @@ func (f *Frontera) Create(instance *types.ServiceInstance, cleanup bool) (err er
 		DomainID:             instance.DomainID,
 		RootDir:                f.cfg.RootDir,
 		DataDir:                rootDir,
-		KayakMux:               f.kayakMux,
+
+		//wyong, 20210528 
+		//KayakMux:               f.kayakMux,
+
 		ChainMux:               f.chainMux,
 		MaxWriteTimeGap:        f.cfg.MaxReqTimeGap,
 		EncryptionKey:          instance.ResourceMeta.EncryptionKey,
