@@ -14,4 +14,5 @@
  * limitations under the License.
  */
 
-package xenomint
+// Package state provides an eventual consistency implementation of the blockchain database.
+package state 

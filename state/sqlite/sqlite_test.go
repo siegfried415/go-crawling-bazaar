@@ -30,7 +30,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	xi "github.com/siegfried415/go-crawling-bazaar/xenomint/interfaces"
+	si "github.com/siegfried415/go-crawling-bazaar/state/interfaces"
 )
 
 func TestStorage(t *testing.T) {
@@ -38,7 +38,7 @@ func TestStorage(t *testing.T) {
 		const passes = 1000
 		var (
 			fl  = path.Join(testingDataDir, t.Name())
-			st  xi.Storage
+			st  si.Storage
 			err error
 		)
 		st, err = NewSqlite(fmt.Sprint("file:", fl))
@@ -327,7 +327,7 @@ var (
 )
 
 func setupBenchmarkStorage(b *testing.B) (
-	st xi.Storage,
+	st si.Storage,
 	q string, makeDest func() []interface{},
 	e string, src [][]interface{},
 ) {
@@ -404,7 +404,7 @@ func setupBenchmarkStorage(b *testing.B) (
 	return
 }
 
-func teardownBenchmarkStorage(b *testing.B, st xi.Storage) {
+func teardownBenchmarkStorage(b *testing.B, st si.Storage) {
 	var (
 		fl  = path.Join(testingDataDir, b.Name())
 		err error
@@ -423,7 +423,7 @@ func teardownBenchmarkStorage(b *testing.B, st xi.Storage) {
 	}
 }
 
-func setupSubBenchmarkStorage(b *testing.B, st xi.Storage) {
+func setupSubBenchmarkStorage(b *testing.B, st si.Storage) {
 	// Reset key generators
 	irkg.reset()
 	ipkg.reset()
@@ -432,7 +432,7 @@ func setupSubBenchmarkStorage(b *testing.B, st xi.Storage) {
 	trkg.reset()
 }
 
-func teardownSubBenchmarkStorage(b *testing.B, st xi.Storage) {
+func teardownSubBenchmarkStorage(b *testing.B, st si.Storage) {
 	var (
 		d   = `DELETE FROM "t2" WHERE "k">=?`
 		err error
@@ -662,7 +662,7 @@ func BenchmarkStorage(b *testing.B) {
 }
 
 func setupBenchmarkLargeWriteTx(
-	b *testing.B, st xi.Storage, e string, src [][]interface{}, n int) (tx *sql.Tx,
+	b *testing.B, st si.Storage, e string, src [][]interface{}, n int) (tx *sql.Tx,
 ) {
 	var err error
 	ipkg.reset()
@@ -804,13 +804,13 @@ func BenchmarkLargeWriteTx(b *testing.B) {
 //
 // BW is a background writer function passed to benchmark helper.
 //type BW func(
-//	*testing.B, *sync.WaitGroup, <-chan struct{}, xi.Storage, keygen, string, [][]interface{},
+//	*testing.B, *sync.WaitGroup, <-chan struct{}, si.Storage, keygen, string, [][]interface{},
 //)
 
 func busyWrite(
 	b *testing.B,
 	wg *sync.WaitGroup, sc <-chan struct{},
-	st xi.Storage, kg keygen, e string, src [][]interface{},
+	st si.Storage, kg keygen, e string, src [][]interface{},
 ) {
 	defer wg.Done()
 	var err error
@@ -829,7 +829,7 @@ func busyWrite(
 func busyWriteTx(
 	b *testing.B,
 	wg *sync.WaitGroup, sc <-chan struct{},
-	st xi.Storage, kg keygen, e string, src [][]interface{},
+	st si.Storage, kg keygen, e string, src [][]interface{},
 ) {
 	defer wg.Done()
 	var (
@@ -873,7 +873,7 @@ func busyWriteTx(
 func idleWriteTx(
 	b *testing.B,
 	wg *sync.WaitGroup, sc <-chan struct{},
-	st xi.Storage, kg keygen, e string, src [][]interface{},
+	st si.Storage, kg keygen, e string, src [][]interface{},
 ) {
 	const writeIntlMS = 1
 	var (
@@ -920,10 +920,10 @@ func idleWriteTx(
 }
 
 // GR is a get reader function passed to benchmark helper.
-//type GR func(xi.Storage) *sql.DB
+//type GR func(si.Storage) *sql.DB
 //
-//func getDirtyReader(st xi.Storage) *sql.DB { return st.DirtyReader() }
-//func getReader(st xi.Storage) *sql.DB      { return st.Reader() }
+//func getDirtyReader(st si.Storage) *sql.DB { return st.DirtyReader() }
+//func getReader(st si.Storage) *sql.DB      { return st.Reader() }
 //
 //func benchmarkStorageSequentialReadWithBackgroundWriter(b *testing.B, getReader GR, write BW) {
 //	var (

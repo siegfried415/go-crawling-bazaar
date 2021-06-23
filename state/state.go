@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package xenomint
+package state 
 
 import (
 	"context"
@@ -28,7 +28,7 @@ import (
 	"github.com/siegfried415/go-crawling-bazaar/proto"
 	"github.com/siegfried415/go-crawling-bazaar/types"
 	"github.com/siegfried415/go-crawling-bazaar/utils/log"
-	xi "github.com/siegfried415/go-crawling-bazaar/xenomint/interfaces"
+	si "github.com/siegfried415/go-crawling-bazaar/state/interfaces"
 )
 
 type sqlQuerier interface {
@@ -56,7 +56,7 @@ type State struct {
 	level sql.IsolationLevel
 
 	sync.RWMutex
-	strg   xi.Storage
+	strg   si.Storage
 	pool   *pool
 	closed bool
 	nodeID proto.NodeID
@@ -69,7 +69,7 @@ type State struct {
 }
 
 // NewState returns a new State bound to strg.
-func NewState(level sql.IsolationLevel, nodeID proto.NodeID, strg xi.Storage) (s *State) {
+func NewState(level sql.IsolationLevel, nodeID proto.NodeID, strg si.Storage) (s *State) {
 	s = &State{
 		level:  level,
 		nodeID: nodeID,

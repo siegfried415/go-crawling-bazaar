@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package xenomint
+package state
 
 import (
 	"context"
@@ -32,8 +32,8 @@ import (
 	"github.com/siegfried415/go-crawling-bazaar/crypto/verifier"
 	"github.com/siegfried415/go-crawling-bazaar/proto"
 	"github.com/siegfried415/go-crawling-bazaar/types"
-	xi "github.com/siegfried415/go-crawling-bazaar/xenomint/interfaces"
-	xs "github.com/siegfried415/go-crawling-bazaar/xenomint/sqlite"
+	si "github.com/siegfried415/go-crawling-bazaar/state/interfaces"
+	ss "github.com/siegfried415/go-crawling-bazaar/state/sqlite"
 )
 
 var (
@@ -47,10 +47,10 @@ func TestState(t *testing.T) {
 			fl1          = path.Join(testingDataDir, fmt.Sprint(t.Name(), "x1"))
 			fl2          = path.Join(testingDataDir, fmt.Sprint(t.Name(), "x2"))
 			st1, st2     *State
-			strg1, strg2 xi.Storage
+			strg1, strg2 si.Storage
 			err          error
 		)
-		strg1, err = xs.NewSqlite(fmt.Sprint("file:", fl1))
+		strg1, err = ss.NewSqlite(fmt.Sprint("file:", fl1))
 		So(err, ShouldBeNil)
 		So(strg1, ShouldNotBeNil)
 		st1 = NewState(sql.LevelReadUncommitted, nodeID, strg1)
@@ -66,7 +66,7 @@ func TestState(t *testing.T) {
 			err = os.Remove(fmt.Sprint(fl1, "-wal"))
 			So(err == nil || os.IsNotExist(err), ShouldBeTrue)
 		})
-		strg2, err = xs.NewSqlite(fmt.Sprint("file:", fl2))
+		strg2, err = ss.NewSqlite(fmt.Sprint("file:", fl2))
 		So(err, ShouldBeNil)
 		So(strg1, ShouldNotBeNil)
 		st2 = NewState(sql.LevelReadUncommitted, nodeID, strg2)
@@ -715,10 +715,10 @@ func TestSerializableState(t *testing.T) {
 		var (
 			filePath = path.Join(testingDataDir, t.Name())
 			state    *State
-			storage  xi.Storage
+			storage  si.Storage
 			err      error
 		)
-		storage, err = xs.NewSqlite(fmt.Sprint("file:", filePath))
+		storage, err = ss.NewSqlite(fmt.Sprint("file:", filePath))
 		So(err, ShouldBeNil)
 		So(storage, ShouldNotBeNil)
 		state = NewState(sql.LevelSerializable, nodeID, storage)

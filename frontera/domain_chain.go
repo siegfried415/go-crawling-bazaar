@@ -54,7 +54,7 @@ import (
 	//"github.com/siegfried415/go-crawling-bazaar/storage"
 	"github.com/siegfried415/go-crawling-bazaar/types"
 	"github.com/siegfried415/go-crawling-bazaar/utils/log"
-	x "github.com/siegfried415/go-crawling-bazaar/xenomint"
+	s "github.com/siegfried415/go-crawling-bazaar/state"
 	//net "github.com/siegfried415/go-crawling-bazaar/net"
 
 	//wyong, 20200805 
@@ -834,7 +834,7 @@ func (domain *Domain) Query(request *types.Request) (response *types.Response, e
 
 	var (
 		isSlowQuery uint32
-		tracker     *x.QueryTracker
+		tracker     *s.QueryTracker
 		tmStart     = time.Now()
 	)
 
@@ -899,7 +899,7 @@ func (domain *Domain) Query(request *types.Request) (response *types.Response, e
 }
 
 /* wyong, 20210528 
-func (domain *Domain) writeQuery(request *types.Request) (tracker *x.QueryTracker, response *types.Response, err error) {
+func (domain *Domain) writeQuery(request *types.Request) (tracker *s.QueryTracker, response *types.Response, err error) {
 	// check database size first, wal/kayak/chain database size is not included
 	if domain.cfg.SpaceLimit > 0 {
 		path := filepath.Join(domain.cfg.DataDir, StorageFileName)

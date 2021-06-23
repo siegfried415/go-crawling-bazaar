@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package xenomint
+package state
 
 import (
 	"database/sql"
@@ -26,8 +26,8 @@ import (
 	"github.com/siegfried415/go-crawling-bazaar/proto"
 	"github.com/siegfried415/go-crawling-bazaar/types"
 	"github.com/siegfried415/go-crawling-bazaar/utils/log"
-	xi "github.com/siegfried415/go-crawling-bazaar/xenomint/interfaces"
-	xs "github.com/siegfried415/go-crawling-bazaar/xenomint/sqlite"
+	si "github.com/siegfried415/go-crawling-bazaar/state/interfaces"
+	ss "github.com/siegfried415/go-crawling-bazaar/state/sqlite"
 )
 
 // Chain defines the xenomint chain structure.
@@ -40,14 +40,14 @@ type Chain struct {
 // NewChain returns new chain instance.
 func NewChain(filename string) (c *Chain, err error) {
 	var (
-		strg xi.Storage
+		strg si.Storage
 		priv *ca.PrivateKey
 	)
 	// generate empty nodeId
 	nodeID := proto.NodeID("0000000000000000000000000000000000000000000000000000000000000000")
 
 	// TODO(leventeliu): add multiple storage engine support.
-	if strg, err = xs.NewSqlite(filename); err != nil {
+	if strg, err = ss.NewSqlite(filename); err != nil {
 		return
 	}
 	if priv, err = kms.GetLocalPrivateKey(); err != nil {

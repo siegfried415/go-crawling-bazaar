@@ -47,7 +47,7 @@ import (
 	//rpc "github.com/siegfried415/go-crawling-bazaar/rpc/mux"
 	"github.com/siegfried415/go-crawling-bazaar/types"
 	"github.com/siegfried415/go-crawling-bazaar/utils/log"
-	xi "github.com/siegfried415/go-crawling-bazaar/xenomint/interfaces"
+	si "github.com/siegfried415/go-crawling-bazaar/state/interfaces"
 )
 
 // Metric keys
@@ -78,7 +78,7 @@ type Chain struct {
 	host net.RoutedHost 
 
 	// Other components
-	storage xi.Storage
+	storage si.Storage
 	// NOTE(leventeliu): this LRU object is only used for block cache control,
 	// do NOT read it in any case.
 	blockCache *lru.Cache
@@ -119,7 +119,7 @@ func NewChainWithContext(ctx context.Context, cfg *Config) (c *Chain, err error)
 	var (
 		ierr error
 
-		st        xi.Storage
+		st        si.Storage
 		cache     *lru.Cache
 		lastIrre  *blockNode
 		heads     []*blockNode

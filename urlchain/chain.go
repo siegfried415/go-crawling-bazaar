@@ -55,9 +55,9 @@ import (
 	"github.com/siegfried415/go-crawling-bazaar/types"
 	"github.com/siegfried415/go-crawling-bazaar/utils"
 	"github.com/siegfried415/go-crawling-bazaar/utils/log"
-	x "github.com/siegfried415/go-crawling-bazaar/xenomint"
-	xi "github.com/siegfried415/go-crawling-bazaar/xenomint/interfaces"
-	xs "github.com/siegfried415/go-crawling-bazaar/xenomint/sqlite"
+	s "github.com/siegfried415/go-crawling-bazaar/state"
+	si "github.com/siegfried415/go-crawling-bazaar/state/interfaces"
+	ss "github.com/siegfried415/go-crawling-bazaar/state/sqlite"
 
         //wyong, 20200819
         "github.com/siegfried415/go-crawling-bazaar/crypto/hash"
@@ -118,7 +118,7 @@ func keyWithSymbolToHeight(k []byte) int32 {
 type Chain struct {
 	bi *blockIndex
 	ai *ackIndex
-	st *x.State
+	st *s.State
 
 	//wyong, 20201014 
 	//cl *rpc.Caller
@@ -196,8 +196,8 @@ func NewChainWithContext(ctx context.Context, c *Config) (chain *Chain, err erro
 
 	log.Infof("urlchain/NewChainWithContext(30)") 
 	// Open storage
-	var strg xi.Storage
-	if strg, err = xs.NewSqlite(c.DataFile); err != nil {
+	var strg si.Storage
+	if strg, err = ss.NewSqlite(c.DataFile); err != nil {
 		err = errors.Wrapf(err, "open data file %s", c.DataFile)
 		return
 	}
@@ -237,7 +237,7 @@ func NewChainWithContext(ctx context.Context, c *Config) (chain *Chain, err erro
 	chain = &Chain{
 		bi:           newBlockIndex(),
 		ai:           newAckIndex(),
-		st:           x.NewState(sql.IsolationLevel(c.IsolationLevel), c.Server, strg),
+		st:           s.NewState(sql.IsolationLevel(c.IsolationLevel), c.Server, strg),
 		
 		//wyong, 20201014 
 		//cl:           rpc.NewCaller(),
@@ -554,7 +554,7 @@ func (c *Chain) pushAckedQuery(ack *types.SignedAckHeader) (err error) {
 func (c *Chain) produceBlock(now time.Time) (err error) {
 	var (
 		frs []*types.Request
-		qts []*x.QueryTracker
+		qts []*s.QueryTracker
 	)
 	if frs, qts, err = c.st.CommitEx(); err != nil {
 		err = errors.Wrap(err, "failed to fetch query list from db state")
@@ -1167,7 +1167,7 @@ func (c *Chain) UpdatePeers(peers *proto.Peers) error {
 
 // Query queries req from local chain state and returns the query results in resp.
 func (c *Chain) Query(
-	req *types.Request, isLeader bool) (tracker *x.QueryTracker, resp *types.Response, err error,
+	req *types.Request, isLeader bool) (tracker *s.QueryTracker, resp *types.Response, err error,
 ) {
 	// TODO(leventeliu): we're using an external context passed by request. Make sure that
 	// cancelling will be propagated to this context before chain instance stops.

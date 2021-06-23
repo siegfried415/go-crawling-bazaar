@@ -36,7 +36,7 @@ import (
 	"github.com/siegfried415/go-crawling-bazaar/proto"
 	"github.com/siegfried415/go-crawling-bazaar/utils"
 	"github.com/siegfried415/go-crawling-bazaar/utils/log"
-	xs "github.com/siegfried415/go-crawling-bazaar/xenomint/sqlite"
+	ss "github.com/siegfried415/go-crawling-bazaar/state/sqlite"
 
         //wyong, 20201116 
         //"github.com/ugorji/go/codec"
@@ -45,7 +45,7 @@ import (
 
 // PublicKeyStore holds db and bucket name.
 type PublicKeyStore struct {
-	db *xs.SQLite3
+	db *ss.SQLite3
 }
 
 var (
@@ -145,16 +145,16 @@ func InitPublicKeyStore(dbPath string, initNodes []proto.Node) (err error) {
 	pksLock.Lock()
 	InitBP()
 
-	var strg *xs.SQLite3
+	var strg *ss.SQLite3
 
-	if strg, err = func() (strg *xs.SQLite3, err error) {
+	if strg, err = func() (strg *ss.SQLite3, err error) {
 		// test if the keystore is a valid sqlite database
 		// if so, truncate and upgrade to new version
 
 		if err = removeFileIfIsNotSQLite(dbPath); err != nil {
 			return
 		}
-		if strg, err = xs.NewSqlite(dbPath); err != nil {
+		if strg, err = ss.NewSqlite(dbPath); err != nil {
 			return
 		}
 		if _, err = strg.Writer().Exec(initTableSQL); err != nil {
