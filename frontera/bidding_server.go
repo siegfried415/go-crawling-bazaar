@@ -37,6 +37,9 @@ import (
 	
 	//wyong, 20210118 
 	ecvrf "github.com/vechain/go-ecvrf"
+
+	//wyong, 20210630
+        sortition "github.com/siegfried415/go-crawling-bazaar/sortition"
 )
 
 
@@ -446,10 +449,10 @@ func(bs *BiddingServer) GetBidding(/* wyong, 20181227 p proto.NodeID */ ) (*Bidd
 //}
 
 
+/*wyong, 20210630 
 //todo, wyong, 20210118 
 // IsWinner returns true if the input challengeTicket wins the election
 func (bs *BiddingServer) IsWinner(challengeTicket []byte, expectCrawlerCount int64 , totalPeersCount int64 ) bool {
-
 	//wyong, 20210127 
         // (ChallengeTicket / MaxChallengeTicket) < (ExpectedCrawlerCount / totalPeersCount )
         // ->
@@ -472,6 +475,13 @@ func (bs *BiddingServer) IsWinner(challengeTicket []byte, expectCrawlerCount int
 	log.Debugf("BiddingServer/IsWinner(50), rhs=%s\n", rhs.String())
 
 	return lhs.Cmp(rhs) < 0 
+
+}
+*/
+
+// IsWinner returns true if the input challengeTicket wins the election, wyong, 20210630 
+func (bs *BiddingServer) IsWinner(challengeTicket []byte, expectCrawlerCount int64 , money uint64, totalMoney uint64 ) bool {
+	return sortition.Select(money, totalMoney, float64(expectedCrawlerCount), challengeTicket ) > 0 
 }
 
 //split UrlBiddingMessageReceived to 2 functions, wyong, 20210117 
@@ -569,6 +579,8 @@ func (bs *BiddingServer) UrlBiddingReceived( ctx context.Context, p proto.NodeID
 			log.Debugf("BiddingServer/UrlBiddingMessageReceived(70)\n" )
 			//todo, only node successfully in competeting has the right to crawl the url in bidding
 			//wyong, 20210117 
+
+			//todo, don't forget to add parameter money and totalMoney, wyong, 20210630 
 			if bs.IsWinner(beta, int64(bidding.ExpectCrawlerCount), peersCount ) {
 				//todo, save hash(beta) & proof(pi) with bidding, wyong, 20200118 
 				//entry.Hash = beta 
