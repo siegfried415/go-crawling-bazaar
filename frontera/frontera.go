@@ -245,7 +245,7 @@ func NewFrontera( cfg *FronteraConfig, peerHost net.RoutedHost  ) (f *Frontera, 
 		nodeID: nodeID,
 
 		//todo, network.NodeId()? bstore? wyong, 20200730 
-		bs :        /* decision. */ NewBiddingServer (ctx, nodeID /*, bstore */ ), 
+		bs :        /* decision. */ NewBiddingServer (ctx, nodeID /*, bstore */, peerHost ), 
 
 		//network:       network,
 		host : peerHost, 

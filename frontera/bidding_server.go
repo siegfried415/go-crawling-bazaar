@@ -39,7 +39,11 @@ import (
 	ecvrf "github.com/vechain/go-ecvrf"
 
 	//wyong, 20210630
-        sortition "github.com/siegfried415/go-crawling-bazaar/sortition"
+        sortition "github.com/siegfried415/go-crawling-bazaar/frontera/sortition"
+
+	//wyong, 20210706 
+	net "github.com/siegfried415/go-crawling-bazaar/net"
+	crypto "github.com/siegfried415/go-crawling-bazaar/crypto"
 )
 
 
@@ -142,10 +146,12 @@ type BiddingServer struct {
 	//wyong, 20190118
 	nodeid  proto.NodeID
 
+	//wyong, 20210706 
+	host net.RoutedHost 	
 }
 
 //add nodeid, wyong, 20190118
-func NewBiddingServer (ctx context.Context, nodeid proto.NodeID) *BiddingServer {
+func NewBiddingServer (ctx context.Context, nodeid proto.NodeID, host net.RoutedHost ) *BiddingServer {
 	bs := &BiddingServer{
 		ledgerMap:        make(map[proto.NodeID]*ledger),
 		nodeid:		  nodeid, 	//wyong, 20190118
@@ -154,6 +160,7 @@ func NewBiddingServer (ctx context.Context, nodeid proto.NodeID) *BiddingServer 
 		outbox:           make(chan /*  *Envelope */ *types.UrlBidMessage , outboxChanBuffer),
 		workSignal:       make(chan struct{}, 1),
 		ticker:           time.NewTicker(time.Millisecond * 100),
+		host  : 	  host, 
 	}
 	//go e.taskWorker(ctx)
 	return bs  
@@ -480,7 +487,7 @@ func (bs *BiddingServer) IsWinner(challengeTicket []byte, expectCrawlerCount int
 */
 
 // IsWinner returns true if the input challengeTicket wins the election, wyong, 20210630 
-func (bs *BiddingServer) IsWinner(challengeTicket []byte, expectCrawlerCount int64 , money uint64, totalMoney uint64 ) bool {
+func (bs *BiddingServer) IsWinner(challengeTicket []byte, expectedCrawlerCount int64 , money uint64, totalMoney uint64 ) bool {
 	return sortition.Select(money, totalMoney, float64(expectedCrawlerCount), challengeTicket ) > 0 
 }
 
@@ -498,6 +505,37 @@ func (bs *BiddingServer) UrlBiddingMessageReceived( ctx context.Context,  m *typ
 	domainID := m.Header.DomainID
 
 	return bs.UrlBiddingReceived(ctx, p, domainID,  m.Payload.Requests ) 
+}
+
+
+func (bs *BiddingServer) getDomainTokenBalanceAndTotal(domainID proto.DomainID,  addr proto.AccountAddress, tt types.TokenType) (balance uint64, totalBalance uint64, err error) {
+        req := new(types.QueryDomainAccountTokenBalanceAndTotalReq)
+        resp := new(types.QueryDomainAccountTokenBalanceAndTotalResp)
+
+        //var pubKey *asymmetric.PublicKey
+        //if pubKey, err = kms.GetLocalPublicKey(); err != nil {
+        //        return
+        //}
+	//
+        //if req.Addr, err = crypto.PubKeyHash(pubKey); err != nil {
+        //        return
+        //}
+
+        req.DomainID = domainID
+	req.Addr = addr 
+        req.TokenType = tt
+
+        if err = bs.host.RequestPB("MCC.QueryDomainAccountTokenBalanceAndTotal", &req, &resp); err == nil {
+                if !resp.OK {
+                        //err = ErrNoSuchTokenBalance
+                	err = errors.New("can't get account 's balance or total balance")
+                        return
+                }
+                balance = resp.Balance
+		totalBalance = resp.TotalBalance 
+        }
+
+        return
 }
 
 // MessageReceived performs book-keeping. Returns error if passed invalid arguments.
@@ -529,7 +567,12 @@ func (bs *BiddingServer) UrlBiddingReceived( ctx context.Context, p proto.NodeID
         }
 	sk := (*ecdsa.PrivateKey)(privateKey)
 
+	//wyong, 20210702 
 	log.Debugf("BiddingServer/UrlBiddingMessageReceived(20)\n" )
+        addr, err := crypto.PubKeyHash(privateKey.PubKey())
+	if err != nil {
+                return err 
+        }
 
 	//wyong, 20210127 
 	//IDs, err := kms.GetAllNodeID()
@@ -539,21 +582,29 @@ func (bs *BiddingServer) UrlBiddingReceived( ctx context.Context, p proto.NodeID
 	//}
 	//peersCount := int64(len(IDs)) 
 
+	//wyong, 20210706 
 	//get count of crawlers in this domain, wyong, 20210219 
-        domain, exist := bs.f.DomainForID(domainID)
-        if exist != true {
-                err = errors.New("domain not exist")
-                return err 
-        }
+        //domain, exist := bs.f.DomainForID(domainID)
+        //if exist != true {
+        //        err = errors.New("domain not exist")
+        //        return err 
+        //}
 
-	peersCount := int64(len(domain.activePeers)) 
-	if _, ok := domain.activePeers[bs.nodeid]; ok {
-		//does not take myself to account, wyong, 20210219 
-		peersCount-- 
+	
+	//wyong, 20210702 
+	//peersCount := int64(len(domain.activePeers)) 
+	//if _, ok := domain.activePeers[bs.nodeid]; ok {
+	//	//does not take myself to account, wyong, 20210219 
+	//	peersCount-- 
+	//}
+	balance, totalBalance , err := bs.getDomainTokenBalanceAndTotal(domainID, addr, types.Particle )
+	if err != nil {
+                err = errors.New("can't get token balance of addr or total addrs in domain!")
+                return err 
 	}
 
 
-	log.Debugf("BiddingServer/UrlBiddingMessageReceived(30), peersCount=%d\n", peersCount )
+	log.Debugf("BiddingServer/UrlBiddingMessageReceived(30), balance=%d, totalBalance=%d\n", balance, totalBalance)
 
 	//var msgSize int
 	//var activeEntries []*bl.BiddingEntry
@@ -580,8 +631,8 @@ func (bs *BiddingServer) UrlBiddingReceived( ctx context.Context, p proto.NodeID
 			//todo, only node successfully in competeting has the right to crawl the url in bidding
 			//wyong, 20210117 
 
-			//todo, don't forget to add parameter money and totalMoney, wyong, 20210630 
-			if bs.IsWinner(beta, int64(bidding.ExpectCrawlerCount), peersCount ) {
+			//add tokenBalance and totalTokenBalance, wyong, 20210702 
+			if bs.IsWinner(beta, int64(bidding.ExpectCrawlerCount), balance, totalBalance){
 				//todo, save hash(beta) & proof(pi) with bidding, wyong, 20200118 
 				//entry.Hash = beta 
 				//entry.VRFProof = pi 

@@ -124,6 +124,44 @@ func (s *metaState) loadAccountTokenBalance(addr proto.AccountAddress,
 	return
 }
 
+//wyong, 20210702 
+func (s *metaState) loadDomainAccountTokenBalanceAndTotal(domainID proto.DomainID, addr proto.AccountAddress,  tokenType types.TokenType) (balance uint64, totalBalance uint64,  err error ) {
+	if !tokenType.Listed() {
+		return
+	}
+	//var o *types.Account
+	defer func() {
+		log.WithFields(log.Fields{
+			"domainID":  domainID, 
+			"account":    addr,
+			"balance":    balance,
+			"totalBalance" : totalBalance, 
+			"token_type": tokenType,
+		}).Debug("queried token account")
+	}()
+
+	domain, ok := s.readonly.domains[domainID]
+	if ok != true {
+		err = errors.New("Domain not exist")
+		return
+	}
+
+	for _, miner := range domain.Miners {
+		//wyong, 20201204 
+		log.WithFields(log.Fields{
+			"miner_addr":   miner.Address,
+		}).Debugf("metaState/loadROSQLChains(30)")
+
+		b, _ := s.loadAccountTokenBalance(miner.Address, tokenType)
+		if miner.Address == addr {
+			balance = b 
+		}
+		totalBalance  += b
+	}
+
+	return
+}
+
 func (s *metaState) storeBaseAccount(k proto.AccountAddress, v *types.Account) (err error) {
 	log.WithFields(log.Fields{
 		"addr":    k,

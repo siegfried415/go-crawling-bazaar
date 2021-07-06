@@ -150,6 +150,28 @@ type QueryAccountTokenBalanceResp struct {
 	Balance uint64
 }
 
+
+//wyong, 20210706 
+// QueryAccountTokenBalanceReq defines a request of the QueryAccountTokenBalance RPC method.
+type QueryDomainAccountTokenBalanceAndTotalReq struct {
+	proto.Envelope
+	DomainID proto.DomainID
+	Addr      proto.AccountAddress
+	TokenType TokenType
+}
+
+//wyong, 20210706 
+// QueryAccountTokenBalanceResp defines a request of the QueryAccountTokenBalance RPC method.
+type QueryDomainAccountTokenBalanceAndTotalResp struct {
+	proto.Envelope
+	DomainID proto.DomainID
+	Addr    proto.AccountAddress
+	OK      bool
+	Balance uint64
+	TotalBalance uint64 
+}
+
+
 // QuerySQLChainProfileReq defines a request of the QuerySQLChainProfile RPC method.
 type QuerySQLChainProfileReq struct {
 	proto.Envelope

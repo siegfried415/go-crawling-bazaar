@@ -54,6 +54,10 @@ func NewChainRPCService(chain *Chain) (s *ChainRPCService, err error) {
 	chain.host.SetStreamHandlerExt(protocol.ID("MCC.NextAccountNonce"), s.NextAccountNonceHandler)
 	chain.host.SetStreamHandlerExt(protocol.ID("MCC.AddTx"), s.AddTxHandler)
 	chain.host.SetStreamHandlerExt(protocol.ID("MCC.QueryAccountTokenBalance"), s.QueryAccountTokenBalanceHandler)
+
+	//wyong, 20210702 
+	chain.host.SetStreamHandlerExt(protocol.ID("MCC.QueryDomainAccountTokenBalanceAndTotal"), s.QueryDomainAccountTokenBalanceAndTotalHandler)
+
 	chain.host.SetStreamHandlerExt(protocol.ID("MCC.QuerySQLChainProfile"), s.QuerySQLChainProfileHandler)
 	chain.host.SetStreamHandlerExt(protocol.ID("MCC.QueryTxState"), s.QueryTxStateHandler)
 	chain.host.SetStreamHandlerExt(protocol.ID("MCC.QueryAccountSQLChainProfiles"), s.QueryAccountSQLChainProfilesHandler)
@@ -262,6 +266,30 @@ func (cs *ChainRPCService) QueryAccountTokenBalanceHandler(
 
 	s.SendMsg(ctx, &resp) 
 	//return
+}
+
+//wyong, 20210706 
+// QueryAccountTokenBalance is the RPC method to query account token balance.
+func (cs *ChainRPCService) QueryDomainAccountTokenBalanceAndTotalHandler(s net.Stream ) {
+	ctx := context.Background()
+	var req types.QueryDomainAccountTokenBalanceAndTotalReq 
+
+	//wyong, 20201119 
+	err := s.RecvMsg(ctx, &req) 
+	if err != nil {
+		return 
+	}
+
+	balance, totalBalance, ok := cs.chain.loadDomainAccountTokenBalanceAndTotal(req.DomainID, req.Addr, req.TokenType)
+	var resp = types.QueryDomainAccountTokenBalanceAndTotalResp {
+		DomainID : req.DomainID, 
+		Addr : req.Addr, 
+		Balance : balance,
+		TotalBalance : totalBalance, 
+		OK: ok, 
+	}	
+
+	s.SendMsg(ctx, &resp) 
 }
 
 //wyong, 20201018 

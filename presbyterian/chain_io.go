@@ -103,6 +103,19 @@ func (c *Chain) loadAccountTokenBalance(addr proto.AccountAddress, tt types.Toke
 	return c.immutable.loadAccountTokenBalance(addr, tt)
 }
 
+//wyong, 20210702 
+func (c *Chain) loadDomainAccountTokenBalanceAndTotal(domainID proto.DomainID, addr proto.AccountAddress, tt types.TokenType) (balance uint64, totalBalance uint64,  ok bool) {
+	c.RLock()
+	defer c.RUnlock()
+	ok = true 
+	b, tb, err := c.immutable.loadDomainAccountTokenBalanceAndTotal(domainID, addr, tt )
+	if err!= nil {
+		ok = false 
+	}
+
+	return b, tb, ok 
+}
+
 func (c *Chain) loadSQLChainProfile(domainID proto.DomainID) (profile *types.SQLChainProfile, ok bool) {
 	c.RLock()
 	defer c.RUnlock()

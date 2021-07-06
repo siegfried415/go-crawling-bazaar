@@ -29,7 +29,7 @@ import (
 )
 
 // Select runs the sortition function and returns the number of time the key was selected
-func Select(money uint64, totalMoney uint64, expectedCount float64, vrfOutput /* crypto.Digest */ byte[]) uint64 {
+func Select(money uint64, totalMoney uint64, expectedCount float64, vrfOutput []byte) uint64 {
 	binomialN := float64(money)
 	binomialP := expectedCount / float64(totalMoney)
 
