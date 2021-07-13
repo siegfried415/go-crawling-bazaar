@@ -137,7 +137,7 @@ func (s *metaState) loadDomainAccountTokenBalanceAndTotal(domainID proto.DomainI
 			"balance":    balance,
 			"totalBalance" : totalBalance, 
 			"token_type": tokenType,
-		}).Debug("queried token account")
+		}).Debugf("metaState/loadDomainAccountTokenBalanceAndTotal, queried token account")
 	}()
 
 	domain, ok := s.readonly.domains[domainID]
@@ -147,12 +147,13 @@ func (s *metaState) loadDomainAccountTokenBalanceAndTotal(domainID proto.DomainI
 	}
 
 	for _, miner := range domain.Miners {
+		b, _ := s.loadAccountTokenBalance(miner.Address, tokenType)
 		//wyong, 20201204 
 		log.WithFields(log.Fields{
 			"miner_addr":   miner.Address,
-		}).Debugf("metaState/loadROSQLChains(30)")
+			"balance" : b, 
+		}).Debugf("metaState/loadDomainAccountTokenBalanceAndTotal, process miner")
 
-		b, _ := s.loadAccountTokenBalance(miner.Address, tokenType)
 		if miner.Address == addr {
 			balance = b 
 		}

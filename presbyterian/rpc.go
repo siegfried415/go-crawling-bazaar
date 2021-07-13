@@ -289,6 +289,13 @@ func (cs *ChainRPCService) QueryDomainAccountTokenBalanceAndTotalHandler(s net.S
 		OK: ok, 
 	}	
 
+	//wyong, 20210713 
+	log.WithFields(log.Fields{
+		"addr": req.Addr,
+		"balance" : balance, 
+		"total" : totalBalance, 
+	}).Debugf("ChainRPCService/QueryDomainAccountTokenBalanceAndTotalHandler")
+
 	s.SendMsg(ctx, &resp) 
 }
 

@@ -5,6 +5,8 @@ go 1.13
 require (
 	github.com/CovenantSQL/HashStablePack v2.0.0+incompatible
 	github.com/CovenantSQL/beacon v0.0.0-20190521023351-8402bfe07ece
+	github.com/CovenantSQL/go-sqlite3-encrypt v1.9.0 // indirect
+	github.com/CovenantSQL/sqlparser v0.0.0-20190618091803-c4a6cf6cebb6 // indirect
 	github.com/cyberdelia/go-metrics-graphite v0.0.0-20161219230853-39f87cc3b432
 	github.com/davecgh/go-spew v1.1.1
 	github.com/hashicorp/golang-lru v0.5.4
@@ -16,6 +18,7 @@ require (
 	github.com/ipfs/go-ds-badger v0.2.3
 	github.com/ipfs/go-graphsync v0.0.0-00010101000000-000000000000
 	github.com/ipfs/go-ipfs-blockstore v0.1.4
+	github.com/ipfs/go-ipfs-chunker v0.0.5 // indirect
 	github.com/ipfs/go-ipfs-cmdkit v0.0.1
 	github.com/ipfs/go-ipfs-cmds v0.4.0
 	github.com/ipfs/go-ipfs-exchange-interface v0.0.1
@@ -26,6 +29,8 @@ require (
 	github.com/ipfs/go-ipld-format v0.0.2
 	github.com/ipfs/go-log v1.0.4
 	github.com/ipfs/go-merkledag v0.0.6
+	github.com/ipfs/go-path v0.0.9 // indirect
+	github.com/ipfs/go-unixfs v0.0.0-00010101000000-000000000000 // indirect
 	github.com/ipld/go-ipld-prime v0.5.0
 	github.com/libp2p/go-libp2p v0.11.0
 	github.com/libp2p/go-libp2p-autonat-svc v0.2.0
@@ -42,6 +47,8 @@ require (
 	github.com/multiformats/go-multiaddr v0.3.1
 	github.com/multiformats/go-multiaddr-net v0.2.0
 	github.com/multiformats/go-multihash v0.0.14
+	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
+	github.com/philhofer/fwd v1.1.1 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0
 	github.com/siegfried415/go-crawling-bazaar v0.0.0-00010101000000-000000000000
@@ -50,6 +57,7 @@ require (
 
 	github.com/ugorji/go v1.1.2
 	github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8
+	github.com/vechain/go-ecvrf v0.0.0-20200326080414-5b7e9ee61906 // indirect
 	github.com/whyrusleeping/go-logging v0.0.1
 	github.com/zserge/metric v0.1.0
 	golang.org/x/crypto v0.0.0-20200423211502-4bdfaf469ed5
