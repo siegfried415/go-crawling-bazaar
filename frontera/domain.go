@@ -349,21 +349,6 @@ func NewDomain(cfg *DomainConfig, f *Frontera, peers *proto.Peers, genesis *type
 		return
 	}
 	
-
-	/*
-	//just for test, wyong, 20200821 
-        hexcid := "f015512209d8453505bdc6f269678e16b3e56c2a2948a41f2c792617cc9611ed363c95b63"
-        c, err := cid.Decode(hexcid)
-        if err != nil {
-		return 
-        }
-	log.Infof("NewDomain(116)")
-	if err = domain.SetCid("http://127.0.0.1/index.html", c ); err != nil {
-		return
-	}
-	*/	
-
-
 	/* wyong, 20210528 
 	log.Infof("NewDomain(120)")
 	// init kayak config

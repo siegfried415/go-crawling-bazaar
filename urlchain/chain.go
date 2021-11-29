@@ -931,6 +931,7 @@ func (c *Chain) processBlocks(ctx context.Context) {
 				nonceReq := &types.NextAccountNonceReq{}
 				nonceResp := &types.NextAccountNonceResp{}
 
+				//todo, wyong, 20210719
 				//nonceReq.Addr = *c.addr
 				if err = c.host.RequestPB("MCC.NextAccountNonce", nonceReq, nonceResp); err != nil {
 					// allocate nonce failed
@@ -1375,5 +1376,14 @@ func (c *Chain) updateMetrics() {
 
 //export this fuction, wyong, 20210205 
 func (c *Chain) GetCurrentHeight() int32 {
-	return c.rt.getHead().Height
+	//return c.rt.getHead().Height
+	//return c.rt.getHead().node.height 
+
+	//wyong, 20210719 
+	now := c.rt.now()
+	return c.rt.getHeightFromTime(now)
+}
+
+func (c *Chain) GetCurrentHeightFromTime(t time.Time) int32 {
+	return c.rt.getHeightFromTime(t)
 }

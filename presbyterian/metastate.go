@@ -152,7 +152,7 @@ func (s *metaState) loadDomainAccountTokenBalanceAndTotal(domainID proto.DomainI
 		log.WithFields(log.Fields{
 			"miner_addr":   miner.Address,
 			"balance" : b, 
-		}).Debugf("metaState/loadDomainAccountTokenBalanceAndTotal, process miner")
+		}).Debugf("metaState/loadDomainAccountTokenBalanceAndTotal(10), process miner(%s), balance=%d ", miner.Address, b)
 
 		if miner.Address == addr {
 			balance = b 
@@ -160,6 +160,7 @@ func (s *metaState) loadDomainAccountTokenBalanceAndTotal(domainID proto.DomainI
 		totalBalance  += b
 	}
 
+	log.Debugf("metaState/loadDomainAccountTokenBalanceAndTotal(20), balance=%d, total balance=%d ", balance, totalBalance )
 	return
 }
 
@@ -829,7 +830,7 @@ func (s *metaState) filterNMiners(
 		delete(allProviderMap, m)
 	}
 
-	log.Debugf("filterNMiners(10), len(allProviderMap0=%d\n", len(allProviderMap)) 
+	log.Debugf("filterNMiners(10), len(allProviderMap)=%d\n", len(allProviderMap)) 
 	// suppose 1/4 miners match
 	newMiners := make(MinerInfos, 0, len(allProviderMap)/4)
 	// filter all miners to slice and sort

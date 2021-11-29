@@ -61,7 +61,7 @@ var (
 	//N->Y, wyong, 20201211
 	// SimpleLog is the flag of simple log format
 	// "Y" for true, "N" for false. defined in `go build`
-	SimpleLog = "Y"
+	SimpleLog = "N"
 )
 
 // Logger wraps logrus logger type.

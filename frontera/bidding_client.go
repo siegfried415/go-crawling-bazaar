@@ -62,6 +62,9 @@ import (
         //wyong, 20200218
         //"github.com/mfonda/simhash"
 
+	//wyong, 20210719
+	crypto "github.com/siegfried415/go-crawling-bazaar/crypto"
+        utils "github.com/siegfried415/go-crawling-bazaar/utils"
 )
 
 const (
@@ -654,6 +657,16 @@ func (bc *BiddingClient) Run() {
 
 			log.Debugf("BiddingClient/Run(110), bidding = %s\n", bidding )
 
+			//get domain by bidding.DomainID, wyong, 20210719 
+			domain, exist := bc.f.DomainForID(bidding.DomainID)
+			if exist != true {
+				//err = errors.New("domain not exist")
+				continue 	
+			}
+
+			//wyong, 20210719 
+			currentHeight := uint32(domain.chain.GetCurrentHeightFromTime( bidding.LastBroadcastTime)) 
+
 			//wyong, 20210203 
 			pk, err := kms.GetPublicKey(bs.from)
 			if err != nil {
@@ -665,17 +678,37 @@ func (bc *BiddingClient) Run() {
 			//wyong, 20210118
 			// `pi` is the VRF proof
 			// pk is publick key of bid.From 
-			_, err = ecvrf.NewSecp256k1Sha256Tai().Verify((*ecdsa.PublicKey)(pk), []byte(bs.url), bs.proof)
+			_, err = ecvrf.NewSecp256k1Sha256Tai().Verify((*ecdsa.PublicKey)(pk), 
+				//[]byte(bs.url), 
+				append(utils.Uint32ToBytes(currentHeight), []byte(bs.url)...), 
+				bs.proof)
 			if err != nil {
 				// invalid proof
 				continue	
 			}
 
 			log.Debugf("BiddingClient/Run(130)\n")
+			//get addr by pubkey, wyong, 20210719
+			addr, err := crypto.PubKeyHash(pk)
+			if err != nil {
+				continue 
+			}
+
+			balance, totalBalance , err := GetDomainTokenBalanceAndTotal(bc.host, bs.domain, addr, types.Particle )
+			if err != nil {
+				//err = errors.New("can't get token balance of addr or total addrs in domain!")
+				continue 	
+			}
+
 			//todo, verify if crawler has successfully in competition,  wyong, 20210118
 			//if verify(bs.beta, expectedCrawler, minerPower, networkPower) != ok {
 			//	continue 	
 			//} 
+
+			//wyong, 20210719 
+			if IsWinner(bs.hash, int64(bidding.ExpectCrawlerCount), balance, totalBalance) != true {
+				continue 
+			}
 
 			/*wyong, 20200828 
 			// add bids to biddinglist

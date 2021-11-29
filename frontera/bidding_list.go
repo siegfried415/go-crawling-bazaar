@@ -17,6 +17,8 @@ import (
         //wyong, 20210220
         log "github.com/siegfried415/go-crawling-bazaar/utils/log"
 
+	//wyong, 20211124
+        //asymmetric "github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
 )
 
 
@@ -27,6 +29,7 @@ type BidEntry struct {
 	From	proto.NodeID 
 
 	VerifiedCount int //wyong,  20210220 
+	//Signature 	asymmetric.Signature	//wyong, 2021124 
 }
 
 //wyong, 20190118
