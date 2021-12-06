@@ -32,7 +32,9 @@ import (
 	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
 	//"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
 
-	mine "github.com/siegfried415/go-crawling-bazaar/pow/cpuminer"
+	//wyong, 20211206 
+	//mine "github.com/siegfried415/go-crawling-bazaar/pow/cpuminer"
+
 	"github.com/siegfried415/go-crawling-bazaar/proto"
 	"github.com/siegfried415/go-crawling-bazaar/utils"
 	"github.com/siegfried415/go-crawling-bazaar/utils/log"
@@ -254,7 +256,7 @@ func GetAllNodeID() (nodeIDs []proto.NodeID, err error) {
 }
 
 // SetPublicKey verifies nonce and set Public Key.
-func SetPublicKey(id proto.NodeID, nonce mine.Uint256, publicKey *asymmetric.PublicKey) (err error) {
+func SetPublicKey(id proto.NodeID, /* nonce mine.Uint256, wyong, 20211206 */  publicKey *asymmetric.PublicKey) (err error) {
 	nodeInfo := &proto.Node{
 		ID:        id,
 		Addr:      "",
@@ -272,25 +274,27 @@ func SetNode(nodeInfo *proto.Node) (err error) {
 		return ErrNilNode
 	}
 
-	//todo, wyong, 20201114 
-	//if !Unittest {
-	//	if !IsIDPubNonceValid(nodeInfo.ID.ToRawNodeID(), &nodeInfo.Nonce, nodeInfo.PublicKey) {
-	//		return ErrNodeIDKeyNonceNotMatch
-	//	}
-	//}
+	/*todo, wyong, 20201114 
+	if !Unittest {
+		if !IsIDPubNonceValid(nodeInfo.ID.ToRawNodeID(), &nodeInfo.Nonce, nodeInfo.PublicKey) {
+			return ErrNodeIDKeyNonceNotMatch
+		}
+	}
+	*/
 
 	return setNode(nodeInfo)
 }
 
-//todo, wyong, 20201114 
-// IsIDPubNonceValid returns if `id == HashBlock(key, nonce)`.
-//func IsIDPubNonceValid(id *proto.RawNodeID, nonce *mine.Uint256, key *asymmetric.PublicKey) bool {
-//	if key == nil || id == nil || nonce == nil {
-//		return false
-//	}
-//	keyHash := mine.HashBlock(key.Serialize(), *nonce)
-//	return keyHash.IsEqual(&id.Hash)
-//}
+/*todo, wyong, 20201114 
+IsIDPubNonceValid returns if `id == HashBlock(key, nonce)`.
+func IsIDPubNonceValid(id *proto.RawNodeID, nonce *mine.Uint256, key *asymmetric.PublicKey) bool {
+	if key == nil || id == nil || nonce == nil {
+		return false
+	}
+	keyHash := mine.HashBlock(key.Serialize(), *nonce)
+	return keyHash.IsEqual(&id.Hash)
+}
+*/
 
 // setNode sets id and its publicKey.
 func setNode(nodeInfo *proto.Node) (err error) {

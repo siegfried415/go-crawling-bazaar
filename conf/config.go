@@ -28,7 +28,10 @@ import (
 
 	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
 	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
-	"github.com/siegfried415/go-crawling-bazaar/pow/cpuminer"
+
+	//wyong, 20211206 
+	//"github.com/siegfried415/go-crawling-bazaar/pow/cpuminer"
+
 	"github.com/siegfried415/go-crawling-bazaar/proto"
 	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
@@ -72,8 +75,11 @@ type BPInfo struct {
 	NodeID proto.NodeID `yaml:"NodeID"`
 	// RawNodeID
 	RawNodeID proto.RawNodeID `yaml:"-"`
+
+	//wyong, 20211206 
 	// Nonce is the nonce, SEE: cmd/cql for more
-	Nonce cpuminer.Uint256 `yaml:"Nonce"`
+	//Nonce cpuminer.Uint256 `yaml:"Nonce"`
+
 	// ChainFileName is the chain db's name
 	ChainFileName string `yaml:"ChainFileName"`
 	// BPGenesis is the genesis block filed

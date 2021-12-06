@@ -8,25 +8,27 @@ require (
 	github.com/cyberdelia/go-metrics-graphite v0.0.0-20161219230853-39f87cc3b432
 	github.com/davecgh/go-spew v1.1.1
 	github.com/hashicorp/golang-lru v0.5.4
-	github.com/ipfs/go-bitswap v0.1.8
-	github.com/ipfs/go-block-format v0.0.2
-	github.com/ipfs/go-blockservice v0.1.3
-	github.com/ipfs/go-cid v0.0.7
-	github.com/ipfs/go-datastore v0.4.4
+	github.com/ipfs/go-bitswap v0.5.1
+	github.com/ipfs/go-block-format v0.0.3
+	github.com/ipfs/go-blockservice v0.2.1
+	github.com/ipfs/go-cid v0.1.0
+	github.com/ipfs/go-datastore v0.5.0
 	github.com/ipfs/go-ds-badger v0.2.3
 	github.com/ipfs/go-graphsync v0.0.0-00010101000000-000000000000
-	github.com/ipfs/go-ipfs-blockstore v0.1.4
+	github.com/ipfs/go-ipfs-blockstore v0.2.1
 	github.com/ipfs/go-ipfs-cmdkit v0.0.1
 	github.com/ipfs/go-ipfs-cmds v0.4.0
-	github.com/ipfs/go-ipfs-exchange-interface v0.0.1
+	github.com/ipfs/go-ipfs-exchange-interface v0.1.0
 	github.com/ipfs/go-ipfs-files v0.0.1
 	github.com/ipfs/go-ipfs-keystore v0.0.1
-	github.com/ipfs/go-ipfs-routing v0.1.0
+	github.com/ipfs/go-ipfs-routing v0.2.1
 	github.com/ipfs/go-ipld-cbor v0.0.1
-	github.com/ipfs/go-ipld-format v0.0.2
-	github.com/ipfs/go-log v1.0.4
-	github.com/ipfs/go-merkledag v0.0.6
-	github.com/ipld/go-ipld-prime v0.5.0
+	github.com/ipfs/go-ipld-format v0.2.0
+	github.com/ipfs/go-log v1.0.5
+	github.com/ipfs/go-merkledag v0.5.1
+
+	github.com/ipfs/go-path v0.0.1
+	github.com/ipld/go-ipld-prime v0.11.0
 	github.com/libp2p/go-libp2p v0.11.0
 	github.com/libp2p/go-libp2p-autonat-svc v0.2.0
 	github.com/libp2p/go-libp2p-circuit v0.3.1
@@ -41,19 +43,22 @@ require (
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 	github.com/multiformats/go-multiaddr v0.3.1
 	github.com/multiformats/go-multiaddr-net v0.2.0
-	github.com/multiformats/go-multihash v0.0.14
+	github.com/multiformats/go-multihash v0.0.15
+
 	github.com/pkg/errors v0.9.1
 	github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0
 	github.com/siegfried415/go-crawling-bazaar v0.0.0-00010101000000-000000000000
 	github.com/sirupsen/logrus v1.7.0
-	github.com/stretchr/testify v1.6.1
+	github.com/stretchr/testify v1.7.0
+
+	github.com/tchap/go-patricia v2.3.0+incompatible
 
 	github.com/ugorji/go v1.1.2
 	github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8
 	github.com/whyrusleeping/go-logging v0.0.1
 	github.com/zserge/metric v0.1.0
-	golang.org/x/crypto v0.0.0-20200423211502-4bdfaf469ed5
-	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a
+	golang.org/x/crypto v0.0.0-20210506145944-38f3c27a63bf
+	golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9
 	gopkg.in/yaml.v2 v2.2.4
 
 )
@@ -113,3 +118,13 @@ replace github.com/libp2p/go-libp2p-record => github.com/libp2p/go-libp2p-record
 replace github.com/libp2p/go-eventbus => github.com/libp2p/go-eventbus v0.2.1
 
 //replace github.com/libp2p/go-libp2p-transport-upgrader => github.com/libp2p/go-libp2p-transport-upgrader v0.2.0
+
+replace github.com/ipfs/go-blockservice => github.com/ipfs/go-blockservice v0.0.2
+
+replace github.com/ipfs/go-ipfs-exchange-interface => github.com/ipfs/go-ipfs-exchange-interface v0.0.1
+
+replace github.com/ipfs/go-ipld-format => github.com/ipfs/go-ipld-format v0.0.1
+
+replace github.com/ipfs/go-ipld-cbor => github.com/ipfs/go-ipld-cbor v0.0.3
+
+//replace github.com/ipld/go-ipld-prime => github.com/ipld/go-ipld-prime v0.0.5

@@ -30,12 +30,14 @@ import (
 	"fmt"
 	"math/big"
 	"sync"
-	"time"
+	//"time"
 
 	hsp "github.com/CovenantSQL/HashStablePack/marshalhash"
 	ec "github.com/btcsuite/btcd/btcec"
 
-	mine "github.com/siegfried415/go-crawling-bazaar/pow/cpuminer"
+	//wyong, 20211206 
+	//mine "github.com/siegfried415/go-crawling-bazaar/pow/cpuminer"
+
 	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 
 	//wyong, 20201002 
@@ -251,6 +253,8 @@ func GenSecp256k1KeyPair() (
 	return
 }
 
+
+/* wyong, 20211206 
 // GetPubKeyNonce will make his best effort to find a difficult enough
 // nonce.
 func GetPubKeyNonce(
@@ -278,3 +282,4 @@ func GetPubKeyNonce(
 
 	return <-block.NonceChan
 }
+*/
