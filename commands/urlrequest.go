@@ -3,33 +3,35 @@ package commands
 
 import (
 	"encoding/json" 
+	"errors"
+	"strings"
 
-	types "github.com/siegfried415/go-crawling-bazaar/types" 
-	cmds "github.com/ipfs/go-ipfs-cmds"
 	cmdkit "github.com/ipfs/go-ipfs-cmdkit"
+	cmds "github.com/ipfs/go-ipfs-cmds"
+
 	env "github.com/siegfried415/go-crawling-bazaar/env" 
-	log "github.com/siegfried415/go-crawling-bazaar/utils/log" 
+	proto "github.com/siegfried415/go-crawling-bazaar/proto" 
+	types "github.com/siegfried415/go-crawling-bazaar/types" 
 
 )
 
 var urlRequestCmd = &cmds.Command{
 	Helptext: cmdkit.HelpText{
-		Tagline: "Put and get url request.",
+		Tagline: "Put url request.",
 		ShortDescription: `
-Whenever a node can't access a web page, a url request can be issued to his 
-connected peers on crawling market,  some of those peers will fetch the url 
-for biddee. 
+Put a url request to crawling bazaar.
 `,
 		LongDescription: `
 Whenever a node can't access a web page, a url request can be issued to his 
 connected peers on crawling market,  some of those peers will fetch the url 
-for biddee. 
+for the client. 
 `,
 	},
 
 	Subcommands: map[string]*cmds.Command{
 		"put": UrlRequestsPutCmd,
 	},
+
 }
 
 var UrlRequestsPutCmd = &cmds.Command{
@@ -37,8 +39,7 @@ var UrlRequestsPutCmd = &cmds.Command{
 		Tagline: "Put url request.",
 
 		ShortDescription: `
-Whenever you can't access a web page, you can issue url request to crawling-
-market to let other peers fetch the web page for you.
+Put url request to crawling-bazaar.
 `,
 		LongDescription: `
 Whenever you can't access a web page, you can issue url request to crawling-
@@ -56,52 +57,60 @@ Put a request for a url:
 	},
 
 	Run: func(req *cmds.Request, res cmds.ResponseEmitter, cmdenv cmds.Environment) error {
-                var parenturlrequest types.UrlRequest
-                var urlrequests []types.UrlRequest
+                role := cmdenv.(*env.Env).Role()
+                if role != proto.Client {
+			return errors.New("this command must issued at Client mode!")
+		}
 
-		//log.Debugf("commands/urlrequest.go(10), req.Arguments[0]=%s\n", req.Arguments[0]) 
+                var parenturlrequest types.UrlRequest
                 err := json.Unmarshal([]byte(req.Arguments[0]), &parenturlrequest)
                 if err != nil {
                         return err
                 }
 
-                log.Debugf("commands/urlrequest.go(20), PushUrlRequestsCmd, get parent url %s with probability(%f)\n", parenturlrequest.Url, parenturlrequest.Probability)
-
-		//log.Debugf("commands/urlrequest.go(30), req.Arguments[1]=%s\n", req.Arguments[1]) 
+                var urlrequests []types.UrlRequest
                 err = json.Unmarshal([]byte(req.Arguments[1]), &urlrequests )
                 if err != nil {
                         return err
                 }
 
+		//get domain of this url request 
+		var domain string 
+		if parenturlrequest.Url != "" { 
+			domain, _ = domainForUrl(parenturlrequest.Url) 
+		}
+
+		if domain == "" {
+			if urlrequests[0].Url != "" { 
+				domain, err = domainForUrl(urlrequests[0].Url) 
+				if err != nil {
+					return err 
+				}
+			}
+		}
+
+		if domain == "" {
+			return errors.New("can't get domain of this url request!")
+		}
+
                 for _, urlrequest := range urlrequests {
-			//todo, check each requests is child of parenturl? 
-                        log.Debugf("commands/urlrequest.go(40), PushUrlRequestsCmd, get url %s with probability(%f)\n", urlrequest.Url, urlrequest.Probability)
+			if !strings.HasPrefix(urlrequest.Url, domain) {
+				return errors.New("requested url must belongs to the same domain of parent")
+			}
                 }
 
-		domain, err := domainForUrl(urlrequests[0].Url) 
+		host := cmdenv.(*env.Env).Host()
+		conn, err := getConn(host, "FRT.UrlRequest",  domain)
+		if err != nil {
+			return err  
+		}
+		defer conn.Close()
+
+		err = conn.PutUrlRequest(req.Context, parenturlrequest, urlrequests ) 
 		if err != nil {
 			return err 
 		}
 
-		log.Debugf("commands/urlrequest.go(50), domain=%s\n", domain) 
-		e := cmdenv.(*env.Env)
-		host := e.Host()
-
-		conn, err := getConn(host, "FRT.UrlRequest",  domain)
-		if err != nil {
-			log.Debugf("commands/urlrequest.go(55), err=%s\n", err.Error()) 
-			return nil 
-		}
-		defer conn.Close()
-
-		log.Debugf("commands/urlrequest.go(60)\n") 
-		err = conn.PutUrlRequest(req.Context, parenturlrequest, urlrequests ) 
-		if err != nil {
-			log.Debugf("commands/urlrequest.go(65), err=%s\n", err.Error()) 
-			return nil 
-		}
-
-		log.Debugf("commands/urlrequest.go(70)\n") 
 		return cmds.EmitOnce(res, 0)
 	},
 
