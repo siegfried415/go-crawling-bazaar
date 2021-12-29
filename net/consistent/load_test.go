@@ -53,7 +53,7 @@ func TestLoadDHT(t *testing.T) {
 		x, _ := InitConsistent(testStorePath2, new(KMSStorage), false)
 		defer utils.RemoveAll(testStorePath1 + "*")
 		defer utils.RemoveAll(testStorePath2 + "*")
-		// with BP node, there should be 3 nodes
+		// with PB node, there should be 3 nodes
 		So(len(x.circle), ShouldEqual, x.NumberOfReplicas*2)
 		So(len(x.sortedHashes), ShouldEqual, x.NumberOfReplicas*2)
 		So(sort.IsSorted(x.sortedHashes), ShouldBeTrue)

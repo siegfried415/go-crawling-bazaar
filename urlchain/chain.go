@@ -23,15 +23,9 @@ import (
 	"encoding/binary"
 	"expvar"
 	"fmt"
-	//"strings"
 	"sync"
 	"sync/atomic"
 	"time"
-	//"bufio" 
-
-        //wyong, 20200928
-        //"io/ioutil"
-        //"github.com/ugorji/go/codec"
 
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
@@ -39,32 +33,22 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/util"
 	mw "github.com/zserge/metric"
 
-	"github.com/siegfried415/go-crawling-bazaar/crypto"
-	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
-	"github.com/siegfried415/go-crawling-bazaar/kms"
-
-	//wyong, 20201014
-	//"github.com/siegfried415/go-crawling-bazaar/address" 
-	//host "github.com/libp2p/go-libp2p-host" 
-	//peer "github.com/libp2p/go-libp2p-core/peer" 
 	protocol "github.com/libp2p/go-libp2p-core/protocol" 
 
+	"github.com/siegfried415/go-crawling-bazaar/crypto"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
+        "github.com/siegfried415/go-crawling-bazaar/crypto/hash"
+	"github.com/siegfried415/go-crawling-bazaar/kms"
+	net "github.com/siegfried415/go-crawling-bazaar/net" 
 	"github.com/siegfried415/go-crawling-bazaar/proto"
-	//"github.com/siegfried415/go-crawling-bazaar/route"
-	//rpc "github.com/siegfried415/go-crawling-bazaar/rpc/mux"
-	"github.com/siegfried415/go-crawling-bazaar/types"
-	"github.com/siegfried415/go-crawling-bazaar/utils"
-	"github.com/siegfried415/go-crawling-bazaar/utils/log"
+
 	s "github.com/siegfried415/go-crawling-bazaar/state"
 	si "github.com/siegfried415/go-crawling-bazaar/state/interfaces"
 	ss "github.com/siegfried415/go-crawling-bazaar/state/sqlite"
 
-        //wyong, 20200819
-        "github.com/siegfried415/go-crawling-bazaar/crypto/hash"
-
-	//wyong, 20201014
-	net "github.com/siegfried415/go-crawling-bazaar/net" 
-
+	"github.com/siegfried415/go-crawling-bazaar/types"
+	"github.com/siegfried415/go-crawling-bazaar/utils"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 const (
@@ -120,10 +104,7 @@ type Chain struct {
 	ai *ackIndex
 	st *s.State
 
-	//wyong, 20201014 
-	//cl *rpc.Caller
 	host net.RoutedHost 
-
 	rt *runtime
 
 	blocks    chan *types.Block
@@ -166,7 +147,6 @@ func NewChain(c *Config) (chain *Chain, err error) {
 
 // NewChainWithContext creates a new sql-chain struct with context.
 func NewChainWithContext(ctx context.Context, c *Config) (chain *Chain, err error) {
-	log.Infof("urlchain/NewChainWithContext(10)") 
 	le := log.WithField("domain", c.DomainID)
 
 	leveldbInit.Do(func() {
@@ -189,12 +169,10 @@ func NewChainWithContext(ctx context.Context, c *Config) (chain *Chain, err erro
 		le.Debugf("opened chain tdb %s", tdbFile)
 	})
 
-	log.Infof("urlchain/NewChainWithContext(20)") 
 	if err != nil {
 		return
 	}
 
-	log.Infof("urlchain/NewChainWithContext(30)") 
 	// Open storage
 	var strg si.Storage
 	if strg, err = ss.NewSqlite(c.DataFile); err != nil {
@@ -202,7 +180,6 @@ func NewChainWithContext(ctx context.Context, c *Config) (chain *Chain, err erro
 		return
 	}
 
-	log.Infof("urlchain/NewChainWithContext(40)") 
 	// Cache local private key
 	var (
 		pk   *asymmetric.PrivateKey	
@@ -213,16 +190,12 @@ func NewChainWithContext(ctx context.Context, c *Config) (chain *Chain, err erro
 		return
 	}
 
-	log.Infof("urlchain/NewChainWithContext(50)") 
 	addr, err = crypto.PubKeyHash(pk.PubKey())
 	if err != nil {
 		err = errors.Wrap(err, "failed to generate address")
 		return
 	}
 
-	log.Infof("urlchain/NewChainWithContext(60)") 
-	//wyong, 20200820 
-	//metaKeyPrefix, err := c.DomainID.AccountAddress()
 	rawID := hash.THashH([]byte(c.DomainID))
         tmpID := proto.DomainID(rawID.String())
         metaKeyPrefix, err := tmpID.AccountAddress()
@@ -232,17 +205,12 @@ func NewChainWithContext(ctx context.Context, c *Config) (chain *Chain, err erro
 		return
 	}
 
-	log.Infof("urlchain/NewChainWithContext(70)") 
 	// Create chain state
 	chain = &Chain{
 		bi:           newBlockIndex(),
 		ai:           newAckIndex(),
 		st:           s.NewState(sql.IsolationLevel(c.IsolationLevel), c.Server, strg),
-		
-		//wyong, 20201014 
-		//cl:           rpc.NewCaller(),
 		host :		c.Host,  
-
 		rt:           newRunTime(ctx, c),
 		blocks:       make(chan *types.Block),
 		heights:      make(chan int32, 1),
@@ -253,7 +221,7 @@ func NewChainWithContext(ctx context.Context, c *Config) (chain *Chain, err erro
 		updatePeriod: c.UpdatePeriod,
 		domainID:   c.DomainID,
 
-		//todo, wyong, 20200930 
+		//todo
 		pk:                pk,
 		addr:              &addr,
 
@@ -274,7 +242,6 @@ func NewChainWithContext(ctx context.Context, c *Config) (chain *Chain, err erro
 
 	le = le.WithField("peer", chain.rt.getPeerInfoString())
 
-	log.Infof("urlchain/NewChainWithContext(80)") 
 	// Read blocks and rebuild memory index
 	var (
 		id           uint64
@@ -282,9 +249,7 @@ func NewChainWithContext(ctx context.Context, c *Config) (chain *Chain, err erro
 		blockIter    = blkDB.NewIterator(util.BytesPrefix(chain.metaBlockIndex), nil)
 	)
 	defer blockIter.Release()
-	log.Infof("urlchain/NewChainWithContext(90)") 
 	for blockIter.Next() {
-		log.Infof("urlchain/NewChainWithContext(100)") 
 		var (
 			k     = blockIter.Key()
 			v     = blockIter.Value()
@@ -296,72 +261,52 @@ func NewChainWithContext(ctx context.Context, c *Config) (chain *Chain, err erro
 				keyWithSymbolToHeight(k), string(k))
 			return
 		}
-		log.Infof("urlchain/NewChainWithContext(110)") 
 		le.WithField("block", block.BlockHash().String()).Debug("loading block from database")
 
 		if last == nil {
-			log.Infof("urlchain/NewChainWithContext(120)") 
 			if err = block.VerifyAsGenesis(); err != nil {
-				log.Infof("urlchain/NewChainWithContext(125)") 
 				err = errors.Wrap(err, "genesis verification failed")
 				return
 			}
-			log.Infof("urlchain/NewChainWithContext(130)") 
 			// Set constant fields from genesis block
 			chain.rt.setGenesis(block)
-			log.Infof("urlchain/NewChainWithContext(140)") 
 		} else if block.ParentHash().IsEqual(&last.hash) {
-			log.Infof("urlchain/NewChainWithContext(150)") 
 			if err = block.Verify(); err != nil {
-				log.Infof("urlchain/NewChainWithContext(160)") 
 				err = errors.Wrapf(err, "block verification failed at height %d with key %s",
 					keyWithSymbolToHeight(k), string(k))
 				return
 			}
-			log.Infof("urlchain/NewChainWithContext(170)") 
 			parent = last
 		} else {
-			log.Infof("urlchain/NewChainWithContext(180)") 
 			if parent = chain.bi.lookupNode(block.ParentHash()); parent == nil {
-				log.Infof("urlchain/NewChainWithContext(190)") 
 				return nil, ErrParentNotFound
 			}
-			log.Infof("urlchain/NewChainWithContext(190)") 
 		}
 
-		log.Infof("urlchain/NewChainWithContext(200)") 
 		// Update id
 		if nid, ok := block.CalcNextID(); ok && nid > id {
 			id = nid
 		}
 
-		log.Infof("urlchain/NewChainWithContext(210)") 
 		// do not cache block in memory in reloading
 		last = newBlockNodeEx(
 			chain.rt.getHeightFromTime(block.Timestamp()), block.BlockHash(), nil, parent)
 		chain.bi.addBlock(last)
-		log.Infof("urlchain/NewChainWithContext(220)") 
 	}
 
-	log.Infof("urlchain/NewChainWithContext(230)") 
 	if err = blockIter.Error(); err != nil {
 		err = errors.Wrap(err, "accumulated error of iterator")
 		return
 	}
 
-	log.Infof("urlchain/NewChainWithContext(240)") 
 	// Initiate chain Genesis if block list is empty
 	if last == nil {
-		log.Infof("urlchain/NewChainWithContext(250)") 
 		if err = chain.genesis(c.Genesis); err != nil {
-			log.Infof("urlchain/NewChainWithContext(255)") 
 			return nil, err
 		}
-		log.Infof("urlchain/NewChainWithContext(260)") 
 		return
 	}
 
-	log.Infof("urlchain/NewChainWithContext(270)") 
 	// Set chain state
 	var head = &state{
 		node:   last,
@@ -374,24 +319,19 @@ func NewChainWithContext(ctx context.Context, c *Config) (chain *Chain, err erro
 	// update metric
 	chain.updateMetrics()
 
-	log.Infof("urlchain/NewChainWithContext(280)") 
 	// Read queries and rebuild memory index
 	respIter := txDB.NewIterator(util.BytesPrefix(chain.metaResponseIndex), nil)
 	defer respIter.Release()
 
-	log.Infof("urlchain/NewChainWithContext(290)") 
 	for respIter.Next() {
-		log.Infof("urlchain/NewChainWithContext(300)") 
 		k := respIter.Key()
 		v := respIter.Value()
 		h := keyWithSymbolToHeight(k)
 		var resp = &types.SignedResponseHeader{}
 		if err = utils.DecodeMsgPack(v, resp); err != nil {
-			log.Infof("urlchain/NewChainWithContext(310)") 
 			err = errors.Wrapf(err, "load resp, height %d, index %s", h, string(k))
 			return
 		}
-		log.Infof("urlchain/NewChainWithContext(320)") 
 		log.WithFields(log.Fields{
 			"height": h,
 			"header": resp.Hash().String(),
@@ -399,27 +339,22 @@ func NewChainWithContext(ctx context.Context, c *Config) (chain *Chain, err erro
 		}).Debug("loaded new resp header")
 	}
 
-	log.Infof("urlchain/NewChainWithContext(330)") 
 	if err = respIter.Error(); err != nil {
 		err = errors.Wrap(err, "load resp")
 		return
 	}
 
-	log.Infof("urlchain/NewChainWithContext(340)") 
 	ackIter := txDB.NewIterator(util.BytesPrefix(chain.metaAckIndex), nil)
 	defer ackIter.Release()
 	for ackIter.Next() {
-		log.Infof("urlchain/NewChainWithContext(350)") 
 		k := ackIter.Key()
 		v := ackIter.Value()
 		h := keyWithSymbolToHeight(k)
 		var ack = &types.SignedAckHeader{}
 		if err = utils.DecodeMsgPack(v, ack); err != nil {
-			log.Infof("urlchain/NewChainWithContext(360)") 
 			err = errors.Wrapf(err, "load ack, height %d, index %s", h, string(k))
 			return
 		}
-		log.Infof("urlchain/NewChainWithContext(370)") 
 		log.WithFields(log.Fields{
 			"height": h,
 			"header": ack.Hash().String(),
@@ -427,13 +362,11 @@ func NewChainWithContext(ctx context.Context, c *Config) (chain *Chain, err erro
 		}).Debug("loaded new ack header")
 	}
 
-	log.Infof("urlchain/NewChainWithContext(380)") 
 	if err = respIter.Error(); err != nil {
 		err = errors.Wrap(err, "load ack")
 		return
 	}
 
-	log.Infof("urlchain/NewChainWithContext(390)") 
 	return
 }
 
@@ -571,7 +504,7 @@ func (c *Chain) produceBlock(now time.Time) (err error) {
 				Producer:    c.rt.getServer(),
 				GenesisHash: c.rt.genesisHash,
 				ParentHash:  c.rt.getHead().Head,
-				// MerkleRoot: will be set by BPBlock.PackAndSignBlock(PrivateKey)
+				// MerkleRoot: will be set by PBBlock.PackAndSignBlock(PrivateKey)
 				Timestamp: now,
 			},
 		},
@@ -595,7 +528,7 @@ func (c *Chain) produceBlock(now time.Time) (err error) {
 		}
 	}
 
-	/* todo, wyong, 20200930 
+	/* todo
 	// Sign block
 	if err = block.PackAndSignBlock(c.pk); err != nil {
 		return
@@ -637,32 +570,19 @@ func (c *Chain) produceBlock(now time.Time) (err error) {
 						},
 					}
 					resp := MuxAdviseNewBlockResp{}
-
-					//wyong, 20200928 
-					//if err := c.cl.CallNodeWithContext(
-					//	ctx, remote, route.SQLCAdviseNewBlock.String(), req, resp,
-					//); err != nil {
-					//	le.WithError(err).Error("failed to advise new block")
-					//}
-
-					//wyong, 20200928
 					s, err := c.host.NewStreamExt(ctx, remote, protocol.ID("URLC.AdviseNewBlock"))
 					if err != nil {
 						le.WithError(err).Error("error opening push stream")
 						return 
 					}
 
-					//wyong, 20201014 
 	                		if _, err := s.SendMsg(ctx, &req ) ; err != nil { 
 						le.WithError(err).Error("failed to advise new block")
 					}
 
-					//wyong, 20201014 
 	                		if err := s.RecvMsg(ctx, &resp ) ; err != nil { 
 						le.WithError(err).Error("failed to receive new block advise response")
 					}
-
-					//end 
 
 
 				}, c.rt.tick)
@@ -725,41 +645,23 @@ func (c *Chain) syncHead() (err error) {
 			)
 
 			atomic.AddUint32(&totalCount, 1)
-			//if err := c.cl.CallNodeWithContext(
-			//	child, node, route.SQLCFetchBlock.String(), req, resp,
-			//); err != nil {
-			//	if !strings.Contains(err.Error(), ErrUnknownMuxRequest.Error()) {
-			//		ile.WithError(err).Error("failed to fetch block from peer")
-			//		return
-			//	}
-			//	atomic.AddUint32(&initiatingCount, 1)
-			//	return
-			//}
-
-			ile.Debugf("UrlChain/syncHead(10)")
-
-			//wyong, 20200928
 			s, err := c.host.NewStreamExt(child, node, protocol.ID("URLC.FetchBlock"))
 			if err != nil {
 				ile.WithError(err).Error("error opening push stream")
 				return 
 			}
 
-			//wyong, 20201014 
 	                if _, err := s.SendMsg(child, &req ) ; err != nil { 
 				ile.WithError(err).Error("failed to fetch block from peer")
 				return 
 			}
 
 
-			//wyong, 20201020 
-			//resp, err = ioutil.ReadAll(s)
 			err = s.RecvMsg(child, &resp) 
 			if err != nil {
 				ile.WithError(err).Error("failed to get response")
 				return 
 			}
-			//end 
 
 			if resp.Block == nil {
 				ile.Debug("fetch block request reply: no such block")
@@ -931,8 +833,6 @@ func (c *Chain) processBlocks(ctx context.Context) {
 				nonceReq := &types.NextAccountNonceReq{}
 				nonceResp := &types.NextAccountNonceResp{}
 
-				//todo, wyong, 20210719
-				//nonceReq.Addr = *c.addr
 				if err = c.host.RequestPB("MCC.NextAccountNonce", nonceReq, nonceResp); err != nil {
 					// allocate nonce failed
 					le.WithError(err).Warning("allocate nonce for transaction failed")
@@ -947,11 +847,6 @@ func (c *Chain) processBlocks(ctx context.Context) {
 				addTxResp := &types.AddTxResp{}
 				addTxReq.Tx = ub
 				
-				//todo, wyong, 20200930 
-				//le.Debugf("nonce in processBlocks: %d, addr: %s",
-				//	addTxReq.Tx.GetAccountNonce(), addTxReq.Tx.GetAccountAddress())
-
-				//wyong, 20201014 
 				if err = c.host.RequestPB("MCC.AddTx", addTxReq, addTxResp); err != nil {
 					le.WithError(err).Warning("send tx failed")
 				}
@@ -1257,7 +1152,7 @@ func (c *Chain) billing(h int32, node *blockNode) (ub *types.UpdateBilling, err 
 		for _, tx := range block.QueryTxs {
 			minerAddr = tx.Response.ResponseAccount
 			if userAddr, err = crypto.PubKeyHash(tx.Request.Header.Signee); err != nil {
-				//todo, wyong, 20200930 
+				//todo 
 				//le.WithError(err).Warning("billing fail: miner addr")
 				return
 			}
@@ -1276,12 +1171,12 @@ func (c *Chain) billing(h int32, node *blockNode) (ub *types.UpdateBilling, err 
 
 		for _, req := range block.FailedReqs {
 			if minerAddr, err = crypto.PubKeyHash(block.Signee()); err != nil {
-				//todo, wyong, 20200930 
+				//todo
 				//le.WithError(err).Warning("billing fail: miner addr")
 				return
 			}
 			if userAddr, err = crypto.PubKeyHash(req.Header.Signee); err != nil {
-				//todo, wyong, 20200930 
+				//todo
 				//le.WithError(err).Warning("billing fail: user addr")
 				return
 			}
@@ -1299,7 +1194,7 @@ func (c *Chain) billing(h int32, node *blockNode) (ub *types.UpdateBilling, err 
 		Users: make([]*types.UserCost, len(usersMap)),
 	})
 
-	//todo, check if the following line is necessary, wyong, 20210203 
+	//todo, check if the following line is necessary
 	//ub.Version = int32(ub.HSPDefaultVersion())
 
 	i = 0
@@ -1374,12 +1269,8 @@ func (c *Chain) updateMetrics() {
 	c.expVars.Get(mwMinerChainBlockTimestamp).(*expvar.String).Set(b.Timestamp().String())
 }
 
-//export this fuction, wyong, 20210205 
+//export this fuction
 func (c *Chain) GetCurrentHeight() int32 {
-	//return c.rt.getHead().Height
-	//return c.rt.getHead().node.height 
-
-	//wyong, 20210719 
 	now := c.rt.now()
 	return c.rt.getHeightFromTime(now)
 }

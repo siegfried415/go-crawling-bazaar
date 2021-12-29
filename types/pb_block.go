@@ -29,8 +29,8 @@ import (
 
 //go:generate hsp
 
-// BPHeader defines the main chain block header.
-type BPHeader struct {
+// PBHeader defines the main chain block header.
+type PBHeader struct {
 	Version    int32
 	Producer   proto.AccountAddress
 	MerkleRoot hash.Hash
@@ -38,36 +38,36 @@ type BPHeader struct {
 	Timestamp  time.Time
 }
 
-// BPSignedHeader defines the main chain header with the signature.
-type BPSignedHeader struct {
-	BPHeader
+// PBSignedHeader defines the main chain header with the signature.
+type PBSignedHeader struct {
+	PBHeader
 	verifier.DefaultHashSignVerifierImpl
 }
 
-func (s *BPSignedHeader) verifyHash() error {
-	return s.DefaultHashSignVerifierImpl.VerifyHash(&s.BPHeader)
+func (s *PBSignedHeader) verifyHash() error {
+	return s.DefaultHashSignVerifierImpl.VerifyHash(&s.PBHeader)
 }
 
-func (s *BPSignedHeader) verify() error {
-	return s.DefaultHashSignVerifierImpl.Verify(&s.BPHeader)
+func (s *PBSignedHeader) verify() error {
+	return s.DefaultHashSignVerifierImpl.Verify(&s.PBHeader)
 }
 
-func (s *BPSignedHeader) setHash() error {
-	return s.DefaultHashSignVerifierImpl.SetHash(&s.BPHeader)
+func (s *PBSignedHeader) setHash() error {
+	return s.DefaultHashSignVerifierImpl.SetHash(&s.PBHeader)
 }
 
-func (s *BPSignedHeader) sign(signer *asymmetric.PrivateKey) error {
-	return s.DefaultHashSignVerifierImpl.Sign(&s.BPHeader, signer)
+func (s *PBSignedHeader) sign(signer *asymmetric.PrivateKey) error {
+	return s.DefaultHashSignVerifierImpl.Sign(&s.PBHeader, signer)
 }
 
-// BPBlock defines the main chain block.
-type BPBlock struct {
-	SignedHeader BPSignedHeader
+// PBBlock defines the main chain block.
+type PBBlock struct {
+	SignedHeader PBSignedHeader
 	Transactions []pi.Transaction
 }
 
 // GetTxHashes returns all hashes of tx in block.{Billings, ...}.
-func (b *BPBlock) GetTxHashes() []*hash.Hash {
+func (b *PBBlock) GetTxHashes() []*hash.Hash {
 	// TODO(lambda): when you add new tx type, you need to put new tx's hash in the slice
 	// get hashes in block.Transactions
 	hs := make([]*hash.Hash, len(b.Transactions))
@@ -79,12 +79,12 @@ func (b *BPBlock) GetTxHashes() []*hash.Hash {
 	return hs
 }
 
-func (b *BPBlock) setMerkleRoot() {
+func (b *PBBlock) setMerkleRoot() {
 	var merkleRoot = merkle.NewMerkle(b.GetTxHashes()).GetRoot()
 	b.SignedHeader.MerkleRoot = *merkleRoot
 }
 
-func (b *BPBlock) verifyMerkleRoot() error {
+func (b *PBBlock) verifyMerkleRoot() error {
 	var merkleRoot = *merkle.NewMerkle(b.GetTxHashes()).GetRoot()
 	if !merkleRoot.IsEqual(&b.SignedHeader.MerkleRoot) {
 		return ErrMerkleRootVerification
@@ -93,13 +93,13 @@ func (b *BPBlock) verifyMerkleRoot() error {
 }
 
 // SetHash sets the block header hash, including the merkle root of the packed transactions.
-func (b *BPBlock) SetHash() error {
+func (b *PBBlock) SetHash() error {
 	b.setMerkleRoot()
 	return b.SignedHeader.setHash()
 }
 
 // VerifyHash verifies the block header hash, including the merkle root of the packed transactions.
-func (b *BPBlock) VerifyHash() error {
+func (b *PBBlock) VerifyHash() error {
 	if err := b.verifyMerkleRoot(); err != nil {
 		return err
 	}
@@ -107,13 +107,13 @@ func (b *BPBlock) VerifyHash() error {
 }
 
 // PackAndSignBlock computes block's hash and sign it.
-func (b *BPBlock) PackAndSignBlock(signer *asymmetric.PrivateKey) error {
+func (b *PBBlock) PackAndSignBlock(signer *asymmetric.PrivateKey) error {
 	b.setMerkleRoot()
 	return b.SignedHeader.sign(signer)
 }
 
 // Verify verifies whether the block is valid.
-func (b *BPBlock) Verify() error {
+func (b *PBBlock) Verify() error {
 	if err := b.verifyMerkleRoot(); err != nil {
 		return err
 	}
@@ -121,21 +121,21 @@ func (b *BPBlock) Verify() error {
 }
 
 // Timestamp returns timestamp of block.
-func (b *BPBlock) Timestamp() time.Time {
+func (b *PBBlock) Timestamp() time.Time {
 	return b.SignedHeader.Timestamp
 }
 
 // Producer returns the producer of block.
-func (b *BPBlock) Producer() proto.AccountAddress {
+func (b *PBBlock) Producer() proto.AccountAddress {
 	return b.SignedHeader.Producer
 }
 
 // ParentHash returns the parent hash field of the block header.
-func (b *BPBlock) ParentHash() *hash.Hash {
+func (b *PBBlock) ParentHash() *hash.Hash {
 	return &b.SignedHeader.ParentHash
 }
 
 // BlockHash returns the parent hash field of the block header.
-func (b *BPBlock) BlockHash() *hash.Hash {
+func (b *PBBlock) BlockHash() *hash.Hash {
 	return &b.SignedHeader.DataHash
 }

@@ -18,27 +18,19 @@ import (
 	"github.com/libp2p/go-libp2p-core/peerstore"
 	"github.com/libp2p/go-libp2p-core/protocol"
 
-	//logging "github.com/ipfs/go-log"
 	circuit "github.com/libp2p/go-libp2p-circuit"
 	lgbl "github.com/libp2p/go-libp2p-loggables"
-
 	ma "github.com/multiformats/go-multiaddr"
 
-	//wyong, 20201108 
 	"github.com/siegfried415/go-crawling-bazaar/kms"
-	"github.com/siegfried415/go-crawling-bazaar/proto"
-	//"github.com/siegfried415/go-crawling-bazaar/route"
 	"github.com/siegfried415/go-crawling-bazaar/utils/log"
-
-	//wyong, 20201213 
-	//"github.com/siegfried415/go-crawling-bazaar/utils/callinfo"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
 )
 
-//var log = logging.Logger("routedhost")
 
 var (
-        // ErrNoChiefBlockProducerAvailable defines failure on find chief block producer.
-        ErrNoChiefBlockProducerAvailable = errors.New("no chief block producer found")
+        // ErrNoChiefPresbyterianAvailable defines failure on find chief presbyterian.
+        ErrNoChiefPresbyterianAvailable = errors.New("no chief presbyterian found")
 )
 
 // AddressTTL is the expiry time for our addresses.
@@ -53,15 +45,11 @@ type RoutedHost struct {
 	route *PBRouter  
 
 	//FIXME(auxten): remove currentPB stuff
-	// currentPB represents current chief block producer node.
+	// currentPB represents current chief presbyterian node.
 	currentPB proto.NodeID
-	// currentPBLock represents the chief block producer access lock.
+	// currentPBLock represents the chief presbyterian access lock.
 	currentPBLock sync.Mutex
 }
-
-//type Routing interface {
-//	FindPeer(context.Context, peer.ID) (peer.AddrInfo, error)
-//}
 
 func NewRoutedHost(h host.Host, pbr *PBRouter) RoutedHost {
 	return RoutedHost{
@@ -93,16 +81,13 @@ func (rh RoutedHost) Connect(ctx context.Context, pi peer.AddrInfo) error {
 		// no addrs? find some with the routing system.
 		var err error
 		
-		//add pi.ID, wyong, 20201117 
-		//addrs, err = rh.findPeerAddrs(ctx, pi.ID)
 		pi, err = rh.findPeerAddrs(ctx, pi.ID)
 		if err != nil {
 			err = errors.Wrap(err, "can't find peer address")
 			return err
 		}
 
-		//wyong, 20201117 
-		rh.Peerstore().AddAddrs(/* peer.ID(pi.ID.Pretty()) */ pi.ID, pi.Addrs, peerstore.TempAddrTTL)
+		rh.Peerstore().AddAddrs(pi.ID, pi.Addrs, peerstore.TempAddrTTL)
 
 		addrs = pi.Addrs 
 	}
@@ -135,43 +120,34 @@ func (rh RoutedHost) Connect(ctx context.Context, pi peer.AddrInfo) error {
 			continue
 		}
 
-		//wyong, 20201117 
-		//relayAddrs, err := rh.findPeerAddrs(ctx, relayID)
 		relayAddrInfo, err := rh.findPeerAddrs(ctx, relayID) 
 		if err != nil {
 			//log.Debugf("failed to find relay %s: %s", relay, err)
 			continue
 		}
 
-		//wyong, 20201117
 		relayAddrs := relayAddrInfo.Addrs 
-
 		rh.Peerstore().AddAddrs(relayID, relayAddrs, peerstore.TempAddrTTL)
 	}
 
-	//wyong, 20201117 
 	// if we're here, we got some addrs. let's use our wrapped host to connect.
 	//pi.Addrs = addrs
 
 	return rh.host.Connect(ctx, pi)
 }
 
-func (rh RoutedHost) findPeerAddrs(ctx context.Context, id peer.ID) (/* []ma.Multiaddr, */ peer.AddrInfo,  error) {
+func (rh RoutedHost) findPeerAddrs(ctx context.Context, id peer.ID) (peer.AddrInfo,  error) {
 	pi, err := rh.route.FindPeer(ctx, id)
 	if err != nil {
 		return peer.AddrInfo{ID:id}, err // couldnt find any :(
 	}
 
-	//bugfix, wyong, 20201117 
-	//piID := peer.ID(pi.ID.Pretty()) 
 	if pi.ID != id {
 		err = fmt.Errorf("routing failure: provided addrs for different peer")
 		logRoutingErrDifferentPeers(ctx, id, pi.ID, err)
 		return peer.AddrInfo{ID:id}, err
 	}
 
-
-	//return pi.Addrs, nil
 	return pi, nil 
 }
 
@@ -183,7 +159,6 @@ func logRoutingErrDifferentPeers(ctx context.Context, wanted, got peer.ID, err e
 	//log.Event(ctx, "routingError", lm)
 }
 
-//wyong, 20201112
 // Peers lists peers currently available on the network
 func (rh RoutedHost) Peers(ctx context.Context, verbose, latency, streams bool) (*SwarmConnInfos, error) {
         if rh.host == nil {
@@ -225,7 +200,6 @@ func (rh RoutedHost) Peers(ctx context.Context, verbose, latency, streams bool) 
         return &out, nil
 }
 
-//wyong, 20201111 
 func (rh RoutedHost) Router() *PBRouter {
 	return rh.route
 }
@@ -254,12 +228,10 @@ func (rh RoutedHost) EventBus() event.Bus {
 	return rh.host.EventBus()
 }
 
-//wyong, 20201210 
 // StreamHandler is the type of function used to listen for
 // streams opened by the remote side.
 type StreamHandler func(Stream)
 
-//wyong, 20201210 
 func (rh RoutedHost) SetStreamHandlerExt(pid protocol.ID, handler StreamHandler) {
 	sh := func(s network.Stream) {
 		ns := Stream{Stream: s }
@@ -281,7 +253,6 @@ func (rh RoutedHost) RemoveStreamHandler(pid protocol.ID) {
 	rh.host.RemoveStreamHandler(pid)
 }
 
-//wyong, 20201117 
 func (rh RoutedHost) NewStreamExt(ctx context.Context, peerid proto.NodeID, pids ...protocol.ID) (Stream, error) {
 	decPeerId, err := peer.IDB58Decode(peerid.String())
 	if err != nil {
@@ -331,18 +302,11 @@ func (rh RoutedHost) ConnManager() connmgr.ConnManager {
 
 // PingPB Send DHT.Ping Request with Anonymous ETLS session.
 func (rh RoutedHost)PingPB(node *proto.Node, PBNodeID proto.NodeID) (err error) {
-	//wyong, 20201020 
 	ctx := context.Background()
-
-	//client := NewCaller()
 	req := proto.PingReq{
 		Node: *node,
 	}
 
-	//wyong, 20201008 
-	//err = client.CallNode(PBNodeID, "DHT.Ping", req, resp)
-
-	//wyong, 20201118 
         s, err := rh.NewStreamExt(ctx, PBNodeID, protocol.ID("DHT.Ping"))
 	if err != nil {
 		err = errors.Wrap(err, "call DHT.Ping failed")
@@ -356,7 +320,6 @@ func (rh RoutedHost)PingPB(node *proto.Node, PBNodeID proto.NodeID) (err error) 
 		return 
 	}
 
-	//resp, err = ioutil.ReadAll(s)
 	resp := new(proto.PingResp)
 	err = s.RecvMsg(ctx, &resp) 
 	if err!= nil {
@@ -367,16 +330,15 @@ func (rh RoutedHost)PingPB(node *proto.Node, PBNodeID proto.NodeID) (err error) 
 	return
 }
 
-// GetCurrentPB returns nearest hash distance block producer as current node chief block producer.
-func (rh RoutedHost) GetCurrentPB() (bpNodeID proto.NodeID, err error) {
-	//wyong, 20201020 
+// GetCurrentPB returns nearest hash distance presbyterian as current node chief presbyterian.
+func (rh RoutedHost) GetCurrentPB() (pbNodeID proto.NodeID, err error) {
 	ctx := context.Background()
 
 	rh.currentPBLock.Lock()
 	defer rh.currentPBLock.Unlock()
 
 	if !rh.currentPB.IsEmpty() {
-		bpNodeID = rh.currentPB
+		pbNodeID = rh.currentPB
 		return
 	}
 
@@ -385,17 +347,17 @@ func (rh RoutedHost) GetCurrentPB() (bpNodeID proto.NodeID, err error) {
 		return
 	}
 
-	// get random block producer first
-	bpList := rh.route.GetPBs()
+	// get random presbyterian first
+	pbList := rh.route.GetPBs()
 
-	if len(bpList) == 0 {
-		err = ErrNoChiefBlockProducerAvailable
+	if len(pbList) == 0 {
+		err = ErrNoChiefPresbyterianAvailable
 		return
 	}
 
-	randomPB := bpList[rand.Intn(len(bpList))]
+	randomPB := pbList[rand.Intn(len(pbList))]
 
-	// call random block producer for nearest block producer node
+	// call random presbyterian for nearest presbyterian node
 	req := &proto.FindNeighborReq{
 		ID: localNodeID,
 		Roles: []proto.ServerRole{
@@ -404,8 +366,7 @@ func (rh RoutedHost) GetCurrentPB() (bpNodeID proto.NodeID, err error) {
 		},
 		Count: 1,
 	}
-	//wyong, 20201008 
-	//if err = NewCaller().CallNode(randomPB, "DHT.FindNeighbor", req, res); err != nil {
+
         s, err := rh.NewStreamExt(ctx, randomPB, protocol.ID("DHT.FindNeighbor"))
 	if err != nil { 
 		return
@@ -429,108 +390,64 @@ func (rh RoutedHost) GetCurrentPB() (bpNodeID proto.NodeID, err error) {
 
 	if len(res.Nodes) <= 0 {
 		// node not found
-		err = errors.Wrap(ErrNoChiefBlockProducerAvailable,
-			"get no hash nearest block producer nodes")
+		err = errors.Wrap(ErrNoChiefPresbyterianAvailable,
+			"get no hash nearest presbyterian nodes")
 		return
 	}
 
 	if res.Nodes[0].Role != proto.Leader && res.Nodes[0].Role != proto.Follower {
-		// not block producer
-		err = errors.Wrap(ErrNoChiefBlockProducerAvailable,
-			"no suitable nodes with proper block producer role")
+		// not presbyterian  
+		err = errors.Wrap(ErrNoChiefPresbyterianAvailable,
+			"no suitable nodes with proper presbyterian role")
 		return
 	}
 
 	rh.currentPB = res.Nodes[0].ID
-	bpNodeID = rh.currentPB
+	pbNodeID = rh.currentPB
 
 	return
 }
 
-// SetCurrentPB sets current node chief block producer.
-func (rh RoutedHost) SetCurrentPB(bpNodeID proto.NodeID) {
+// SetCurrentPB sets current node chief presbyterian.
+func (rh RoutedHost) SetCurrentPB(pbNodeID proto.NodeID) {
 	rh.currentPBLock.Lock()
 	defer rh.currentPBLock.Unlock()
-	rh.currentPB = bpNodeID
+	rh.currentPB = pbNodeID
 }
 
 // RequestPB sends request to main chain.
 func (rh RoutedHost)RequestPB(method string, req interface{}, resp interface{}) (err error) {
-	log.Debugf("RoutedHost/RequestPB(10)\n") 
-	//log.Debugf( "\x1b[%dmRoutedHost/RequestPB(10)\x1b[0m=", 36) 
-	//log.Debugf("\033[1;34m RoutedHost/RequestPB(10) \033[0m") 
-	//log.Debugf("%s\033[1;34m RoutedHost/RequestPB(10) \033[0m\n", callinfo.Prefix()) 
-
-	//log.WithFields(log.Fields{
-	//	"Prefix":    callinfo.Prefix(),
-	//	"Goid": callinfo.Goid(),
-	//}).Debugf("RoutedHost/RequestPB(10)")
-
-	//wyong, 20201020
 	ctx := context.Background()
 
-	var bp proto.NodeID
-	if bp, err = rh.GetCurrentPB(); err != nil {
+	var pb proto.NodeID
+	if pb, err = rh.GetCurrentPB(); err != nil {
 		return err
 	}
 
-	log.Debugf("RoutedHost/RequestPB(20), current pb is %s\n", bp.String()) 
-	//log.Debugf( "\x1b[%dmRoutedHost/RequestPB(20), current pb is %s\x1b[0m=", 36, bp.String()) 
-	//log.Debugf("\033[1;34m RoutedHost/RequestPB(20) \033[0m") 
-	//log.Debugf("%s\033[1;34m RoutedHost/RequestPB(20) \033[0m\n", callinfo.Prefix()) 
-
-	//todo, method->protocol, wyong, 20201008 
-	//return NewCaller().CallNode(bp, method, req, resp)
-        s, err := rh.NewStreamExt(ctx, bp, protocol.ID(method))
+        s, err := rh.NewStreamExt(ctx, pb, protocol.ID(method))
         if err != nil {
-                log.Debugf("RoutedHost/RequestPB(25), error opening push stream to %s: %s", bp, err.Error())
-		//log.Debugf( "\x1b[%dmRoutedHost/RequestPB(25), error opening push stream to %s: %s\x1b[0m=", 36, bp, err.Error()) 
+                log.Debugf("error opening push stream to %s: %s", pb, err.Error())
                 return
         }
         defer s.Close()
 
-	log.Debugf("RoutedHost/RequestPB(30)\n") 
-	//log.Debugf( "\x1b[%dmRoutedHost/RequestPB(30)\x1b[0m=", 36) 
-	//log.Debugf("\033[1;34m RoutedHost/RequestPB(30) \033[0m") 
-	//log.Debugf("%s\033[1;34m RoutedHost/RequestPB(30) \033[0m\n", callinfo.Prefix()) 
-
 	_, err = s.SendMsg(ctx, req )
 	if err != nil {
-		//log.WithFields(log.Fields{
-		//	"index":    i.index,
-		//	"instance": i.r.instanceID,
-		//}).WithError(err).Debug("send fetch request failed")
-		log.Debugf("RoutedHost/RequestPB(35), send presbyterian request failed") 
-		//log.Debugf( "\x1b[%dmRoutedHost/RequestPB(35), send presbyterian request fialed\x1b[0m=", 36) 
+		log.Debugf("send presbyterian request failed") 
 		return err 
 	}
 
-	log.Debugf("RoutedHost/RequestPB(40)\n") 
-	//log.Debugf( "\x1b[%dmRoutedHost/RequestPB(40)\x1b[0m=", 36) 
-	//log.Debugf("\033[1;34m RoutedHost/RequestPB(40) \033[0m") 
-	//log.Debugf("%s\033[1;34m RoutedHost/RequestPB(40) \033[0m\n", callinfo.Prefix()) 
-
 	err = s.RecvMsg(ctx, resp )
 	if err!= nil {
-		//log.WithFields(log.Fields{
-		//	"index":    i.index,
-		//	"instance": i.r.instanceID,
-		//}).WithError(err).Debug("get fetch result failed")
-		log.Debugf("RoutedHost/RequestPB(45), get result for presbyterian request failed") 
-		//log.Debugf( "\x1b[%dmRoutedHost/RequestPB(45), get result for presbyteria request failed \x1b[0m=", 36) 
+		log.Debugf("get result for presbyterian request failed") 
 		return err 	
 	} 
-
-	log.Debugf("RoutedHost/RequestPB(50)\n") 
-	//log.Debugf( "\x1b[%dmRoutedHost/RequestPB(50)\x1b[0m=", 36) 
-	//log.Debugf("\033[1;34m RoutedHost/RequestPB(50) \033[0m") 
-	//log.Debugf("%s\033[1;34m RoutedHost/RequestPB(50) \033[0m\n", callinfo.Prefix()) 
 
 	return nil 
 
 }
 
-// RegisterNodeToPB registers the current node to bp network.
+// RegisterNodeToPB registers the current node to presbyterian network.
 func (rh RoutedHost) RegisterNodeToPB(timeout time.Duration) (err error) {
 	// get local node id
 	localNodeID, err := kms.GetLocalNodeID()
@@ -546,21 +463,17 @@ func (rh RoutedHost) RegisterNodeToPB(timeout time.Duration) (err error) {
 		return
 	}
 
-	//log.WithField("node", localNodeInfo).Debug("construct local node info")
 	log.Debugf("construct local node info\n")
 
 	pingWaitCh := make(chan proto.NodeID)
-	bpNodeIDs := rh.route.GetPBs()
-	for _, bpNodeID := range bpNodeIDs {
+	pbNodeIDs := rh.route.GetPBs()
+	for _, pbNodeID := range pbNodeIDs {
 		go func(ch chan proto.NodeID, id proto.NodeID) {
 			for {
-				//wyong, 20201020 
-				//log.Infof("ping PB %s", id )
 				log.Debugf("ping PB : localNodeInfo=%s, id=%s\n", localNodeInfo, id )
 
 				err := rh.PingPB(localNodeInfo, id)
 				if err == nil {
-					//log.Infof("ping PB succeed: %v", localNodeInfo)
 					log.Debugf("ping PB succeed: %v", localNodeInfo)
 					select {
 					case ch <- id:
@@ -569,17 +482,15 @@ func (rh RoutedHost) RegisterNodeToPB(timeout time.Duration) (err error) {
 					return
 				}
 
-				//log.Warnf("ping PB failed: %v", err)
 				log.Debugf("ping PB failed: %v\n", err)
 				time.Sleep(3 * time.Second)
 			}
-		}(pingWaitCh, bpNodeID)
+		}(pingWaitCh, pbNodeID)
 	}
 
 	select {
-	case bp := <-pingWaitCh:
-		//log.WithField("PB", bp).Infof("ping PB succeed")
-		log.Debugf("ping PB(%s) succeed\n", bp)
+	case pb := <-pingWaitCh:
+		log.Debugf("ping PB(%s) succeed\n", pb)
 
 	case <-time.After(timeout):
 		return errors.New("ping PB timeout")
@@ -588,5 +499,4 @@ func (rh RoutedHost) RegisterNodeToPB(timeout time.Duration) (err error) {
 	return
 }
 
-//todo, wyong, 20201110 
 var _ (host.Host) = (*RoutedHost)(nil)

@@ -21,11 +21,6 @@ import (
 	"sync"
 
 	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
-	//"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
-
-	//wyong, 20211206 
-	//mine "github.com/siegfried415/go-crawling-bazaar/pow/cpuminer"
-
 	"github.com/siegfried415/go-crawling-bazaar/proto"
 )
 
@@ -35,10 +30,7 @@ type LocalKeyStore struct {
 	private   *asymmetric.PrivateKey
 	public    *asymmetric.PublicKey
 	nodeID    []byte
-
-	//wyong, 20211206 
 	//nodeNonce *mine.Uint256
-
 	sync.RWMutex
 }
 
@@ -65,8 +57,6 @@ func initLocalKeyStore() {
 			private:   nil,
 			public:    nil,
 			nodeID:    nil,
-			
-			//wyong, 20211206 
 			//nodeNonce: nil,
 		}
 	})
@@ -79,8 +69,6 @@ func ResetLocalKeyStore() {
 		private:   nil,
 		public:    nil,
 		nodeID:    nil,
-
-		//wyong, 20211206 
 		//nodeNonce: nil,
 	}
 }
@@ -98,13 +86,12 @@ func SetLocalKeyPair(private *asymmetric.PrivateKey, public *asymmetric.PublicKe
 }
 
 // SetLocalNodeIDNonce sets private and public key, this is a one time thing.
-func SetLocalNodeID /* Nonce */ (rawNodeID []byte /* , nonce *mine.Uint256  wyong, 20201116 */){
+func SetLocalNodeID /* Nonce */ (rawNodeID []byte /* , nonce *mine.Uint256 */){
 	localKey.Lock()
 	defer localKey.Unlock()
 	localKey.nodeID = make([]byte, len(rawNodeID))
 	copy(localKey.nodeID, rawNodeID)
 
-	//wyong, 20201116 
 	//if nonce != nil {
 	//	localKey.nodeNonce = new(mine.Uint256)
 	//	*localKey.nodeNonce = *nonce
@@ -118,7 +105,7 @@ func GetLocalNodeID() (rawNodeID proto.NodeID, err error) {
 		return
 	}
 
-	//todo, wyong, 20201114 
+	//todo
 	//var h *hash.Hash
 	//if h, err = hash.NewHash(rawNodeIDBytes); err != nil {
 	//	return
@@ -143,7 +130,7 @@ func GetLocalNodeIDBytes() (rawNodeID []byte, err error) {
 }
 
 
-/* wyong, 20211206 
+/* 
 // GetLocalNonce gets current node nonce copy.
 func GetLocalNonce() (nonce *mine.Uint256, err error) {
 	localKey.RLock()

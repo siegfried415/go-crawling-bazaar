@@ -21,7 +21,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	//wyong, 20201214 
         "github.com/siegfried415/go-crawling-bazaar/utils/callinfo"
 )
 

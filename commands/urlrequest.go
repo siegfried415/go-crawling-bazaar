@@ -10,6 +10,7 @@ import (
 	cmds "github.com/ipfs/go-ipfs-cmds"
 
 	env "github.com/siegfried415/go-crawling-bazaar/env" 
+	//log "github.com/siegfried415/go-crawling-bazaar/utils/log" 
 	proto "github.com/siegfried415/go-crawling-bazaar/proto" 
 	types "github.com/siegfried415/go-crawling-bazaar/types" 
 
@@ -57,7 +58,8 @@ Put a request for a url:
 	},
 
 	Run: func(req *cmds.Request, res cmds.ResponseEmitter, cmdenv cmds.Environment) error {
-                role := cmdenv.(*env.Env).Role()
+                ce := cmdenv.(*env.Env)
+		role := ce.Role() 
                 if role != proto.Client {
 			return errors.New("this command must issued at Client mode!")
 		}
@@ -99,7 +101,7 @@ Put a request for a url:
 			}
                 }
 
-		host := cmdenv.(*env.Env).Host()
+		host := ce.Host()
 		conn, err := getConn(host, "FRT.UrlRequest",  domain)
 		if err != nil {
 			return err  

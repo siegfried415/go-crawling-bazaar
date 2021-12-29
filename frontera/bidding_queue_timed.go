@@ -4,15 +4,14 @@ package frontera
 import (
 	"errors" 
 	"time"
-	//"fmt"
 
         "github.com/siegfried415/go-crawling-bazaar/types"
 )
 
-//todo, biddingQueue->biddingQueue, wyong, 20210126 
+//todo, biddingQueue->biddingQueue
 type TimedBiddingQueue struct {
 	elems []types.UrlBidding 
-	eset map[string] time.Time 	//map[string]struct{}, wyong, 20210129 
+	eset map[string] time.Time 	
 }
 
 func newTimedBiddingQueue() *TimedBiddingQueue {
@@ -38,8 +37,8 @@ func (tbq *TimedBiddingQueue) Pop() (time.Time, types.UrlBidding, error ){
 
 func (tbq *TimedBiddingQueue) Push(runat time.Time, b types.UrlBidding) {
 	_, has := tbq.eset[b.Url] 
-	if !has /* || (has && runat > (prevRunAt + MIN_CRAWLING_INTERVAL)) */  {
-		tbq.eset[b.Url]= runat  //struct{}{}, wyong, 20210129 
+	if !has {
+		tbq.eset[b.Url]= runat  
 		tbq.elems = append(tbq.elems, b)
 	}
 

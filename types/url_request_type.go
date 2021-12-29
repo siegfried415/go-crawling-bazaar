@@ -2,7 +2,6 @@ package types
 
 
 import (
-	//"fmt"
 	"time"
 
 	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
@@ -11,19 +10,15 @@ import (
 	"github.com/siegfried415/go-crawling-bazaar/proto"
 )
 
-//wyong, 20191113 
 type UrlRequest struct {
 	Url    string 
 	Probability	float64	
-
-	//wyong, 20210205 
-	ParentUrl 	string
-	ParentProbability float64 
 }
 
 // RequestPayload defines a queries payload.
 type UrlRequestPayload struct {
-	Requests []UrlRequest `json:"qs"`
+	Requests []UrlRequest `json:"urs"`
+	ParentUrlRequest UrlRequest `json:"pur"`
 }
 
 // RequestHeader defines a query request header.

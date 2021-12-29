@@ -28,13 +28,13 @@ import (
 
 // This file provides methods set for chain state read/write.
 
-// loadBlock loads a BPBlock from chain storage.
-func (c *Chain) loadBlock(h hash.Hash) (b *types.BPBlock, err error) {
+// loadBlock loads a PBBlock from chain storage.
+func (c *Chain) loadBlock(h hash.Hash) (b *types.PBBlock, err error) {
 	return loadBlock(c.storage, h)
 }
 
 func (c *Chain) fetchLastIrreversibleBlock() (
-	b *types.BPBlock, count uint32, height uint32, err error,
+	b *types.PBBlock, count uint32, height uint32, err error,
 ) {
 	var node = c.lastIrreversibleBlock()
 	if b = node.load(); b != nil {
@@ -51,7 +51,7 @@ func (c *Chain) fetchLastIrreversibleBlock() (
 	return
 }
 
-func (c *Chain) fetchBlockByHeight(h uint32) (b *types.BPBlock, count uint32, err error) {
+func (c *Chain) fetchBlockByHeight(h uint32) (b *types.PBBlock, count uint32, err error) {
 	var node = c.head().ancestor(h)
 	// Not found
 	if node == nil {
@@ -70,7 +70,7 @@ func (c *Chain) fetchBlockByHeight(h uint32) (b *types.BPBlock, count uint32, er
 	return
 }
 
-func (c *Chain) fetchBlockByCount(count uint32) (b *types.BPBlock, height uint32, err error) {
+func (c *Chain) fetchBlockByCount(count uint32) (b *types.PBBlock, height uint32, err error) {
 	var node = c.head().ancestorByCount(count)
 	// Not found
 	if node == nil {
@@ -103,7 +103,6 @@ func (c *Chain) loadAccountTokenBalance(addr proto.AccountAddress, tt types.Toke
 	return c.immutable.loadAccountTokenBalance(addr, tt)
 }
 
-//wyong, 20210702 
 func (c *Chain) loadDomainAccountTokenBalanceAndTotal(domainID proto.DomainID, addr proto.AccountAddress, tt types.TokenType) (balance uint64, totalBalance uint64,  ok bool) {
 	c.RLock()
 	defer c.RUnlock()

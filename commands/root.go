@@ -8,26 +8,21 @@ import (
 	"os"
 	"syscall"
 
+	"github.com/pkg/errors"
+
 	"github.com/ipfs/go-ipfs-cmdkit"
 	"github.com/ipfs/go-ipfs-cmds"
 	"github.com/ipfs/go-ipfs-cmds/cli"
 	cmdhttp "github.com/ipfs/go-ipfs-cmds/http"
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/multiformats/go-multiaddr-net"
-	"github.com/pkg/errors"
 
-	"github.com/siegfried415/go-crawling-bazaar/paths"
 	"github.com/siegfried415/go-crawling-bazaar/conf"
-	//"github.com/siegfried415/go-crawling-bazaar/types"
-
 	env "github.com/siegfried415/go-crawling-bazaar/env" 
-	gcbnet "github.com/siegfried415/go-crawling-bazaar/net" 
-
-	//wyong, 20201126 
+	//log "github.com/siegfried415/go-crawling-bazaar/utils/log" 
+	"github.com/siegfried415/go-crawling-bazaar/paths"
 	"github.com/siegfried415/go-crawling-bazaar/proto" 
-
-	//wyong, 20201215 
-	log "github.com/siegfried415/go-crawling-bazaar/utils/log" 
+	gcbnet "github.com/siegfried415/go-crawling-bazaar/net" 
 )
 
 const (
@@ -37,7 +32,6 @@ const (
 	// OptionRepoDir is the name of the option for specifying the directory of the repo.
 	OptionRepoDir = "repodir"
 
-	//wyong, 20201028
 	OptionRole = "role"
 
 	// OptionSectorDir is the name of the option for specifying the directory into which staged and sealed sectors will be written.
@@ -68,10 +62,6 @@ const (
 	// run with.  TODO: this should eventually be more explicitly grouped
 	// with testing as we won't be able to set blocktime in production.
 	BlockTime = "block-time"
-
-	//wyong, 20201125 
-	//wyong, 20201030 
-	//AdapterAddress = "adapter"
 
 	// PeerKeyFile is the path of file containing key to use for new nodes libp2p identity
 	PeerKeyFile = "peerkeyfile"
@@ -158,12 +148,10 @@ TOOL COMMANDS
 		cmdkit.BoolOption("help", "Show the full command help text."),
 		cmdkit.BoolOption("h", "Show a short version of the command help text."),
 
-		//wyong, 20201002 
         	cmdkit.BoolOption("with-password", "Enter the passphrase for private.key") , 
         	cmdkit.StringOption("password", "Passphrase for encrypting private.key (NOT SAFE, for debug or script only)"),
 		cmdkit.StringOption("log-level", "Console log level: trace debug info warning error fatal panic"), 
 
-		//wyong, 20201007
 		cmdkit.StringOption(OptionRole, "The role of this node."), 
 
 	},
@@ -187,66 +175,12 @@ var rootSubcmdsLocal = map[string]*cmds.Command{
 var rootSubcmdsDaemon = map[string]*cmds.Command{
 	"domain":            domainCmd,
 	"urlrequest":            urlRequestCmd,
-
-	//wyong, 20200819 
 	"urlgraph":            urlGraphCmd,
-
-	//wyong, 20200910
 	"dag" :		     dagCmd, 
-
-	//"actor":            actorCmd,
-	//"address":          addrsCmd,
-	//"bitswap":          bitswapCmd,
-	//"bootstrap":        bootstrapCmd,
-	//"chain":            chainCmd,
-	//"config":           configCmd,
-
-	//wyong, 20200410 
-	//"client":           clientCmd,
-
-
-	//wyong, 20201007
 	"bidding":	biddingCmd,
 	"bid":		bidCmd, 
-
-	
-	//wyong, 20200410 
-	//"deals":            dealsCmd,
-
-	//"dht":              dhtCmd,
 	"id":               idCmd,
-	//"inspect":          inspectCmd,
-	//"leb128":           leb128Cmd,
-	//"log":              logCmd,
-	//"message":          msgCmd,
-	//"miner":            minerCmd,
-
-	//wyong, 20200416 
-	//wyong, 20190813
-	//"frontera":	    fronteraCmd, 
-	//"crawlingmarket":	    crawlingmarketCmd, 
-	//"urlgraph":	    urlgraphCmd, 
-
-	//wyong, 20191008
-	//"urlstore":	urlstoreCmd, 
-
-	//"mining":           miningCmd,
-	//"mpool":            mpoolCmd,
-	//"outbox":           outboxCmd,
-
-	//wyong, 20200412 
-	//"paych":            paymentChannelCmd,
-
-	//"ping":             pingCmd,
-	//"protocol":         protocolCmd,
-
-	//wyong, 20200410 
-	//"retrieval-client": retrievalClientCmd,
-
-	//"show":             showCmd,
-	//"stats":            statsCmd,
 	"swarm":            swarmCmd,
-	//"wallet":           walletCmd,
 	"version":          versionCmd,
 }
 
@@ -263,23 +197,17 @@ func init() {
 
 // Run processes the arguments and stdin
 func Run(ctx context.Context, args []string, stdin, stdout, stderr *os.File) (int, error) {
-	log.Debugf("Run(10)\n") 
 	err := cli.Run(ctx, rootCmd, args, stdin, stdout, stderr, buildEnv, makeExecutor)
 	if err == nil {
-		log.Debugf("Run(15)\n") 
 		return 0, nil
 	}
-	log.Debugf("Run(20)\n") 
 	if exerr, ok := err.(cli.ExitError); ok {
-		log.Debugf("Run(25)\n") 
 		return int(exerr), nil
 	}
-	log.Debugf("Run(30)\n") 
 	return 1, err
 }
 
 func buildEnv(ctx context.Context, _ *cmds.Request) (cmds.Environment, error) {
-	log.Debugf("buildEnv(10)\n") 
 	return env.NewClientEnv(ctx, proto.Unknown, gcbnet.RoutedHost{}, nil, nil ), nil
 }
 
@@ -289,65 +217,48 @@ type executor struct {
 }
 
 func (e *executor) Execute(req *cmds.Request, re cmds.ResponseEmitter, env cmds.Environment) error {
-	log.Debugf("executor/Execute(10)\n") 
 	if e.api == "" {
-		log.Debugf("executor/Execute(15)\n") 
 		return e.exec.Execute(req, re, env)
 	}
 
-	log.Debugf("executor/Execute(20)\n") 
 	client := cmdhttp.NewClient(e.api, cmdhttp.ClientWithAPIPrefix(APIPrefix))
 
-	log.Debugf("executor/Execute(30)\n") 
 	res, err := client.Send(req)
 	if err != nil {
-		log.Debugf("executor/Execute(35)\n") 
 		if isConnectionRefused(err) {
-			log.Debugf("executor/Execute(37)\n") 
 			return cmdkit.Errorf(cmdkit.ErrFatal, "Connection Refused. Is the daemon running?")
 		}
-		log.Debugf("executor/Execute(39)\n") 
 		return cmdkit.Errorf(cmdkit.ErrFatal, err.Error())
 	}
 
-	log.Debugf("executor/Execute(40)\n") 
 	// copy received result into cli emitter
 	err = cmds.Copy(re, res)
 	if err != nil {
-		log.Debugf("executor/Execute(45)\n") 
 		return cmdkit.Errorf(cmdkit.ErrFatal|cmdkit.ErrNormal, err.Error())
 	}
-	log.Debugf("executor/Execute(50)\n") 
 	return nil
 }
 
 func makeExecutor(req *cmds.Request, env interface{}) (cmds.Executor, error) {
-	log.Debugf("makeExecutor(10)\n") 
 	var api string
 	isDaemonRequired := requiresDaemon(req)
 	if isDaemonRequired {
-		log.Debugf("makeExecutor(20)\n") 
 		var err error
 		maddr, err := getAPIAddress(req)
 		if err != nil {
-			log.Debugf("makeExecutor(25)\n") 
 			return nil, err
 		}
 
 		_, api, err = manet.DialArgs(maddr)
 		if err != nil {
-			log.Debugf("getAPIAddress(75)\n") 
 			return nil, errors.Wrap(err, fmt.Sprintf("unable to dial API endpoint address %s", maddr))
 		}
 
-		log.Debugf("makeExecutor(30)\n") 
 		if api == "" {
-			log.Debugf("makeExecutor(35)\n") 
 			return nil, ErrMissingDaemon
 		}
 	}
 
-	log.Debugf("makeExecutor(40)\n") 
 	return &executor{
 		api:  api,
 		exec: cmds.NewExecutor(rootCmd),
@@ -356,57 +267,37 @@ func makeExecutor(req *cmds.Request, env interface{}) (cmds.Executor, error) {
 }
 
 func getAPIAddress(req *cmds.Request) (ma.Multiaddr, error) {
-	log.Debugf("getAPIAddress(10)\n") 
 	var rawAddr string
 	var err error
 	// second highest precedence is env vars.
 	if envapi := os.Getenv("FIL_API"); envapi != "" {
-		log.Debugf("getAPIAddress(15)\n") 
 		rawAddr = envapi
 	}
 
-	log.Debugf("getAPIAddress(20)\n") 
 	// first highest precedence is cmd flag.
 	if apiAddress, ok := req.Options[OptionAPI].(string); ok && apiAddress != "" {
-		log.Debugf("getAPIAddress(25)\n") 
 		rawAddr = apiAddress
 	}
 
-	log.Debugf("getAPIAddress(30)\n") 
-
 	// we will read the api file if no other option is given.
 	if len(rawAddr) == 0 {
-		log.Debugf("getAPIAddress(40)\n") 
 		repoDir, _ := req.Options[OptionRepoDir].(string)
 		repoDir, err = paths.GetRepoPath(repoDir)
 		if err != nil {
-			log.Debugf("getAPIAddress(45)\n") 
 			return nil, err
 		}
 
-		log.Debugf("getAPIAddress(50), repoDir=%s\n", repoDir ) 
 		rawAddr, err = conf.APIAddrFromRepoPath(repoDir)
 		if err != nil {
-			log.Debugf("getAPIAddress(55)\n") 
 			return nil, errors.Wrap(err, "can't find API endpoint address in environment, command-line, or local repo (is the daemon running?)")
 		}
 	}
 
-	log.Debugf("getAPIAddress(60), rawAddr=%s\n", rawAddr ) 
 	maddr, err := ma.NewMultiaddr(rawAddr)
 	if err != nil {
-		log.Debugf("getAPIAddress(65)\n") 
 		return nil, errors.Wrap(err, fmt.Sprintf("unable to convert API endpoint address %s to a multiaddr", rawAddr))
 	}
 
-	//log.Debugf("getAPIAddress(70)\n") 
-	//_, host, err := manet.DialArgs(maddr)
-	//if err != nil {
-	//	log.Debugf("getAPIAddress(75)\n") 
-	//	return "", errors.Wrap(err, fmt.Sprintf("unable to dial API endpoint address %s", maddr))
-	//}
-
-	log.Debugf("getAPIAddress(80)\n") 
 	return maddr, nil
 }
 
@@ -437,35 +328,3 @@ func isConnectionRefused(err error) bool {
 	return syscallErr.Err == syscall.ECONNREFUSED
 }
 
-var priceOption = cmdkit.StringOption("gas-price", "Price (FIL e.g. 0.00013) to pay for each GasUnit consumed mining this message")
-var limitOption = cmdkit.Uint64Option("gas-limit", "Maximum GasUnits this message is allowed to consume")
-var previewOption = cmdkit.BoolOption("preview", "Preview the Gas cost of this command without actually executing it")
-
-/*
-func parseGasOptions(req *cmds.Request) (types.AttoFIL, types.GasUnits, bool, error) {
-	priceOption := req.Options["gas-price"]
-	if priceOption == nil {
-		return types.ZeroAttoFIL, types.NewGasUnits(0), false, errors.New("gas-price option is required")
-	}
-
-	price, ok := types.NewAttoFILFromFILString(priceOption.(string))
-	if !ok {
-		return types.ZeroAttoFIL, types.NewGasUnits(0), false, errors.New("invalid gas price (specify FIL as a decimal number)")
-	}
-
-	limitOption := req.Options["gas-limit"]
-	if limitOption == nil {
-		return types.ZeroAttoFIL, types.NewGasUnits(0), false, errors.New("gas-limit option is required")
-	}
-
-	gasLimitInt, ok := limitOption.(uint64)
-	if !ok {
-		msg := fmt.Sprintf("invalid gas limit: %s", limitOption)
-		return types.ZeroAttoFIL, types.NewGasUnits(0), false, errors.New(msg)
-	}
-
-	preview, _ := req.Options["preview"].(bool)
-
-	return price, types.NewGasUnits(gasLimitInt), preview, nil
-}
-*/

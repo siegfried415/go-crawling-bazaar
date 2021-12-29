@@ -2,22 +2,19 @@
 package frontera
 
 import (
-	//"time"
-	//"fmt"
 	"errors" 
 	"sort" 
 
         "github.com/siegfried415/go-crawling-bazaar/types"
 )
 
-//todo, biddingQueue->probBiddingQueue, wyong, 20210126 
+//todo, biddingQueue->probBiddingQueue
 type ProbBiddingQueue struct {
 	elems []types.UrlBidding 
 	eset map[string]struct{} 
 }
 
 func newProbBiddingQueue() *ProbBiddingQueue {
-	//return &cidQueue{eset: cid.NewSet()}
 	return &ProbBiddingQueue{eset:  make(map[string]struct{})}
 }
 
@@ -95,7 +92,7 @@ func (pbq *ProbBiddingQueue) Inserts(biddings []types.UrlBidding) {
 //Insert biddings into the queue accroding to probability. 
 func (pbq *ProbBiddingQueue) FastInserts(biddings []types.UrlBidding) {
 
-	//Sort urls with probability. wyong, 20210119 
+	//Sort urls with probability. 
 	sort.Slice(biddings, func(i, j int) bool {
 		return biddings[i].Probability < biddings[j].Probability 
 	})

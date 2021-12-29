@@ -28,38 +28,33 @@ import (
 
 	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
 	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
-	
-	//wyong, 20211206 
-	//"github.com/siegfried415/go-crawling-bazaar/pow/cpuminer"
-
-	"github.com/siegfried415/go-crawling-bazaar/proto"
 	"github.com/siegfried415/go-crawling-bazaar/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
 )
 
 const testFile = "./.configtest"
 
 func TestConf(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	var BPPubkey = new(asymmetric.PublicKey)
+	var PBPubkey = new(asymmetric.PublicKey)
 	pubKeyBytes, err := hex.DecodeString("02c1db96f2ba7e1cb4e9822d12de0f63fb666feb828c7f509e81fab9bd7a34039c")
 	if err != nil {
 		t.Errorf("decode pubkey failed: %v", err)
 	}
-	err = BPPubkey.UnmarshalBinary(pubKeyBytes)
+	err = PBPubkey.UnmarshalBinary(pubKeyBytes)
 	if err != nil {
 		t.Errorf("unmarshal pubkey failed: %v", err)
 	}
-	log.Debugf("pubkey: %x", BPPubkey.Serialize())
+	log.Debugf("pubkey: %x", PBPubkey.Serialize())
 	rawBytes := []byte("Space Cowboy")
 	h := hash.THashH(rawBytes)
 
 	log.SetLevel(log.DebugLevel)
-	BP := &BPInfo{
-		PublicKey: BPPubkey,
+	PB := &PresbyterianInfo{
+		PublicKey: PBPubkey,
 		NodeID:    "00000000000589366268c274fdc11ec8bdb17e668d2f619555a2e9c1a29c91d8",
 		RawNodeID: proto.RawNodeID{},
 	
-		//wyong, 20211206 
 		//Nonce: cpuminer.Uint256{
 		//	A: 14396347928,
 		//	B: 0,
@@ -68,7 +63,7 @@ func TestConf(t *testing.T) {
 		//},
 
 		ChainFileName: "",
-		BPGenesis: BPGenesisInfo{
+		PBGenesis: PBGenesisInfo{
 			Version:   1,
 			Timestamp: time.Now().UTC(),
 		},
@@ -99,11 +94,11 @@ func TestConf(t *testing.T) {
 					"202.46.34.76",
 				},
 			},
-			BP: BP,
+			PB: PB,
 			KnownNodes: []proto.Node{
 				{
-					ID:        BP.NodeID,
-					Nonce:     BP.Nonce,
+					ID:        PB.NodeID,
+					Nonce:     PB.Nonce,
 					PublicKey: nil,
 					Addr:      "127.0.0.1:2122",
 					Role:      proto.Leader,
@@ -112,7 +107,6 @@ func TestConf(t *testing.T) {
 					ID:        proto.NodeID("000000000013fd4b3180dd424d5a895bc57b798e5315087b7198c926d8893f98"),
 					PublicKey: nil,
 
-					//wyong, 20211206 
 					//Nonce: cpuminer.Uint256{
 					//	A: 789554103,
 					//	B: 0,
@@ -127,7 +121,6 @@ func TestConf(t *testing.T) {
 					ID:        proto.NodeID("0000000000293f7216362791b6b1c9772184d6976cb34310c42547735410186c"),
 					PublicKey: nil,
 
-					//wyong, 20211206 
 					//Nonce: cpuminer.Uint256{
 					//	A: 746598970,
 					//	B: 0,
@@ -142,7 +135,6 @@ func TestConf(t *testing.T) {
 					// {{22403 0 0 0} 20 00000f3b43288fe99831eb533ab77ec455d13e11fc38ec35a42d4edd17aa320d}
 					ID: proto.NodeID("00000f3b43288fe99831eb533ab77ec455d13e11fc38ec35a42d4edd17aa320d"),
 
-					//wyong, 20211206 
 					//Nonce: cpuminer.Uint256{
 					//	A: 22403,
 					//	B: 0,
@@ -163,9 +155,9 @@ func TestConf(t *testing.T) {
 		ioutil.WriteFile(testFile, sConfig, 0600)
 		configNew, err := LoadConfig(testFile)
 		So(err, ShouldBeNil)
-		So(configNew.BP.NodeID, ShouldResemble, config.BP.NodeID)
-		So(configNew.BP.Nonce, ShouldResemble, config.BP.Nonce)
-		So(configNew.BP.PublicKey.Serialize(), ShouldResemble, config.BP.PublicKey.Serialize())
+		So(configNew.PB.NodeID, ShouldResemble, config.PB.NodeID)
+		So(configNew.PB.Nonce, ShouldResemble, config.PB.Nonce)
+		So(configNew.PB.PublicKey.Serialize(), ShouldResemble, config.PB.PublicKey.Serialize())
 
 		configNew, err = LoadConfig("notExistFile")
 		So(err, ShouldNotBeNil)

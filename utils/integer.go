@@ -21,7 +21,6 @@ import (
 	"math"
 	"strconv"
 
-	//wyong, 20210719 
 	"encoding/binary"
 )
 
@@ -43,14 +42,12 @@ func (i HexOrDecimal64) MarshalText() ([]byte, error) {
 	return []byte(fmt.Sprintf("%#x", uint64(i))), nil
 }
 
-//wyong, 20210719 
 func UInt64ToBytes(i uint64) []byte {
     var buf = make([]byte, 8)
     binary.BigEndian.PutUint64(buf, uint64(i))
     return buf
 }
 
-//wyong, 20210719 
 func Uint32ToBytes(i uint32) []byte {
     var buf = make([]byte, 4)
     binary.BigEndian.PutUint32(buf, uint32(i))

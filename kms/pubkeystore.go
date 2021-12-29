@@ -27,21 +27,12 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/siegfried415/go-crawling-bazaar/conf"
-
 	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
-	//"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
-
-	//wyong, 20211206 
-	//mine "github.com/siegfried415/go-crawling-bazaar/pow/cpuminer"
-
+	"github.com/siegfried415/go-crawling-bazaar/conf"
 	"github.com/siegfried415/go-crawling-bazaar/proto"
+	ss "github.com/siegfried415/go-crawling-bazaar/state/sqlite"
 	"github.com/siegfried415/go-crawling-bazaar/utils"
 	"github.com/siegfried415/go-crawling-bazaar/utils/log"
-	ss "github.com/siegfried415/go-crawling-bazaar/state/sqlite"
-
-        //wyong, 20201116 
-        //"github.com/ugorji/go/codec"
 
 )
 
@@ -59,10 +50,10 @@ var (
 )
 
 var (
-	//HACK(auxten): maybe each BP uses distinct key pair is safer
+	//HACK(auxten): maybe each Presbyterian uses distinct key pair is safer
 
-	// BP hold the initial BP info
-	BP *conf.BPInfo
+	// PB hold the initial Presbyterian info
+	PB *conf.PresbyterianInfo
 )
 
 var (
@@ -93,35 +84,32 @@ func init() {
 		if err != nil {
 			log.WithError(err).Fatal("load config for test in kms failed")
 		}
-		InitBP()
+		InitPB()
 	}
 }
 
-// InitBP initializes kms.BP struct with conf.GConf.
-func InitBP() {
+// InitPB initializes kms.PB struct with conf.GConf.
+func InitPB() {
 	if conf.GConf == nil {
 		log.Fatal("must call conf.LoadConfig first")
 	}
-	if conf.GConf.BP == nil && len(conf.GConf.SeedBPNodes) > 0 {
-		seedBP := &conf.GConf.SeedBPNodes[0]
-		conf.GConf.BP = &conf.BPInfo{
-			PublicKey: seedBP.PublicKey,
-			NodeID:    seedBP.ID,
-
-			//wyong, 20201116 
-			//Nonce:     seedBP.Nonce,
+	if conf.GConf.PB == nil && len(conf.GConf.SeedPBNodes) > 0 {
+		seedPB := &conf.GConf.SeedPBNodes[0]
+		conf.GConf.PB = &conf.PresbyterianInfo{
+			PublicKey: seedPB.PublicKey,
+			NodeID:    seedPB.ID,
+			//Nonce:     seedPB.Nonce,
 		}
 	}
-	if conf.GConf.BP == nil {
-		log.Fatal("no available block producer config")
+	if conf.GConf.PB == nil {
+		log.Fatal("no available presbyterian config")
 	}
 
-	BP = conf.GConf.BP
+	PB = conf.GConf.PB
 
-	//wyong, 20201114 
-	//err := hash.Decode(&conf.GConf.BP.RawNodeID.Hash, string(conf.GConf.BP.NodeID))
+	//err := hash.Decode(&conf.GConf.PB.RawNodeID.Hash, string(conf.GConf.PB.NodeID))
 	//if err != nil {
-	//	log.WithError(err).Fatal("BP.NodeID error")
+	//	log.WithError(err).Fatal("PB.NodeID error")
 	//}
 }
 
@@ -145,7 +133,7 @@ func InitPublicKeyStore(dbPath string, initNodes []proto.Node) (err error) {
 	ClosePublicKeyStore()
 
 	pksLock.Lock()
-	InitBP()
+	InitPB()
 
 	var strg *ss.SQLite3
 
@@ -256,13 +244,11 @@ func GetAllNodeID() (nodeIDs []proto.NodeID, err error) {
 }
 
 // SetPublicKey verifies nonce and set Public Key.
-func SetPublicKey(id proto.NodeID, /* nonce mine.Uint256, wyong, 20211206 */  publicKey *asymmetric.PublicKey) (err error) {
+func SetPublicKey(id proto.NodeID, /* nonce mine.Uint256 */  publicKey *asymmetric.PublicKey) (err error) {
 	nodeInfo := &proto.Node{
 		ID:        id,
 		Addr:      "",
 		PublicKey: publicKey,
-		
-		//wyong, 20201116 
 		//Nonce:     nonce,
 	}
 	return SetNode(nodeInfo)
@@ -274,7 +260,7 @@ func SetNode(nodeInfo *proto.Node) (err error) {
 		return ErrNilNode
 	}
 
-	/*todo, wyong, 20201114 
+	/*todo
 	if !Unittest {
 		if !IsIDPubNonceValid(nodeInfo.ID.ToRawNodeID(), &nodeInfo.Nonce, nodeInfo.PublicKey) {
 			return ErrNodeIDKeyNonceNotMatch
@@ -285,7 +271,7 @@ func SetNode(nodeInfo *proto.Node) (err error) {
 	return setNode(nodeInfo)
 }
 
-/*todo, wyong, 20201114 
+/*todo
 IsIDPubNonceValid returns if `id == HashBlock(key, nonce)`.
 func IsIDPubNonceValid(id *proto.RawNodeID, nonce *mine.Uint256, key *asymmetric.PublicKey) bool {
 	if key == nil || id == nil || nonce == nil {

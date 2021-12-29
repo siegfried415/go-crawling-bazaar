@@ -23,23 +23,16 @@ import (
 
 	yaml "gopkg.in/yaml.v2"
 
-	//todo, wyong, 20201028 
-	//"github.com/siegfried415/go-crawling-bazaar/crypto"
-
 	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
 	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
-
-	//wyong, 20211206 
-	//"github.com/siegfried415/go-crawling-bazaar/pow/cpuminer"
-
-	"github.com/siegfried415/go-crawling-bazaar/proto"
 	"github.com/siegfried415/go-crawling-bazaar/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
 )
 
-// these const specify the role of this app, which can be "miner", "blockProducer".
+// these const specify the role of this app, which can be "miner", "presbyterian".
 const (
 	MinerBuildTag         = "M"
-	BlockProducerBuildTag = "B"
+	PresbyterianBuildTag = "P"
 	ClientBuildTag        = "C"
 	UnknownBuildTag       = "U"
 )
@@ -57,8 +50,8 @@ type BaseAccountInfo struct {
 	CovenantCoinBalance uint64    `yaml:"CovenantCoinBalance"`
 }
 
-// BPGenesisInfo hold all genesis info fields.
-type BPGenesisInfo struct {
+// PBGenesisInfo hold all genesis info fields.
+type PBGenesisInfo struct {
 	// Version defines the block version
 	Version int32 `yaml:"Version"`
 	// Timestamp defines the initial time of chain
@@ -67,23 +60,22 @@ type BPGenesisInfo struct {
 	BaseAccounts []BaseAccountInfo `yaml:"BaseAccounts"`
 }
 
-// BPInfo hold all BP info fields.
-type BPInfo struct {
-	// PublicKey point to BlockProducer public key
+// PresbyterianInfo hold all PB info fields.
+type PresbyterianInfo struct {
+	// PublicKey point to Presbyterian public key
 	PublicKey *asymmetric.PublicKey `yaml:"PublicKey"`
-	// NodeID is the node id of Block Producer
+	// NodeID is the node id of Presbyterian  
 	NodeID proto.NodeID `yaml:"NodeID"`
 	// RawNodeID
 	RawNodeID proto.RawNodeID `yaml:"-"`
 
-	//wyong, 20211206 
 	// Nonce is the nonce, SEE: cmd/cql for more
 	//Nonce cpuminer.Uint256 `yaml:"Nonce"`
 
 	// ChainFileName is the chain db's name
 	ChainFileName string `yaml:"ChainFileName"`
-	// BPGenesis is the genesis block filed
-	BPGenesis BPGenesisInfo `yaml:"BPGenesisInfo,omitempty"`
+	// PBGenesis is the genesis block filed
+	PBGenesis PBGenesisInfo `yaml:"PBGenesisInfo,omitempty"`
 }
 
 // MinerDatabaseFixture config.
@@ -111,10 +103,9 @@ type DNSSeed struct {
 	EnforcedDNSSEC bool     `yaml:"EnforcedDNSSEC"`
 	DNSServers     []string `yaml:"DNSServers"`
 	Domain         string   `yaml:"Domain"`
-	BPCount        int      `yaml:"BPCount"`
+	PBCount        int      `yaml:"PBCount"`
 }
 
-//wyong, 20201125 
 // APIConfig holds all configuration options related to the api.
 //type APIConfig struct {
 //	Address                       string   `yaml:"address"`
@@ -129,7 +120,6 @@ type SwarmConfig struct {
 	PublicRelayAddress string `yaml:"public_relay_address,omitempty"`
 }
 
-//wyong, 20201027 
 // DatastoreConfig holds all the configuration options for the datastore.
 // TODO: use the advanced datastore configuration from ipfs
 type DatastoreConfig struct {
@@ -140,12 +130,10 @@ type DatastoreConfig struct {
 
 // Config holds all the config read from yaml config file.
 type Config struct {
-	//wyong, 20201125 
-	//wyong, 20201003 
 	//API		*APIConfig	`yaml:"API"`	
 
 	UseTestMasterKey bool `yaml:"UseTestMasterKey,omitempty"` // when UseTestMasterKey use default empty masterKey
-	// StartupSyncHoles indicates synchronizing hole blocks from other peers on BP
+	// StartupSyncHoles indicates synchronizing hole blocks from other peers on Presbyterian  
 	// startup/reloading.
 	StartupSyncHoles bool `yaml:"StartupSyncHoles,omitempty"`
 	GenerateKeyPair  bool `yaml:"-"`
@@ -157,19 +145,13 @@ type Config struct {
 	DHTFileName        string            `yaml:"DHTFileName"`
 	ListenAddr         string            `yaml:"ListenAddr"`
 
-	//wyong, 20201028 	
 	PublicRelayAddress	string            `yaml:"PublicRelayAddress"`
 
-	//wyong, 20201125 
-	//wyong, 20200903
 	AdapterAddr	   string	     `yaml:"AdapterAddr"` 
 
-	//wyong, 20201028
-	//wyong, 20200908
 	//SwarmAddr 	   string		`yaml:"SwarmAddr"`
 	//Swarm		   *SwarmConfig 	`yaml:"Swarm"`
 
-	//wyong, 20201027
 	Datastore     *DatastoreConfig     `yaml:"datastore"`
 
 
@@ -177,22 +159,22 @@ type Config struct {
 	ExternalListenAddr string            `yaml:"-"` // for metric purpose
 	ThisNodeID         proto.NodeID      `yaml:"ThisNodeID"`
 	ValidDNSKeys       map[string]string `yaml:"ValidDNSKeys"` // map[DNSKEY]domain
-	// Check By BP DHT.Ping
+	// Check By PB DHT.Ping
 	MinNodeIDDifficulty int `yaml:"MinNodeIDDifficulty"`
 
 	DNSSeed DNSSeed `yaml:"DNSSeed"`
 
-	BP    *BPInfo    `yaml:"BlockProducer"`
+	PB    *PresbyterianInfo    `yaml:"Presbyterian"`
 	Miner *MinerInfo `yaml:"Miner,omitempty"`
 
 	KnownNodes  []proto.Node `yaml:"KnownNodes"`
-	SeedBPNodes []proto.Node `yaml:"-"`
+	SeedPBNodes []proto.Node `yaml:"-"`
 
 	QPS                uint32        `yaml:"QPS"`
 	ChainBusPeriod     time.Duration `yaml:"ChainBusPeriod"`
 	BillingBlockCount  uint64        `yaml:"BillingBlockCount"` // BillingBlockCount is for sql chain miners syncing billing with main chain
-	BPPeriod           time.Duration `yaml:"BPPeriod"`
-	BPTick             time.Duration `yaml:"BPTick"`
+	PBPeriod           time.Duration `yaml:"PBPeriod"`
+	PBTick             time.Duration `yaml:"PBTick"`
 	SQLChainPeriod     time.Duration `yaml:"SQLChainPeriod"`
 	SQLChainTick       time.Duration `yaml:"SQLChainTick"`
 	SQLChainTTL        int32         `yaml:"SQLChainTTL"`
@@ -203,7 +185,7 @@ type Config struct {
 var GConf *Config
 
 
-//todo, wyong, 20201003 
+//todo
 func (c *Config )WriteFile(configFilePath string) error {
        	out, err := yaml.Marshal(c)
 	if err != nil {
@@ -224,7 +206,7 @@ func (c *Config )WriteFile(configFilePath string) error {
 
 }
 
-//todo, wyong, 20201003 
+//todo
 func NewDefaultConfig() (config *Config, err error) {
 	return nil, nil 
 }
@@ -244,8 +226,8 @@ func LoadConfig(configPath string) (config *Config, err error) {
 		return
 	}
 
-	if config.BPPeriod == time.Duration(0) {
-		config.BPPeriod = 10 * time.Second
+	if config.PBPeriod == time.Duration(0) {
+		config.PBPeriod = 10 * time.Second
 	}
 
 	if config.WorkingRoot == "" {
@@ -280,15 +262,15 @@ func LoadConfig(configPath string) (config *Config, err error) {
 		config.WorkingRoot = path.Join(configDir, config.WorkingRoot)
 	}
 
-	if config.BP != nil && !path.IsAbs(config.BP.ChainFileName) {
-		config.BP.ChainFileName = path.Join(configDir, config.BP.ChainFileName)
+	if config.PB != nil && !path.IsAbs(config.PB.ChainFileName) {
+		config.PB.ChainFileName = path.Join(configDir, config.PB.ChainFileName)
 	}
 
 	if config.Miner != nil && !path.IsAbs(config.Miner.RootDir) {
 		config.Miner.RootDir = path.Join(configDir, config.Miner.RootDir)
 	}
 
-	/*todo, wyong, 20201028
+	/*todo
 	if len(config.KnownNodes) > 0 {
 		for _, node := range config.KnownNodes {
 			if node.ID == config.ThisNodeID {

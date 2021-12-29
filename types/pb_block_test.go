@@ -31,7 +31,7 @@ import (
 func TestHeader_MarshalUnmarshalBinary(t *testing.T) {
 
 	block, err := generateRandomBlock(genesisHash, false)
-	header := &block.SignedHeader.BPHeader
+	header := &block.SignedHeader.PBHeader
 	if err != nil {
 		t.Fatalf("failed to generate block: %v", err)
 	}
@@ -41,7 +41,7 @@ func TestHeader_MarshalUnmarshalBinary(t *testing.T) {
 		t.Fatalf("failed to mashal binary: %v", err)
 	}
 
-	dec := &BPHeader{}
+	dec := &PBHeader{}
 	err = utils.DecodeMsgPack(enc.Bytes(), dec)
 	if err != nil {
 		t.Fatalf("failed to unmashal binary: %v", err)
@@ -64,7 +64,7 @@ func TestSignedHeader_MarshalUnmashalBinary(t *testing.T) {
 		t.Fatalf("failed to mashal binary: %v", err)
 	}
 
-	dec := &BPSignedHeader{}
+	dec := &PBSignedHeader{}
 	err = utils.DecodeMsgPack(enc.Bytes(), dec)
 	if err != nil {
 		t.Fatalf("failed to unmashal binary: %v", err)
@@ -92,7 +92,7 @@ func TestBlock_MarshalUnmarshalBinary(t *testing.T) {
 		t.Fatalf("failed to mashal binary: %v", err)
 	}
 
-	dec := &BPBlock{}
+	dec := &PBBlock{}
 	err = utils.DecodeMsgPack(enc.Bytes(), dec)
 	if err != nil {
 		t.Fatalf("failed to unmashal binary: %v", err)

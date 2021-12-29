@@ -20,18 +20,12 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-
-	//wyong, 20201018
-	//"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/protocol"
-	//"github.com/libp2p/go-libp2p-core/network"
 
 	pi "github.com/siegfried415/go-crawling-bazaar/presbyterian/interfaces"
-	"github.com/siegfried415/go-crawling-bazaar/types"
-	net "github.com/siegfried415/go-crawling-bazaar/net"
-
-	//wyong, 20201202
 	"github.com/siegfried415/go-crawling-bazaar/utils/log"
+	net "github.com/siegfried415/go-crawling-bazaar/net"
+	"github.com/siegfried415/go-crawling-bazaar/types"
 
 )
 
@@ -40,7 +34,7 @@ type ChainRPCService struct {
 	chain *Chain
 }
 
-// wyong, 20201015,  NewChainRPCService returns a new chain RPC service.
+// NewChainRPCService returns a new chain RPC service.
 func NewChainRPCService(chain *Chain) (s *ChainRPCService, err error) {
         s = &ChainRPCService{
                 chain: chain,
@@ -55,7 +49,6 @@ func NewChainRPCService(chain *Chain) (s *ChainRPCService, err error) {
 	chain.host.SetStreamHandlerExt(protocol.ID("MCC.AddTx"), s.AddTxHandler)
 	chain.host.SetStreamHandlerExt(protocol.ID("MCC.QueryAccountTokenBalance"), s.QueryAccountTokenBalanceHandler)
 
-	//wyong, 20210702 
 	chain.host.SetStreamHandlerExt(protocol.ID("MCC.QueryDomainAccountTokenBalanceAndTotal"), s.QueryDomainAccountTokenBalanceAndTotalHandler)
 
 	chain.host.SetStreamHandlerExt(protocol.ID("MCC.QuerySQLChainProfile"), s.QuerySQLChainProfileHandler)
@@ -71,25 +64,18 @@ func (cs *ChainRPCService) AdviseNewBlockHandler(s net.Stream) {
 	ctx := context.Background()
 	var req types.AdviseNewBlockReq 
 
-	//wyong, 20201119 
-        //ns := net.Stream{ Stream: s }
 	if err := s.RecvMsg(ctx, &req); err != nil {
 		return 
 	}
 
 	cs.chain.pendingBlocks <- req.Block
-	//return nil
 }
 
-//wyong, 20201018 
 // FetchBlock is the RPC method to fetch a known block from the target server.
-//func (s *ChainRPCService) FetchBlockHandler(req *types.FetchBlockReq, resp *types.FetchBlockResp) error {
 func (cs *ChainRPCService) FetchBlockHandler(s net.Stream ) {
 	ctx := context.Background()
 	var req types.FetchBlockReq  
 
-	//wyong, 20201119 
-        //ns := net.Stream{ Stream: s }
 	err := s.RecvMsg(ctx, &req) 
 	if err != nil {
 		return 
@@ -107,20 +93,14 @@ func (cs *ChainRPCService) FetchBlockHandler(s net.Stream ) {
 	}	
 	_, err = s.SendMsg(ctx, &resp) 
 
-	//return err
 }
 
-//wyong, 20201020 
-// FetchLastIrreversibleBlock fetches the last block irreversible block from block producer.
-func (cs *ChainRPCService) FetchLastIrreversibleBlockHandler(
-	//req *types.FetchLastIrreversibleBlockReq, resp *types.FetchLastIrreversibleBlockResp) error {
-	s net.Stream ) {
+// FetchLastIrreversibleBlock fetches the last block irreversible block from presbyterian.
+func (cs *ChainRPCService) FetchLastIrreversibleBlockHandler( s net.Stream ) {
 
 	ctx := context.Background()
 	var req types.FetchLastIrreversibleBlockReq 
 
-	//wyong, 20201119 
-        //ns := net.Stream{ Stream: s }
 	err := s.RecvMsg(ctx, &req) 
 	if err != nil {
 		return 
@@ -128,7 +108,6 @@ func (cs *ChainRPCService) FetchLastIrreversibleBlockHandler(
 
 	b, c, h, err := cs.chain.fetchLastIrreversibleBlock()
 	if err != nil {
-		//return err
 		return 
 	}
 
@@ -140,18 +119,13 @@ func (cs *ChainRPCService) FetchLastIrreversibleBlockHandler(
 	}	
 
 	s.SendMsg(ctx, &resp) 
-	//return nil
 }
 
-//wyong, 20201020 
 // FetchBlockByCount is the RPC method to fetch a known block from the target server.
-//func (s *ChainRPCService) FetchBlockByCountHandler(req *types.FetchBlockByCountReq, resp *types.FetchBlockResp) error {
 func (cs *ChainRPCService) FetchBlockByCountHandler(s net.Stream ) {
 	ctx := context.Background()
 	var req types.FetchBlockByCountReq  
 
-	//wyong, 20201119 
-        //ns := net.Stream{ Stream: s }
 	err := s.RecvMsg(ctx, &req) 
 	if err != nil {
 		return 
@@ -159,7 +133,6 @@ func (cs *ChainRPCService) FetchBlockByCountHandler(s net.Stream ) {
 
 	block, height, err := cs.chain.fetchBlockByCount(req.Count)
 	if err != nil {
-		//return err
 		return 
 	}
 
@@ -170,27 +143,17 @@ func (cs *ChainRPCService) FetchBlockByCountHandler(s net.Stream ) {
 	}	
 
 	s.SendMsg(ctx, &resp) 
-	//return err
 }
 
-//wyong, 20201020 
 // FetchTxBilling is the RPC method to fetch a known billing tx from the target server.
-//func (s *ChainRPCService) FetchTxBillingHandler(req *types.FetchTxBillingReq, resp *types.FetchTxBillingResp) error {
 func (cs *ChainRPCService) FetchTxBillingHandler(s net.Stream){
-	//return nil 
+
 }
 
-//wyong, 20201020 
 // NextAccountNonce is the RPC method to query the next nonce of an account.
-func (cs *ChainRPCService) NextAccountNonceHandler(
-	//req *types.NextAccountNonceReq, resp *types.NextAccountNonceResp) (err error
-	s net.Stream,
-) {
+func (cs *ChainRPCService) NextAccountNonceHandler( s net.Stream) {
 	ctx := context.Background()
 	var req types.NextAccountNonceReq 
-
-	//wyong, 20201119 
-        //ns := net.Stream{ Stream: s }
 
 	err := s.RecvMsg(ctx, &req) 
 	if err != nil {
@@ -208,50 +171,35 @@ func (cs *ChainRPCService) NextAccountNonceHandler(
 	}	
 
 	s.SendMsg(ctx, &resp) 
-	//return
 }
 
-//wyong, 20201020 
 // AddTx is the RPC method to add a transaction.
-//func (s *ChainRPCService) AddTxHandler(req *types.AddTxReq, _ *types.AddTxResp) (err error) {
 func (cs *ChainRPCService) AddTxHandler(s net.Stream) {
 	ctx := context.Background()
 	var req types.AddTxReq 
 
-	//wyong, 20201119 
-        //ns := net.Stream{ Stream: s }
 	err := s.RecvMsg(ctx, &req) 
 	if err != nil {
 		return 
 	}
 
-	//wyong, 20201202 
 	log.WithFields(log.Fields{
 		"tx_type":  req.Tx.GetTransactionType().String(),
 		"tx_account_addr": req.Tx.GetAccountAddress().String(),
 	}).Debugf("ChainRPCService/AddTxHandler")
 
 	cs.chain.addTx(&req)
-
-	//wyong, 20201202 
 	var resp = types.AddTxResp {
 	}	
 
 	s.SendMsg(ctx, &resp) 
-	//return
 }
 
-//wyong, 20201020 
 // QueryAccountTokenBalance is the RPC method to query account token balance.
-func (cs *ChainRPCService) QueryAccountTokenBalanceHandler(
-	//req *types.QueryAccountTokenBalanceReq, resp *types.QueryAccountTokenBalanceResp) (err error,
-	s net.Stream,
-) {
+func (cs *ChainRPCService) QueryAccountTokenBalanceHandler( s net.Stream) {
 	ctx := context.Background()
 	var req types.QueryAccountTokenBalanceReq 
 
-	//wyong, 20201119 
-        //ns := net.Stream{ Stream: s }
 	err := s.RecvMsg(ctx, &req) 
 	if err != nil {
 		return 
@@ -265,16 +213,13 @@ func (cs *ChainRPCService) QueryAccountTokenBalanceHandler(
 	}	
 
 	s.SendMsg(ctx, &resp) 
-	//return
 }
 
-//wyong, 20210706 
 // QueryAccountTokenBalance is the RPC method to query account token balance.
 func (cs *ChainRPCService) QueryDomainAccountTokenBalanceAndTotalHandler(s net.Stream ) {
 	ctx := context.Background()
 	var req types.QueryDomainAccountTokenBalanceAndTotalReq 
 
-	//wyong, 20201119 
 	err := s.RecvMsg(ctx, &req) 
 	if err != nil {
 		return 
@@ -289,7 +234,6 @@ func (cs *ChainRPCService) QueryDomainAccountTokenBalanceAndTotalHandler(s net.S
 		OK: ok, 
 	}	
 
-	//wyong, 20210713 
 	log.WithFields(log.Fields{
 		"addr": req.Addr,
 		"balance" : balance, 
@@ -299,17 +243,10 @@ func (cs *ChainRPCService) QueryDomainAccountTokenBalanceAndTotalHandler(s net.S
 	s.SendMsg(ctx, &resp) 
 }
 
-//wyong, 20201018 
 // QuerySQLChainProfile is the RPC method to query SQLChainProfile.
-func (cs *ChainRPCService) QuerySQLChainProfileHandler(
-	//req *types.QuerySQLChainProfileReq, resp *types.QuerySQLChainProfileResp) (err error
-	s net.Stream ,
-) {
+func (cs *ChainRPCService) QuerySQLChainProfileHandler( s net.Stream ) {
 	ctx := context.Background()
 	var req types.QuerySQLChainProfileReq 
-
-	//wyong, 20201119 
-        //ns := net.Stream{ Stream: s }
 
 	err := s.RecvMsg(ctx, &req) 
 	if err != nil {
@@ -327,31 +264,17 @@ func (cs *ChainRPCService) QuerySQLChainProfileHandler(
 	}	
 
 	s.SendMsg(ctx, &resp) 
-	//return
 
 }
 
-//wyong, 20201020 
 // QueryTxState is the RPC method to query a transaction state.
-func (cs *ChainRPCService) QueryTxStateHandler(
-	//req *types.QueryTxStateReq, resp *types.QueryTxStateResp) (err error,
-	s net.Stream,
-) {
+func (cs *ChainRPCService) QueryTxStateHandler( s net.Stream) {
 	ctx := context.Background()
 	var req types.QueryTxStateReq 
-
-
-	//wyong, 20201119 
-        //ns := net.Stream{ Stream: s }
 
 	if err := s.RecvMsg(ctx, &req); err != nil {
 		return 
 	}
-
-	//wyong, 20201202 
-	log.WithFields(log.Fields{
-		"hash":  req.Hash,
-	}).Debugf("ChainRPCService/QueryTxStateHandler(10)")
 
 	var state pi.TransactionState
 	state, err := cs.chain.queryTxState(req.Hash)
@@ -364,26 +287,13 @@ func (cs *ChainRPCService) QueryTxStateHandler(
 		State: state , 
 	}	
 
-	//wyong, 20201202 
-	log.WithFields(log.Fields{
-		"state":  state,
-	}).Debugf("ChainRPCService/QueryTxStateHandler(20)")
-
 	s.SendMsg(ctx, &resp) 
-	//return
 }
 
-//wyong, 20201020 
 // QueryAccountSQLChainProfiles is the RPC method to query account sqlchain profiles.
-func (cs *ChainRPCService) QueryAccountSQLChainProfilesHandler(
-	//req *types.QueryAccountSQLChainProfilesReq, resp *types.QueryAccountSQLChainProfilesResp) (err error,
-	s net.Stream ,
-) {
+func (cs *ChainRPCService) QueryAccountSQLChainProfilesHandler( s net.Stream ) {
 	ctx := context.Background()
 	var req types.QueryAccountSQLChainProfilesReq 
-
-	//wyong, 20201119 
-        //ns := net.Stream{ Stream: s }
 
 	if err := s.RecvMsg(ctx, &req); err != nil {
 		return 
@@ -395,13 +305,10 @@ func (cs *ChainRPCService) QueryAccountSQLChainProfilesHandler(
 		return
 	}
 
-	//resp.Addr = req.Addr
-	//resp.Profiles = profiles
 	var resp = types.QueryAccountSQLChainProfilesResp {
 		Addr: req.Addr, 
 		Profiles: profiles, 
 	}	
 
 	s.SendMsg(ctx, &resp) 
-	//return
 }

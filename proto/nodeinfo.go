@@ -21,18 +21,14 @@ import (
 	"time"
 
 	hsp "github.com/CovenantSQL/HashStablePack/marshalhash"
-
-        //wyong, 20201116
         libp2pcrypto "github.com/libp2p/go-libp2p-core/crypto"
         peer "github.com/libp2p/go-libp2p-core/peer"
+	mh "github.com/multiformats/go-multihash"
 
 	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
 	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
-	//mine "github.com/siegfried415/go-crawling-bazaar/pow/cpuminer"
 	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 
-	//wyong, 20200730
-	mh "github.com/multiformats/go-multihash"
 )
 
 //go:generate hsp
@@ -112,7 +108,6 @@ func (z *AccountAddress) DatabaseID() (d DatabaseID) {
 	return
 }
 
-//wyong, 20200806 
 // DatabaseID converts AccountAddress to DatabaseID.
 func (z *AccountAddress) DomainID() (d DomainID) {
 	d = DomainID(z.String())
@@ -152,8 +147,6 @@ type Node struct {
 	Addr       string                `yaml:"Addr"`
 	DirectAddr string                `yaml:"DirectAddr,omitempty"`
 	PublicKey  *asymmetric.PublicKey `yaml:"PublicKey"`
-
-	//wyong, 20201116 
 	//Nonce      mine.Uint256          `yaml:"Nonce"`
 }
 
@@ -232,13 +225,11 @@ func (node *Node) InitNodeCryptoInfo(timeThreshold time.Duration) (err error) {
 		log.Error("failed to generate key pair")
 	}
 
-	//wyong, 20201116 
 	//nonce := asymmetric.GetPubKeyNonce(node.PublicKey, NewNodeIDDifficulty, timeThreshold, nil)
 	//node.ID = NodeID(nonce.Hash.String())
 	//node.Nonce = nonce.Nonce
 
-	//wyong, 20201116 
-	// Obtain Peer ID from public key, wyong, 20201114
+	// Obtain Peer ID from public key
 	libp2pPubKey := (*libp2pcrypto.Secp256k1PublicKey) (node.PublicKey)
 	nid, err := peer.IDFromPublicKey(libp2pPubKey)
 	if err != nil {
@@ -280,9 +271,6 @@ const (
 	Miner
 	// Client is a client that send sql query to database>
 	Client
-
-	//wyong, 20201021 
-	Presbyterian	
 )
 
 // String is a string variable of ServerRole.

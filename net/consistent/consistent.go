@@ -88,15 +88,15 @@ type Consistent struct {
 }
 
 // InitConsistent creates a new Consistent object with a default setting of 20 replicas for each entry.
-func InitConsistent(storePath string, persistImpl Persistence, initBP bool) (c *Consistent, err error) {
-	var BPNodes []proto.Node
-	if initBP {
-		// Load BlockProducer public key, set it in public key store
-		// as all kms.BP stuff is initialized on kms init()
+func InitConsistent(storePath string, persistImpl Persistence, initPB bool) (c *Consistent, err error) {
+	var PBNodes []proto.Node
+	if initPB {
+		// Load Presbyterian public key, set it in public key store
+		// as all kms.PB stuff is initialized on kms init()
 		if conf.GConf == nil {
 			log.Fatal("must call conf.LoadConfig first")
 		}
-		BPNodes = conf.GConf.SeedBPNodes
+		PBNodes = conf.GConf.SeedPBNodes
 	}
 
 	c = &Consistent{
@@ -106,9 +106,9 @@ func InitConsistent(storePath string, persistImpl Persistence, initBP bool) (c *
 		persist:          persistImpl,
 	}
 
-	err = c.persist.Init(storePath, BPNodes)
+	err = c.persist.Init(storePath, PBNodes)
 	if err != nil {
-		log.WithError(err).Error("init persist BP nodes failed")
+		log.WithError(err).Error("init persist PB nodes failed")
 		return
 	}
 

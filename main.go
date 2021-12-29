@@ -3,24 +3,13 @@ package main
 import (
 	"context"
 	"os"
-	//"strconv"
-	//"fmt"
-
-	//logging "github.com/ipfs/go-log"
-	//oldlogging "github.com/whyrusleeping/go-logging"
 
 	"github.com/siegfried415/go-crawling-bazaar/commands"
-	//"github.com/siegfried415/go-crawling-bazaar/metrics"
-
-	//wyong, 20201215
-	log "github.com/siegfried415/go-crawling-bazaar/utils/log"
+	//log "github.com/siegfried415/go-crawling-bazaar/utils/log"
 
 )
 
 func main() {
-	log.Debugf("gcb-minerd/main(10)\n")
-
-	//wyong, 20200922 
 	// TODO: make configurable - this should be done via a command like go-ipfs
 	// something like:
 	//		`go-filecoin log level "system" "level"`
@@ -32,14 +21,12 @@ func main() {
 	//	n = 4
 	//}
 
-	//wyong, 20200922 
 	//if os.Getenv("GO_FILECOIN_LOG_JSON") == "1" {
 	//	oldlogging.SetFormatter(&metrics.JSONFormatter{})
 	//}
 
 	//logging.SetAllLoggers(oldlogging.Level(n))
 
-	// wyong, 20200918 
 	//logging.SetLogLevel("dht", "error")          // nolint: errcheck
 	//logging.SetLogLevel("bitswap", "error")      // nolint: errcheck
 	//logging.SetLogLevel("graphsync", "info")     // nolint: errcheck

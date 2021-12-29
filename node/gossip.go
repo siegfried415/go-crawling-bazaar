@@ -16,7 +16,14 @@
 
 package node
 
-import "github.com/siegfried415/go-crawling-bazaar/proto"
+import (
+        "context"
+
+        protocol "github.com/libp2p/go-libp2p-core/protocol"
+
+        net "github.com/siegfried415/go-crawling-bazaar/net"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+)
 
 // GossipRequest defines the gossip request payload.
 type GossipRequest struct {
@@ -31,13 +38,25 @@ type GossipService struct {
 }
 
 // NewGossipService returns new gossip service.
-func NewGossipService(s *KVServer) *GossipService {
-	return &GossipService{
+func NewGossipService(s *KVServer) (*GossipService, error) {
+	gs := &GossipService{
 		s: s,
 	}
+
+	s.host.SetStreamHandlerExt( protocol.ID("DHTG.SetNode"), gs.SetNodeHandler )
+	return gs, nil 
 }
 
 // SetNode update current node info and broadcast node update request.
-func (s *GossipService) SetNode(req *GossipRequest, resp *interface{}) (err error) {
-	return s.s.SetNodeEx(req.Node, req.TTL, req.GetNodeID().ToNodeID())
+func (gs *GossipService) SetNodeHandler(/* req *GossipRequest, resp *interface{} */ s net.Stream) /* (err error) */  {
+	//return s.s.SetNodeEx(req.Node, req.TTL, req.GetNodeID().ToNodeID())
+        ctx := context.Background()
+        var req GossipRequest  
+
+        err := s.RecvMsg(ctx, &req)
+        if err != nil {
+                return
+        }
+
+	gs.s.SetNodeEx(req.Node, req.TTL, req.GetNodeID().ToNodeID())
 }

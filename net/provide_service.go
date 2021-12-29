@@ -17,26 +17,13 @@
 package net
 
 import (
-	//"fmt"
-	//"github.com/prometheus/client_golang/prometheus"
-	//dto "github.com/prometheus/client_model/go"
-
-	//wyong, 20201021
-	//host "github.com/libp2p/go-libp2p-core/host"
-
 	"github.com/siegfried415/go-crawling-bazaar/conf"
 	"github.com/siegfried415/go-crawling-bazaar/crypto"
 	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
 	"github.com/siegfried415/go-crawling-bazaar/kms"
-	"github.com/siegfried415/go-crawling-bazaar/proto"
-	//"github.com/siegfried415/go-crawling-bazaar/route"
-
-	//wyong, 20201021 
-	//rpc "github.com/siegfried415/go-crawling-bazaar/rpc/mux"
-	//net "github.com/siegfried415/go-crawling-bazaar/net"
-
-	"github.com/siegfried415/go-crawling-bazaar/types"
 	"github.com/siegfried415/go-crawling-bazaar/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/types"
 )
 
 const (
@@ -54,97 +41,26 @@ var (
 func (rh RoutedHost) SendProvideService( /* reg *prometheus.Registry */ ) {
 
 	var (
-		//memoryBytes uint64
-		//cpuCount    float64
-		//loadAvg     float64
-		//keySpace    uint64
 		nodeID      proto.NodeID
 		privateKey  *asymmetric.PrivateKey
-		//mf          []*dto.MetricFamily
 		err         error
 		minerAddr   proto.AccountAddress
 	)
 
-	log.Debug("sendProvideService(10)\n")
 	if nodeID, err = kms.GetLocalNodeID(); err != nil {
 		log.WithError(err).Error("get local node id failed")
 		return
 	}
 
-	log.Debugf("sendProvideService(20),nodeID=%s\n", nodeID )
 	if privateKey, err = kms.GetLocalPrivateKey(); err != nil {
 		log.WithError(err).Error("get local private key failed")
 		return
 	}
 
-	log.Debugf("sendProvideService(30)\n")
 	if minerAddr, err = crypto.PubKeyHash(privateKey.PubKey()); err != nil {
 		log.WithError(err).Error("get miner account address failed")
 		return
 	}
-
-	
-	log.Debugf("sendProvideService(40)\n")
-
-	/* todo, wyong, 20200812 
-	if mf, err = reg.Gather(); err != nil {
-		log.WithError(err).Error("gathering node metrics failed")
-		return
-	}
-
-	log.Debugf("sendProvideService(50)\n")
-	for _, m := range mf {
-		switch m.GetName() {
-		case metricKeyMemory, metricKeyCPUCount, metricKeyLoadAvg, metricKeySpace:
-		default:
-			continue
-		}
-
-		var metricVal float64
-
-		switch m.GetType() {
-		case dto.MetricType_GAUGE:
-			metricVal = m.GetMetric()[0].GetGauge().GetValue()
-		case dto.MetricType_COUNTER:
-			metricVal = m.GetMetric()[0].GetCounter().GetValue()
-		case dto.MetricType_HISTOGRAM:
-			metricVal = m.GetMetric()[0].GetHistogram().GetBucket()[0].GetUpperBound()
-		case dto.MetricType_SUMMARY:
-			metricVal = m.GetMetric()[0].GetSummary().GetQuantile()[0].GetValue()
-		case dto.MetricType_UNTYPED:
-			metricVal = m.GetMetric()[0].GetUntyped().GetValue()
-		default:
-			continue
-		}
-
-		switch m.GetName() {
-		case metricKeyMemory:
-			if metricVal > 0 && metricVal < maxUint64 {
-				memoryBytes = uint64(metricVal)
-			}
-		case metricKeySpace:
-			if metricVal > 0 && metricVal < maxUint64 {
-				keySpace = uint64(metricVal)
-			}
-		case metricKeyCPUCount:
-			cpuCount = metricVal
-		case metricKeyLoadAvg:
-			loadAvg = metricVal
-		default:
-		}
-	}
-
-	log.Debugf("sendProvideService(60)\n")
-	if cpuCount > 0 {
-		loadAvg = loadAvg / cpuCount
-	}
-
-	log.WithFields(log.Fields{
-		"memory":  memoryBytes,
-		"loadAvg": loadAvg,
-		"space":   keySpace,
-	}).Info("sending provide service transaction with resource parameters")
-	*/
 
 	var (
 		nonceReq  = new(types.NextAccountNonceReq)
@@ -155,41 +71,32 @@ func (rh RoutedHost) SendProvideService( /* reg *prometheus.Registry */ ) {
 
 	nonceReq.Addr = minerAddr
 
-	log.Debugf("sendProvideService(70)\n")
 	if err = rh.RequestPB("MCC.NextAccountNonce", &nonceReq, &nonceResp); err != nil {
 		// allocate nonce failed
-		//log.WithError(err).Error("allocate nonce for transaction failed")
-		log.Debugf("sendProvideService(75), err=%s\n", err )
+		log.WithError(err).Error("allocate nonce for transaction failed")
 		return
 	}
 
-	log.Debugf("sendProvideService(80)\n")
 	tx := types.NewProvideService(
 		&types.ProvideServiceHeader{
-			//todo, wyong, 20200812 
-			//Space:         keySpace,
-			//Memory:        memoryBytes,
-			//LoadAvgPerCPU: loadAvg,
 			GasPrice:      defaultGasPrice,
 			TokenType:     types.Particle,
 			NodeID:        nodeID,
 		},
 	)
 
-	log.Debugf("sendProvideService(90)\n")
 	if conf.GConf.Miner != nil && len(conf.GConf.Miner.TargetUsers) > 0 {
 		tx.ProvideServiceHeader.TargetUser = conf.GConf.Miner.TargetUsers
 	}
 
-	log.Debugf("sendProvideService(100)\n")
-	tx.Nonce = nonceResp.Nonce
+	//TODO
+	//tx.Nonce = nonceResp.Nonce
 
 	if err = tx.Sign(privateKey); err != nil {
 		log.WithError(err).Error("sign provide service transaction failed")
 		return
 	}
 
-	log.Debugf("sendProvideService(110)\n")
 	req.TTL = 1
 	req.Tx = tx
 
@@ -198,5 +105,4 @@ func (rh RoutedHost) SendProvideService( /* reg *prometheus.Registry */ ) {
 		log.WithError(err).Error("send provide service transaction failed")
 		return
 	}
-	log.Debugf("sendProvideService(120)\n")
 }

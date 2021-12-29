@@ -19,21 +19,18 @@ package presbyterian
 import (
 	"bytes"
 	"sort"
-	//"fmt"
 
 	"github.com/mohae/deepcopy"
 	"github.com/pkg/errors"
 
-	pi "github.com/siegfried415/go-crawling-bazaar/presbyterian/interfaces"
 	"github.com/siegfried415/go-crawling-bazaar/conf"
 	"github.com/siegfried415/go-crawling-bazaar/crypto"
+        "github.com/siegfried415/go-crawling-bazaar/crypto/hash"
+	pi "github.com/siegfried415/go-crawling-bazaar/presbyterian/interfaces"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 	"github.com/siegfried415/go-crawling-bazaar/proto"
 	"github.com/siegfried415/go-crawling-bazaar/types"
 	"github.com/siegfried415/go-crawling-bazaar/utils"
-	"github.com/siegfried415/go-crawling-bazaar/utils/log"
-
-	//wyong, 20200819 
-        "github.com/siegfried415/go-crawling-bazaar/crypto/hash"
 
 )
 
@@ -124,7 +121,6 @@ func (s *metaState) loadAccountTokenBalance(addr proto.AccountAddress,
 	return
 }
 
-//wyong, 20210702 
 func (s *metaState) loadDomainAccountTokenBalanceAndTotal(domainID proto.DomainID, addr proto.AccountAddress,  tokenType types.TokenType) (balance uint64, totalBalance uint64,  err error ) {
 	if !tokenType.Listed() {
 		return
@@ -148,19 +144,12 @@ func (s *metaState) loadDomainAccountTokenBalanceAndTotal(domainID proto.DomainI
 
 	for _, miner := range domain.Miners {
 		b, _ := s.loadAccountTokenBalance(miner.Address, tokenType)
-		//wyong, 20201204 
-		log.WithFields(log.Fields{
-			"miner_addr":   miner.Address,
-			"balance" : b, 
-		}).Debugf("metaState/loadDomainAccountTokenBalanceAndTotal(10), process miner(%s), balance=%d ", miner.Address, b)
-
 		if miner.Address == addr {
 			balance = b 
 		}
 		totalBalance  += b
 	}
 
-	log.Debugf("metaState/loadDomainAccountTokenBalanceAndTotal(20), balance=%d, total balance=%d ", balance, totalBalance )
 	return
 }
 
@@ -195,39 +184,20 @@ func (s *metaState) storeBaseAccount(k proto.AccountAddress, v *types.Account) (
 func (s *metaState) loadSQLChainObject(k proto.DomainID) (o *types.SQLChainProfile, loaded bool) {
 	var old *types.SQLChainProfile
 	
-	log.Debugf("metaState.loadSQLChainObject(10), k=%s\n" , k ) 
-
-	//wyong, 20200819
-	for k, v := range s.dirty.domains {
-		log.Debugf("loadSQLChainObject(20), s.dirty.domains[%s]=%s\n", k, string(v.ID))
-	}
-
 	if old, loaded = s.dirty.domains[k]; loaded {
 		if old == nil {
-			log.Debugf("metaState.loadSQLChainObject(30)\n" ) 
 			loaded = false
 			return
 		}
-		log.Debugf("loadSQLChainObject(40), k=%s, old=%s\n", k, string(old.ID))
 		o = deepcopy.Copy(old).(*types.SQLChainProfile)
 		return
 	}
-
-	log.Debugf("metaState.loadSQLChainObject(50)\n" ) 
-
-	//wyong, 20200819
-	for k, v := range s.readonly.domains {
-		log.Debugf("metaState.loadSQLChainObject(60), s.readonly.domains[%s]=%s\n", k, string(v.ID))
-	}
-
 
 	if old, loaded = s.readonly.domains[k]; loaded {
-		log.Debugf("metaState.loadSQLChainObject(70), k=%s, old=%s\n", k, string(old.ID))
 		o = deepcopy.Copy(old).(*types.SQLChainProfile)
 		return
 	}
 
-	log.Debugf("metaState.loadSQLChainObject(80)\n" ) 
 	return
 }
 
@@ -577,7 +547,6 @@ func (s *metaState) increaseNonce(addr proto.AccountAddress) (err error) {
 }
 
 func (s *metaState) updateProviderList(tx *types.ProvideService, height uint32) (err error) {
-	log.Debugf("updateProviderList(10)\n") 
 
 	sender, err := crypto.PubKeyHash(tx.Signee)
 	if err != nil {
@@ -585,7 +554,7 @@ func (s *metaState) updateProviderList(tx *types.ProvideService, height uint32) 
 		return
 	}
 
-	if height >= conf.BPHeightCIPFixProvideService {
+	if height >= conf.PBHeightCIPFixProvideService {
 		// load previous provider object
 		po, loaded := s.loadProviderObject(sender)
 		if loaded {
@@ -619,43 +588,35 @@ func (s *metaState) updateProviderList(tx *types.ProvideService, height uint32) 
 	return
 }
 
-//wyong, 20200728 
 func (s *metaState) matchProvidersWithUser(tx *types.CreateDomain) (err error) {
-        //wyong, 20200612
         log.WithFields(log.Fields{
                 "transaction":       tx,
                 }).Debug("presbyterian/metastate, matchCrawlersWithUser() called")
 
-	log.Debugf("matchProvidersWithUser(10)\n")
 
 	sender, err := crypto.PubKeyHash(tx.Signee)
 	if err != nil {
 		err = errors.Wrap(err, "matchProviders failed")
 		return
 	}
-	log.Debugf("matchProvidersWithUser(20)\n")
 	if sender != tx.Owner {
 		err = errors.Wrapf(ErrInvalidSender, "match failed with real sender: %s, sender: %s",
 			sender, tx.Owner)
 		return
 	}
 
-	log.Debugf("matchProvidersWithUser(30)\n")
 	if tx.GasPrice <= 0 {
 		err = ErrInvalidGasPrice
 		return
 	}
-	log.Debugf("matchProvidersWithUser(40)\n")
 	if tx.ResourceMeta.Node <= 0 {
 		err = ErrInvalidMinerCount
 		return
 	}
-	log.Debugf("matchProvidersWithUser(50)\n")
 	minerCount := uint64(tx.ResourceMeta.Node)
 
 
 	minAdvancePayment := minDeposit(tx.GasPrice, minerCount)
-
 	if tx.AdvancePayment < minAdvancePayment {
 		err = ErrInsufficientAdvancePayment
 		log.WithError(err).Warningf("tx.AdvancePayment: %d, minAdvancePayment: %d",
@@ -663,7 +624,6 @@ func (s *metaState) matchProvidersWithUser(tx *types.CreateDomain) (err error) {
 		return
 	}
 
-	log.Debugf("matchProvidersWithUser(60)\n")
 	miners := make(MinerInfos, 0, minerCount)
 
 	for _, m := range tx.ResourceMeta.TargetMiners {
@@ -686,36 +646,26 @@ func (s *metaState) matchProvidersWithUser(tx *types.CreateDomain) (err error) {
 		}
 	}
 
-	log.Debugf("matchProvidersWithUser(70), miers.Len()=%d, minerCount=%d\n", uint64(miners.Len()), minerCount )
 	// not enough, find more miner(s)
 	if uint64(miners.Len()) < minerCount {
-		log.Debugf("matchProvidersWithUser(72),tx.ResourceMeta.TargetMiners =%d\n", uint64(len(tx.ResourceMeta.TargetMiners)))
 		if uint64(len(tx.ResourceMeta.TargetMiners)) >= minerCount {
-			log.Debugf("matchProvidersWithUser(75)\n")
 			err = errors.Wrapf(err, "miners match target are not enough %d:%d", miners.Len(), minerCount)
 			return
 		}
-		log.Debugf("matchProvidersWithUser(76)\n")
 		var newMiners MinerInfos
 		// create new merged map
 		newMiners, err = s.filterNMiners(tx, sender, int(minerCount)-miners.Len())
 		if err != nil {
-			log.Debugf("matchProvidersWithUser(78)\n")
 			return
 		}
 
-		log.Debugf("matchProvidersWithUser(79), len(newMiners)=%d\n", len(newMiners) )
 		miners = append(miners, newMiners...)
 	}
 
-	log.Debugf("matchProvidersWithUser(80)\n")
-
-	//wyong, 20200819 
 	// generate new urlchain id and address
 	//domainID := proto.FromAccountAndNonce(tx.Owner, uint32(tx.Nonce))
 	//domainAddr, err := domainID.AccountAddress()
 	domainID := proto.DomainID(tx.ResourceMeta.Domain)
-	log.Debugf("matchProvidersWithUser(85), domainID=%s\n", domainID)
 
 	rawID := hash.THashH([]byte(tx.ResourceMeta.Domain))
 	dID := proto.DomainID(rawID.String())
@@ -725,19 +675,16 @@ func (s *metaState) matchProvidersWithUser(tx *types.CreateDomain) (err error) {
 		err = errors.Wrapf(err, "unexpected error when convert database id: %v", domainID)
 		return
 	}
-	log.Debugf("matchProvidersWithUser(90)\n")
 	// generate userinfo
 	var all = minAdvancePayment
 	err = safeAdd(&all, &tx.AdvancePayment)
 	if err != nil {
 		return
 	}
-	log.Debugf("matchProvidersWithUser(100)\n")
 	err = s.decreaseAccountToken(sender, all, tx.TokenType)
 	if err != nil {
 		return
 	}
-	log.Debugf("matchProvidersWithUser(110)\n")
 	users := make([]*types.SQLChainUser, 1)
 	users[0] = &types.SQLChainUser{
 		Address:        sender,
@@ -746,7 +693,6 @@ func (s *metaState) matchProvidersWithUser(tx *types.CreateDomain) (err error) {
 		Deposit:        minAdvancePayment,
 		AdvancePayment: tx.AdvancePayment,
 	}
-	log.Debugf("matchProvidersWithUser(120)\n")
 	// generate genesis block
 	gb, err := s.generateGenesisBlock(domainID, tx)
 	if err != nil {
@@ -757,7 +703,6 @@ func (s *metaState) matchProvidersWithUser(tx *types.CreateDomain) (err error) {
 		return err
 	}
 
-	log.Debugf("matchProvidersWithUser(130)\n")
 	// Encode genesis block
 	var enc *bytes.Buffer
 	if enc, err = utils.EncodeMsgPack(gb); err != nil {
@@ -767,7 +712,6 @@ func (s *metaState) matchProvidersWithUser(tx *types.CreateDomain) (err error) {
 		return
 	}
 
-	log.Debugf("matchProvidersWithUser(140)\n")
 	// create urlchain
 	sp := &types.SQLChainProfile{
 		ID:                domainID,
@@ -783,24 +727,16 @@ func (s *metaState) matchProvidersWithUser(tx *types.CreateDomain) (err error) {
 		Meta:              tx.ResourceMeta,
 	}
 
-	log.Debugf("matchProvidersWithUser(150)\n")
 	if _, loaded := s.loadSQLChainObject(domainID); loaded {
 		err = errors.Wrapf(ErrDatabaseExists, "database exists: %s", domainID)
 		return
 	}
-	log.Debugf("matchProvidersWithUser(160)\n")
 	s.dirty.accounts[domainAddr] = &types.Account{Address: domainAddr}
 	s.dirty.domains[domainID] = sp
 	for _, miner := range miners {
 		s.deleteProviderObject(miner.Address)
 	}
 
-	//wyong, 20200819
-	for k, v := range s.dirty.domains {
-		log.Debugf("matchProvidersWithUser(165), s.dirty.domains[%s]=%s\n", string(k), string(v.ID))
-	}
-
-	log.Debugf("matchProvidersWithUser(170), domainID=%s\n", domainID )
 	log.Infof("success create sqlchain with database ID: %s", domainID)
 	return
 }
@@ -830,25 +766,19 @@ func (s *metaState) filterNMiners(
 		delete(allProviderMap, m)
 	}
 
-	log.Debugf("filterNMiners(10), len(allProviderMap)=%d\n", len(allProviderMap)) 
 	// suppose 1/4 miners match
 	newMiners := make(MinerInfos, 0, len(allProviderMap)/4)
 	// filter all miners to slice and sort
 	for _, po := range allProviderMap {
-		log.Debugf("filterNMiners(20), po.Provider.String()=%s\n", po.Provider.String() ) 
 		newMiners, _ = filterAndAppendMiner(newMiners, po, tx, user)
-		log.Debugf("filterNMiners(30), len(newMiners)=%d\n", len(newMiners)) 
 	}
 
-	log.Debugf("filterNMiners(40), newMiners.Len()=%d, minerCount=%d\n", newMiners.Len(), minerCount ) 
 	if newMiners.Len() < minerCount {
 		err = ErrNoEnoughMiner
 		return
 	}
 
-	log.Debugf("filterNMiners(50)\n") 
 	sort.Slice(newMiners, newMiners.Less)
-	log.Debugf("filterNMiners(60)\n") 
 	return newMiners[:minerCount], nil
 }
 
@@ -1120,29 +1050,9 @@ func (s *metaState) updateBilling(tx *types.UpdateBilling) (err error) {
 }
 
 func (s *metaState) loadROSQLChains(addr proto.AccountAddress) (dbs []*types.SQLChainProfile) {
-	//wyong, 20201204 
-	log.WithFields(log.Fields{
-		"addr":   addr,
-	}).Debugf("metaState/loadROSQLChains(10)")
-
 	for _, db := range s.readonly.domains {
-
-		//wyong, 20201204 
-		log.WithFields(log.Fields{
-			"domain_id":   db.ID,
-		}).Debugf("metaState/loadROSQLChains(20)")
-
 		for _, miner := range db.Miners {
-
-			//wyong, 20201204 
-			log.WithFields(log.Fields{
-				"miner_addr":   miner.Address,
-			}).Debugf("metaState/loadROSQLChains(30)")
-
 			if miner.Address == addr {
-				//wyong, 20201204 
-				log.Debugf("metaState/loadROSQLChains(40)")
-
 				var dst = deepcopy.Copy(db).(*types.SQLChainProfile)
 				dbs = append(dbs, dst)
 			}
@@ -1269,11 +1179,6 @@ func (s *metaState) transferSQLChainTokenBalance(transfer *types.Transfer) (err 
 
 
 func (s *metaState) applyTransaction(tx pi.Transaction, height uint32) (err error) {
-        //wyong, 20200612
-        log.WithFields(log.Fields{
-                "transaction":       tx,
-                }).Debug("blockproducer/metastate, applyTransaction() called")
-
 
 	switch t := tx.(type) {
 	case *types.Transfer:
@@ -1290,7 +1195,6 @@ func (s *metaState) applyTransaction(tx pi.Transaction, height uint32) (err erro
 	//case *types.CreateDatabase:
 	//	err = s.matchProvidersWithUser(t)
 
-	//wyong, 20200728
 	case *types.CreateDomain:
 		err = s.matchProvidersWithUser(t)
 

@@ -2,8 +2,9 @@ package types
 
 
 import (
-	//"fmt"
 	"time"
+
+        //"github.com/ipfs/go-cid"
 
 	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
 	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
@@ -11,28 +12,20 @@ import (
 	"github.com/siegfried415/go-crawling-bazaar/crypto/verifier"
 )
 
-//go:generate hsp
+//go:generate hsp 
 
-type UrlBidding struct {
-	Url    string 
-	Probability	float64	
-
-	ParentUrl	string	
-	ParentProbability float64
-
-	Cancel	bool 		
-	ExpectCrawlerCount int	
+type DagCatRequest struct {
+	Cid   	string 	
 }
 
-
 // RequestPayload defines a queries payload.
-type UrlBiddingPayload struct {
-	Requests []UrlBidding `json:"qs"`
-	//Requests UrlBiddingArray `json:"qs"`	
+type DagCatRequestPayload struct {
+	Requests []DagCatRequest `json:"qs"`
+
 }
 
 // RequestHeader defines a query request header.
-type UrlBiddingHeader struct {
+type DagCatRequestHeader struct {
 	QueryType    QueryType        `json:"qt"`
 	NodeID       proto.NodeID     `json:"id"`   // request node id
 	DomainID   proto.DomainID `json:"did"` // request domain id
@@ -45,32 +38,32 @@ type UrlBiddingHeader struct {
 
 
 // SignedRequestHeader defines a signed query request header.
-type SignedUrlBiddingHeader struct {
-	UrlBiddingHeader
+type SignedDagCatRequestHeader struct {
+	DagCatRequestHeader
 	verifier.DefaultHashSignVerifierImpl
 }
 
 // Verify checks hash and signature in request header.
-func (sh *SignedUrlBiddingHeader) Verify() (err error) {
-	return sh.DefaultHashSignVerifierImpl.Verify(&sh.UrlBiddingHeader)
+func (sh *SignedDagCatRequestHeader) Verify() (err error) {
+	return sh.DefaultHashSignVerifierImpl.Verify(&sh.DagCatRequestHeader)
 }
 
 // Sign the request.
-func (sh *SignedUrlBiddingHeader) Sign(signer *asymmetric.PrivateKey) (err error) {
-	return sh.DefaultHashSignVerifierImpl.Sign(&sh.UrlBiddingHeader, signer)
+func (sh *SignedDagCatRequestHeader) Sign(signer *asymmetric.PrivateKey) (err error) {
+	return sh.DefaultHashSignVerifierImpl.Sign(&sh.DagCatRequestHeader, signer)
 }
 
 
 // Request defines a complete query request.
-type UrlBiddingMessage struct {
+type DagCatRequestMessage struct {
 	proto.Envelope
-	Header        SignedUrlBiddingHeader `json:"h"`
-	Payload       UrlBiddingPayload      `json:"p"`
+	Header        SignedDagCatRequestHeader `json:"h"`
+	Payload       DagCatRequestPayload      `json:"p"`
 	_marshalCache []byte              `json:"-"`
 }
 
 // Verify checks hash and signature in whole request.
-func (r *UrlBiddingMessage) Verify() (err error) {
+func (r *DagCatRequestMessage) Verify() (err error) {
 	// verify payload hash in signed header
 	if err = verifyHash(&r.Payload, &r.Header.QueriesHash); err != nil {
 		return
@@ -80,7 +73,7 @@ func (r *UrlBiddingMessage) Verify() (err error) {
 }
 
 // Sign the request.
-func (r *UrlBiddingMessage) Sign(signer *asymmetric.PrivateKey) (err error) {
+func (r *DagCatRequestMessage) Sign(signer *asymmetric.PrivateKey) (err error) {
 	// set query count
 	r.Header.BatchCount = uint64(len(r.Payload.Requests))
 
@@ -92,6 +85,3 @@ func (r *UrlBiddingMessage) Sign(signer *asymmetric.PrivateKey) (err error) {
 	return r.Header.Sign(signer)
 }
 
-func (r *UrlBiddingMessage) Empty() bool {
-	return len(r.Payload.Requests) == 0 
-}

@@ -14,5 +14,5 @@
  * limitations under the License.
  */
 
-// Package interfaces defines commonly used interfaces for block producers.
+// Package interfaces defines commonly used interfaces for presbyterians.
 package interfaces

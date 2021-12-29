@@ -23,42 +23,20 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-	//"os"
-	//"fmt" 
 
+	"github.com/ipfs/go-cid"
 	"github.com/pkg/errors"
-
-	//wyong, 20201007 
-       	//"io/ioutil"
-	//peer "github.com/libp2p/go-libp2p-core/peer" 
 	protocol "github.com/libp2p/go-libp2p-core/protocol" 
-
-	//go-libp2p-net -> go-libp2p-core/network
-	//wyong, 20201029 
-        //inet "github.com/libp2p/go-libp2p-core/network"
-
-        //host "github.com/libp2p/go-libp2p-host"
-
 
 	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
 	"github.com/siegfried415/go-crawling-bazaar/kms"
-	"github.com/siegfried415/go-crawling-bazaar/proto"
-	//"github.com/siegfried415/go-crawling-bazaar/route"
-
-	//wyong, 20201007 
-	//"github.com/siegfried415/go-crawling-bazaar/rpc"
-	//"github.com/siegfried415/go-crawling-bazaar/rpc/mux"
 	net "github.com/siegfried415/go-crawling-bazaar/net"
-
+	"github.com/siegfried415/go-crawling-bazaar/proto"
 	"github.com/siegfried415/go-crawling-bazaar/types"
+	"github.com/siegfried415/go-crawling-bazaar/utils/callinfo"
 	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 	"github.com/siegfried415/go-crawling-bazaar/utils/trace"
 
-	//wyong, 20200715 
-	"github.com/siegfried415/go-crawling-bazaar/utils/callinfo"
-
-	//wyong, 20200803 
-	"github.com/ipfs/go-cid"
 
 )
 
@@ -69,7 +47,6 @@ type Conn struct {
 	queries     []types.Query
 	localNodeID proto.NodeID
 
-	//wyong, 20201007
 	host net.RoutedHost 
 
 	privKey     *asymmetric.PrivateKey
@@ -87,8 +64,6 @@ type pconn struct {
 	parent  *Conn
 	ackCh   chan *types.Ack
 
-	//wyong, 20201007
-	//pCaller rpc.PCaller
 	pCaller *net.Stream 
 }
 
@@ -96,7 +71,6 @@ const workerCount int = 2
 
 func NewConn(cfg *Config) (c *Conn, err error) {
 
-	//wyong, 20201021 
 	ctx := context.Background()
 
 	// get local node id
@@ -114,22 +88,18 @@ func NewConn(cfg *Config) (c *Conn, err error) {
 	c = &Conn{
 		domainID:        proto.DomainID(cfg.DomainID),
 		localNodeID: localNodeID,
-
-		//wyong, 20201007
 		host:		cfg.Host, 
-
 		privKey:     privKey,
 		queries:     make([]types.Query, 0),
 	}
 
-	// get peers from BP
+	// get peers from Presbyterian 
 	var peers *proto.Peers
 	if peers, err = cacheGetPeers(c.host, c.domainID, c.privKey); err != nil {
 		return nil, errors.WithMessage(err, "cacheGetPeers failed")
 	}
 
 	if cfg.Mirror != "" {
-		//wyong, 20201007
 		caller, err := c.host.NewStreamExt(ctx, proto.NodeID(cfg.Mirror), protocol.ID(cfg.Protocol))
 		if err != nil {
 			return nil, errors.WithMessage(err, "open stream failed")
@@ -144,14 +114,6 @@ func NewConn(cfg *Config) (c *Conn, err error) {
 		// no ack workers required, mirror mode does not support ack worker
 	} else {
 		if cfg.UseLeader {
-			//var caller rpc.PCaller
-			//if cfg.UseDirectRPC {
-			//	caller = rpc.NewPersistentCaller(peers.Leader)
-			//} else {
-			//	caller = mux.NewPersistentCaller(peers.Leader)
-			//}
-
-			//wyong, 20201007
 			caller, err := c.host.NewStreamExt(ctx, peers.Leader, protocol.ID(cfg.Protocol))
 			if err != nil {
 				return nil, errors.WithMessage(err, "open stream failed")
@@ -170,14 +132,6 @@ func NewConn(cfg *Config) (c *Conn, err error) {
 			for {
 				node := peers.Servers[randSource.Intn(len(peers.Servers))]
 				if node != peers.Leader {
-					//var caller rpc.PCaller
-					//if cfg.UseDirectRPC {
-					//	caller = rpc.NewPersistentCaller(node)
-					//} else {
-					//	caller = mux.NewPersistentCaller(node)
-					//}
-
-					//wyong, 20201007
 					caller, err := c.host.NewStreamExt(ctx, node, protocol.ID(cfg.Protocol))
 					if err != nil {
 						return nil, errors.WithMessage(err, "open stream failed")
@@ -232,7 +186,6 @@ func (c *pconn) ackWorker() {
 	defer c.wg.Done()
 
 	var (
-		//wyong, 20201021 
 		//oneTime sync.Once
 		//pc      rpc.PCaller
 
@@ -248,28 +201,18 @@ ackWorkerLoop:
 			break ackWorkerLoop
 		}
 
-		//wyong, 20201021 
-		//oneTime.Do(func() {
-		//	pc = c.pCaller.New()
-		//})
-
 		if err = ack.Sign(c.parent.privKey); err != nil {
-			//wyong, 20201021 
-			//log.WithField("target", pc.Target()).WithError(err).Error("failed to sign ack")
 			log.WithField("target", string(c.pCaller.Conn().RemotePeer())).WithError(err).Error("failed to sign ack")
 			continue
 		}
 
 
-		//wyong, 20201008 
 		// send ack back
-		//if err = pc.Call(route.DBSAck.String(), ack, &ackRes); err != nil {
 		if _, err = c.pCaller.SendMsg(ctx, ack ); err != nil {
 			log.WithError(err).Debug("send ack failed")
 			continue
 		}
 		
-		//wyong, 20201021 
 		var ackRes types.AckResponse
 		err = c.pCaller.RecvMsg(ctx, &ackRes) 
 		if err != nil { 
@@ -278,11 +221,6 @@ ackWorkerLoop:
 		}
 		
 	}
-
-	//todo, wyong, 20201021 
-	//if pc != nil {
-	//	pc.Close()
-	//}
 
 	log.Debug("ack worker quiting")
 }
@@ -297,14 +235,12 @@ func (c *pconn) close() error {
 }
 
 
-//wyong, 20200729
  func (c *Conn) sendUrlRequest(ctx context.Context, requests []types.UrlRequest ) (err error) {
-	log.Debugf("Client/Conn/sendUrlRequest(10)\n") 
 
 	var uc *pconn // peer connection used to execute the queries
 	uc = c.leader
 
-	/* todo, select target peer accrodingto hash of url , wyong, 20200729  
+	/* todo, select target peer accrodingto hash of url 
 	// use follower pconn only when the query is readonly
 	if queryType == types.ReadQuery && c.follower != nil {
 		uc = c.follower
@@ -350,13 +286,11 @@ func (c *pconn) close() error {
 		},
 	}
 
-	log.Debugf("Client/Conn/sendUrlRequest(20)\n") 
 	if err = reqMsg.Sign(c.privKey); err != nil {
 		log.Debugf("Client/Conn/sendUrlRequest(25), err=%s\n", err.Error()) 
 		return
 	}
 
-	log.Debugf("Client/Conn/sendUrlRequest(30)\n") 
 	// set receipt if key exists in context
 	if val := ctx.Value(&ctxReceiptKey); val != nil {
 		val.(*atomic.Value).Store(&Receipt{
@@ -364,21 +298,16 @@ func (c *pconn) close() error {
 		})
 	}
 
-	log.Debugf("Client/Conn/sendUrlRequest(40)\n") 
 
 	
-	//wyong, 20201007 
 	//if err = uc.pCaller.Call(route.FronteraURLRequest.String(), reqMsg, &response); err != nil {
 	if _, err = uc.pCaller.SendMsg(ctx, reqMsg ); err != nil {
-		log.Debugf("Client/Conn/sendUrlRequest(45), err=%s\n", err.Error()) 
 		return
 	}
 
-	//wyong, 20201021 
 	var response types.Response
 	err = uc.pCaller.RecvMsg(ctx, &response) 
 	if err != nil {
-		log.Debugf("Client/Conn/sendUrlRequest(47), err=%s\n", err.Error()) 
 		return
 	}
 
@@ -407,7 +336,6 @@ func (c *pconn) close() error {
 		}
 	}()
 
-	log.Debugf("Client/Conn/sendUrlRequest(50)\n") 
 	return
 }
 
@@ -416,10 +344,8 @@ func (c *Conn) PutUrlRequest(ctx context.Context, parent types.UrlRequest, reque
 
 	defer trace.StartRegion(ctx, "dbExec").End()
 
-	//wyong, 20200519 
 	//log.SetOutput(os.Stdout) 
 	//log.WithField("query", query).Debug("ExecContext called...")
-	log.Debugf("Client/Conn/PutUrlRequest(10)\n") 
 
 	/*
 	if atomic.LoadInt32(&c.closed) != 0 {
@@ -434,7 +360,6 @@ func (c *Conn) PutUrlRequest(ctx context.Context, parent types.UrlRequest, reque
 
 	//var affectedRows, lastInsertID int64
 	if err = c.sendUrlRequest(ctx, requests ); err != nil {
-		log.Debugf("Client/Conn/PutUrlRequest(15), err=%s\n", err.Error()) 
 		return
 	}
 
@@ -445,18 +370,15 @@ func (c *Conn) PutUrlRequest(ctx context.Context, parent types.UrlRequest, reque
 	}
 	*/
 
-	log.Debugf("Client/Conn/PutUrlRequest(20)\n") 
 	return
 }
 
 
-//wyong, 20200817 
  func (c *Conn) sendUrlCidRequest(ctx context.Context, request types.UrlCidRequest ) (result cid.Cid, err error) {
-	log.Debugf("conn/sendUrlCidRequest(10)\n") 
 	var uc *pconn // peer connection used to execute the queries
 	uc = c.leader
 
-	// todo, select target peer accrodingto hash of url , wyong, 20200729  
+	// todo, select target peer accrodingto hash of url 
 	// use follower pconn only when the query is readonly
 	//if queryType == types.ReadQuery && c.follower != nil {
 	//	uc = c.follower
@@ -482,7 +404,6 @@ func (c *Conn) PutUrlRequest(ctx context.Context, parent types.UrlRequest, reque
 	//}()
 
 
-	log.Debugf("conn/sendUrlCidRequest(20)\n") 
 	// build request
 	reqMsg := &types.UrlCidRequestMessage {
 		Header: types.SignedUrlCidRequestHeader{
@@ -504,7 +425,6 @@ func (c *Conn) PutUrlRequest(ctx context.Context, parent types.UrlRequest, reque
 		return
 	}
 
-	log.Debugf("conn/sendUrlCidRequest(30)\n") 
 	// set receipt if key exists in context
 	if val := ctx.Value(&ctxReceiptKey); val != nil {
 		val.(*atomic.Value).Store(&Receipt{
@@ -513,28 +433,21 @@ func (c *Conn) PutUrlRequest(ctx context.Context, parent types.UrlRequest, reque
 	}
 
 	
-	//wyong, 20201008 
-	//if err = uc.pCaller.Call(route.FronteraURLCidRequest.String(), reqMsg, &response); err != nil {
 	if _, err = uc.pCaller.SendMsg(ctx, reqMsg ); err != nil {
-		log.Debugf("conn/sendUrlCidRequest(35), err=%s\n", err.Error()) 
 		return
 	}
 
-	//wyong, 20201021 
 	var response types.UrlCidResponse
 	uc.pCaller.RecvMsg(ctx, &response) 
 	if err != nil {
-		log.Debugf("Client/Conn/sendUrlRequest(47), err=%s\n", err.Error()) 
 		return
 	}
 
 	cids := response.Payload.Cids 
 	if len(cids) > 0 {
-		//wyong, 20200907 
 		result, _  = cid.Decode(cids[0])
 	}
 
-	log.Debugf("conn/sendUrlCidRequest(40), result =%s\n", result.String() ) 
 	//rows = newRows(&response)
 	//if queryType == types.WriteQuery {
 	//	affectedRows = response.Header.AffectedRows
@@ -545,7 +458,6 @@ func (c *Conn) PutUrlRequest(ctx context.Context, parent types.UrlRequest, reque
 	//func() {
 	//	defer trace.StartRegion(ctx, "ackEnqueue").End()
 	//	if uc.ackCh != nil {
-	//		log.Debugf("conn/sendUrlCidRequest(50)\n") 
 	//		uc.ackCh <- &types.Ack{
 	//			Header: types.SignedAckHeader{
 	//				AckHeader: types.AckHeader{
@@ -559,17 +471,13 @@ func (c *Conn) PutUrlRequest(ctx context.Context, parent types.UrlRequest, reque
 	//	}
 	//}()
 
-	log.Debugf("conn/sendUrlCidRequest(60)\n") 
 	return
 }
 
-//wyong, 20200729 
 func (c *Conn) GetCidByUrl(ctx context.Context, url string ) (/* result driver.Result, */ result cid.Cid,  err error) {
 
-	log.Debugf("conn/GetCidByUrl(10), url=%s\n", url ) 
 	defer trace.StartRegion(ctx, "dbExec").End()
 
-	//wyong, 20200519 
 	//log.SetOutput(os.Stdout) 
 	//log.WithField("query", query).Debug("ExecContext called...")
 	//log.Debugf("ExecContext called, query=%s\n, stack=%s", query, callinfo.Stacks()) 
@@ -579,30 +487,26 @@ func (c *Conn) GetCidByUrl(ctx context.Context, url string ) (/* result driver.R
 		return
 	}
 
-	log.Debugf("conn/GetCidByUrl(20)\n") 
 	// TODO(xq262144): make use of the ctx argument
 	//query := fmt.Sprintf("select cid from UrlGraph where url=%s", url)
 	//sq := convertQuery(query, []driver.NamedValue{})
 
-	//todo, create requests accroding to url, wyong, 20200817 
+	//todo, create requests accroding to url
 	request := types.UrlCidRequest {
 		Url : url ,
 	}
 
 
 	//var affectedRows, lastInsertID int64
-	//if /* affectedRows */ _, /* lastInsertID */ _, _, err = c.sendQuery(ctx, types.ReadQuery, []types.Query{*sq}); err != nil {
+	//if _, _, _, err = c.sendQuery(ctx, types.ReadQuery, []types.Query{*sq}); err != nil {
 	//	return
 	//}
 
 	if result,  err = c.sendUrlCidRequest(ctx, request); err != nil {
-		log.Debugf("conn/GetCidByUrl(25), err=%s\n", err.Error()) 
 		return
 	}
 
-	log.Debugf("conn/GetCidByUrl(30), result=%s\n", result.String() ) 
-
-	// todo, get cid from result,  wyong, 20200803 
+	// todo, get cid from result
 	//result = &execResult{
 	//	affectedRows: affectedRows,
 	//	lastInsertID: lastInsertID,
@@ -611,7 +515,7 @@ func (c *Conn) GetCidByUrl(ctx context.Context, url string ) (/* result driver.R
 	return
 }
 
-/* wyong, 20200802 
+/* 
 // Prepare implements the driver.Conn.Prepare method.
 func (c *Conn) Prepare(query string) (driver.Stmt, error) {
 	return c.PrepareContext(context.Background(), query)
@@ -659,7 +563,7 @@ func (c *Conn) BeginTx(ctx context.Context, opts driver.TxOptions) (driver.Tx, e
 }
 
 
-/* wyong, 20200802 
+/* 
 // PrepareContext implements the driver.ConnPrepareContext.ConnPrepareContext method.
 func (c *Conn) PrepareContext(ctx context.Context, query string) (driver.Stmt, error) {
 	if atomic.LoadInt32(&c.closed) != 0 {
@@ -677,7 +581,6 @@ func (c *Conn) PrepareContext(ctx context.Context, query string) (driver.Stmt, e
 func (c *Conn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (result driver.Result, err error) {
 	defer trace.StartRegion(ctx, "dbExec").End()
 
-	//wyong, 20200519 
 	//log.SetOutput(os.Stdout) 
 	//log.WithField("query", query).Debug("ExecContext called...")
 	log.Debugf("ExecContext called, query=%s\n, stack=%s", query, callinfo.Stacks()) 
@@ -706,7 +609,6 @@ func (c *Conn) ExecContext(ctx context.Context, query string, args []driver.Name
 func (c *Conn) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (rows driver.Rows, err error) {
 	defer trace.StartRegion(ctx, "dbQuery").End()
 
-	//wyong, 20200519 
 	//log.SetOutput(os.Stdout) 
 	//log.WithField("query", query).Debug("QueryContext called...")
 	log.Debugf("QueryContext called, query=%s\n, stack=%s", query, callinfo.Stacks()) 
@@ -820,11 +722,7 @@ func (c *Conn) sendQuery(ctx context.Context, queryType types.QueryType, queries
 			"type":   queryType.String(),
 			"connID": connID,
 			"seqNo":  seqNo,
-
-			//wyong, 20201021 
-			//"target": uc.pCaller.Target(),
 			"target": string(uc.pCaller.Conn().RemotePeer()),
-
 			"source": c.localNodeID,
 		}).WithError(err).Debug("send query")
 	}()
@@ -858,17 +756,13 @@ func (c *Conn) sendQuery(ctx context.Context, queryType types.QueryType, queries
 	}
 
 
-	//wyong, 20201008 
-	//if err = uc.pCaller.Call(route.DBSQuery.String(), req, &response); err != nil {
 	if _, err = uc.pCaller.SendMsg(ctx, req); err != nil {
 		return
 	}
 
-	//wyong, 20201021 
 	var response types.Response
 	err = uc.pCaller.RecvMsg(ctx, &response) 
 	if err != nil {
-		log.Debugf("Client/Conn/sendUrlRequest(47), err=%s\n", err.Error()) 
 		return
 	}
 

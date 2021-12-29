@@ -2,21 +2,19 @@ package types
 
 
 import (
-	//"fmt"
 	"time"
 
 	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
 	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
-	"github.com/siegfried415/go-crawling-bazaar/crypto/verifier"
 	"github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/crypto/verifier"
 )
 
 //go:generate hsp 
 
-//wyong, 20191113 
 type UrlCidRequest struct {
 	Url    string 
-	ParentUrl string 	//wyong, 20210205 
+	ParentUrl string 	
 }
 
 // RequestPayload defines a queries payload.

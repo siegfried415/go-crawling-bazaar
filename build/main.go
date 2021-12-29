@@ -123,7 +123,6 @@ func deps() {
 		cmd("go mod download"),
 		// Download and build proofs.
 
-		//wyong, 20200104 
 		//cmd("./scripts/install-go-bls-sigs.sh"),
 		//cmd("./scripts/install-go-sectorbuilder.sh"),
 
@@ -136,7 +135,7 @@ func deps() {
 }
 
 
-/* wyong, 20210507 
+/* 
 // lint runs linting using golangci-lint
 func lint(packages ...string) {
 	if len(packages) == 0 {
@@ -249,7 +248,6 @@ func generateGenesis() {
 	}...))
 }
 
-//wyong, 20200918 
 func buildGcb() {
 	log.Println("Building gcb...")
 
@@ -330,11 +328,9 @@ func main() {
 	case "deps", "smartdeps":
 		deps()
 
-	//wyong, 20210507 
 	//case "lint":
 	//	lint(args[1:]...)
 
-	//wyong, 20200918 
 	case "build-gcb":
 		buildGcb()
 
@@ -358,7 +354,6 @@ func main() {
 	case "all":
 		deps()
 		
-		//wyong, 20210507 
 		//lint()
 
 		build()

@@ -25,7 +25,6 @@ import (
 	"time"
 	//"os" 
 
-        //wyong, 20201213
 	"github.com/sirupsen/logrus"
         "github.com/siegfried415/go-crawling-bazaar/utils/callinfo"
 
@@ -58,10 +57,9 @@ var (
 		"rpc":    InfoLevel,
 	}
 
-	//N->Y, wyong, 20201211
 	// SimpleLog is the flag of simple log format
 	// "Y" for true, "N" for false. defined in `go build`
-	SimpleLog = "N"
+	SimpleLog = "Y"
 )
 
 // Logger wraps logrus logger type.
@@ -87,20 +85,7 @@ var (
 
 // StandardLogger returns the standard logger.
 func StandardLogger() *Logger {
-	//wyong, 20200715 
 	return (*Logger)(logrus.StandardLogger())
-
-	/*
-	//l := logrus.StandardLogger()
-	l := logrus.New()
-	l.SetLevel(logrus.InfoLevel)
-	l.SetOutput(os.Stdout) 
-	
-	//wyong, 20201213
-	l.SetFormatter(new(ColoredTextFormatter)) 
-
-	return (*Logger)(l)
-	*/
 }
 
 // Printf logs a message at level Info on the standard logger.
@@ -130,7 +115,6 @@ func StandardCallerHook() *CallerHook {
 			logrus.ErrorLevel,
 
 			//for debug purpose turn hook on warn,info and debug too, 
-			//wyong, 20200612 
 			logrus.WarnLevel,
 			logrus.InfoLevel,
 			logrus.DebugLevel,
@@ -153,7 +137,6 @@ func (hook *CallerHook) Fire(entry *logrus.Entry) error {
 	}
 	entry.Data["caller"] = caller
 
-	//wyong, 20201211
 	//var cMsg string 
 	//cMsg := fmt.Sprintf(" \x1b[%dm%s\x1b[0m=", 36, entry.Message)
 	//fmt.Sprintf(cMsg, "\033[1;34m %s \033[0m", entry.Message) 
@@ -174,7 +157,6 @@ func (hook *CallerHook) Levels() []logrus.Level {
 		logrus.ErrorLevel,
 
 		//for debug purpose turn hook on warn,info and debug too, 
-		//wyong, 20200612 
 		logrus.WarnLevel,
 		logrus.InfoLevel,
 		logrus.DebugLevel,
@@ -388,7 +370,6 @@ func Panic(args ...interface{}) {
 
 // Debugf logs a message at level Debug on the standard logger.
 func Debugf(format string, args ...interface{}) {
-	//wyong, 20201213
 	//logrus.Debugf(format, args...)
 	entry := (*Entry)(logrus.WithFields(logrus.Fields{
                 "Prefix":    callinfo.Prefix(),
@@ -409,7 +390,6 @@ func Printf(format string, args ...interface{}) {
 
 // Infof logs a message at level Info on the standard logger.
 func Infof(format string, args ...interface{}) {
-	//wyong, 20201214
 	//logrus.Infof(format, args...)
 	entry := (*Entry)(logrus.WithFields(logrus.Fields{
                 "Prefix":    callinfo.Prefix(),
@@ -420,7 +400,6 @@ func Infof(format string, args ...interface{}) {
 
 // Warnf logs a message at level Warn on the standard logger.
 func Warnf(format string, args ...interface{}) {
-	//wyong, 20201214
 	//logrus.Warnf(format, args...)
 	entry := (*Entry)(logrus.WithFields(logrus.Fields{
                 "Prefix":    callinfo.Prefix(),

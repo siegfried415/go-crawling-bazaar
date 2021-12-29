@@ -64,11 +64,9 @@ const (
 	// TransactionTypeBaseAccount defines base account transaction type.
 	TransactionTypeBaseAccount
 
-	//wyong, 20200728 
 	// TransactionTypeCreateDatabase defines database creation transaction type.
 	TransactionTypeCreateDatabase
 
-	//wyong, 20200728 
 	// TransactionTypeCreateDomain defines domain creation transaction type.
 	TransactionTypeCreateDomain 
 
@@ -101,11 +99,9 @@ func (t TransactionType) String() string {
 	case TransactionTypeBaseAccount:
 		return "BaseAccount"
 
-	//wyong, 20200728 
 	case TransactionTypeCreateDatabase:
 		return "CreateDatabase"
 
-	//wyong, 20200728 
 	case TransactionTypeCreateDomain:
 		return "CreateDomain"
 
@@ -160,7 +156,7 @@ func (s TransactionState) String() string {
 }
 
 // Transaction is the interface implemented by an object that can be verified and processed by
-// block producers.
+// presbyterians .
 type Transaction interface {
 	GetTransactionType() TransactionType
 	GetAccountAddress() proto.AccountAddress

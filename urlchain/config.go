@@ -19,13 +19,9 @@ package sqlchain
 import (
 	"time"
 
+	"github.com/siegfried415/go-crawling-bazaar/net"
 	"github.com/siegfried415/go-crawling-bazaar/proto"
 	"github.com/siegfried415/go-crawling-bazaar/types"
-	"github.com/siegfried415/go-crawling-bazaar/net"
-
-	//wyong, 20201014
-	//host "github.com/libp2p/go-libp2p-host" 
-
 )
 
 // Config represents a sql-chain config.
@@ -42,7 +38,6 @@ type Config struct {
 	Peers      *proto.Peers
 	Server     proto.NodeID
 
-	//wyong, 20201014
 	Host	net.RoutedHost 
 
 	// QueryTTL sets the unacknowledged query TTL in block periods.

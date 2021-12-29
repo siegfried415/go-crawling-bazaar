@@ -18,14 +18,9 @@ package node
 
 import (
 	"github.com/siegfried415/go-crawling-bazaar/conf"
-
-	//wyong, 20201114 
-	//"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
-
+	//log "github.com/siegfried415/go-crawling-bazaar/utils/log"
 	"github.com/siegfried415/go-crawling-bazaar/kms"
 	"github.com/siegfried415/go-crawling-bazaar/proto"
-	//"github.com/siegfried415/go-crawling-bazaar/route"
-	//"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 func GetPeersFromConf( publicKeystorePath string) (peers *proto.Peers, err error) {
@@ -38,16 +33,16 @@ func GetPeersFromConf( publicKeystorePath string) (peers *proto.Peers, err error
 	peers = &proto.Peers{
 		PeersHeader: proto.PeersHeader{
 			Term:   1,
-			Leader: conf.GConf.BP.NodeID,
+			Leader: conf.GConf.PB.NodeID,
 		},
 	}
 
 	if conf.GConf.KnownNodes != nil {
 		for _, n := range conf.GConf.KnownNodes {
 			if n.Role == proto.Leader || n.Role == proto.Follower {
-				//todo, wyong, 20201028
+				//todo
 				//FIXME all KnownNodes
-				//conf.GConf.KnownNodes[i].PublicKey = kms.BP.PublicKey
+				//conf.GConf.KnownNodes[i].PublicKey = kms.PB.PublicKey
 				peers.Servers = append(peers.Servers, n.ID)
 			}
 		}
@@ -71,7 +66,6 @@ func (node *Node) InitNodePeers( publicKeystorePath string) (nodes *[]proto.Node
 	// set p route and public keystore
 	if conf.GConf.KnownNodes != nil {
 		for i, p := range conf.GConf.KnownNodes {
-			//wyong, 20201114 
 			//rawNodeIDHash, err := hash.NewHashFromStr(string(p.ID))
 			//if err != nil {
 			//	//log.WithError(err).Error("load hash from node id failed")
@@ -84,8 +78,7 @@ func (node *Node) InitNodePeers( publicKeystorePath string) (nodes *[]proto.Node
 			//}).Debug("set node addr")
 			//rawNodeID := &proto.RawNodeID{Hash: *rawNodeIDHash}
 
-			//rawNodeID -> &p.ID, wyong, 20201114 
-			//wyong, 20201112 
+			//rawNodeID -> &p.ID
 			router := node.Host.Router()
 			router.SetNodeAddrCache(&p.ID, p.Addr)
 
@@ -102,7 +95,6 @@ func (node *Node) InitNodePeers( publicKeystorePath string) (nodes *[]proto.Node
 				//log.WithField("node", node).WithError(err).Error("set node failed")
 			}
 			if p.ID == proto.NodeID(node.Host.ID()) {
-				//wyong, 20201114 
 				//kms.SetLocalNodeIDNonce(rawNodeID.CloneBytes(), &p.Nonce)
 				kms.SetLocalNodeID([]byte(p.ID.String()))
 				thisNode = &conf.GConf.KnownNodes[i]

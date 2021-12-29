@@ -28,10 +28,6 @@ import (
 
 	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
 	"github.com/siegfried415/go-crawling-bazaar/kms"
-
-	//wyong, 20211206 
-	//"github.com/siegfried415/go-crawling-bazaar/pow/cpuminer"
-
 	. "github.com/siegfried415/go-crawling-bazaar/proto"
 	"github.com/siegfried415/go-crawling-bazaar/utils"
 	"github.com/siegfried415/go-crawling-bazaar/utils/log"
@@ -65,9 +61,6 @@ func NewNodeFromString(id string) Node {
 		ID:        NodeID(id),
 		Addr:      "",
 		PublicKey: publicKey,
-	
-		//wyong, 20211206 
-		//Nonce:     cpuminer.Uint256{},
 	}
 }
 

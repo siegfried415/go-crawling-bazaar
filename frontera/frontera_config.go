@@ -18,9 +18,6 @@ package frontera
 
 import (
 	"time"
-
-	//"github.com/siegfried415/go-crawling-bazaar/rpc"
-	//"github.com/siegfried415/go-crawling-bazaar/rpc/mux"
 )
 
 var (
@@ -31,14 +28,5 @@ var (
 // FronteraConfig defines the local multi-frontera management system config.
 type FronteraConfig struct {
 	RootDir          string
-	//Server           *mux.Server
-	//DirectServer     *rpc.Server // optional server to provide DBMS service
 	MaxReqTimeGap    time.Duration
-	//OnCreateDatabase func()
-
-	//Network		 fnet.BiddingNetwork 	//wyong, 20200924 
-
-	//wyong, 20200929 
-	//ChainBus	config.ChainBusConfig	
-	//UrlChain	config.UrlChainConfig 
 }

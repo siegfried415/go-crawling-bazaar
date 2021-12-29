@@ -267,7 +267,7 @@ type MinerInfo struct {
 
 // SQLChainProfile defines a SQLChainProfile related to an account.
 type SQLChainProfile struct {
-	ID                proto.DomainID	//wyong, 20200806 
+	ID                proto.DomainID
 	Address           proto.AccountAddress
 	Period            uint64
 	GasPrice          uint64

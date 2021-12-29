@@ -8,9 +8,7 @@ import (
 	cmds "github.com/ipfs/go-ipfs-cmds"
 
 	"github.com/siegfried415/go-crawling-bazaar/flags"
-
-	//wyong, 20201215 
-	log "github.com/siegfried415/go-crawling-bazaar/utils/log"
+	//log "github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 type versionInfo struct {
@@ -20,10 +18,9 @@ type versionInfo struct {
 
 var versionCmd = &cmds.Command{
 	Helptext: cmdkit.HelpText{
-		Tagline: "Show go-filecoin version information",
+		Tagline: "Show go-crawling-bazaar version information",
 	},
 	Run: func(req *cmds.Request, re cmds.ResponseEmitter, env cmds.Environment) error {
-		log.Debugf("versionCmd/Run(10)\n") 
 		return re.Emit(&versionInfo{
 			Commit: flags.Commit,
 		})

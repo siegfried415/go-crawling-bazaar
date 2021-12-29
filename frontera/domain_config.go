@@ -19,12 +19,9 @@ package frontera
 import (
 	"time"
 
+	net "github.com/siegfried415/go-crawling-bazaar/net"
 	"github.com/siegfried415/go-crawling-bazaar/proto"
 	"github.com/siegfried415/go-crawling-bazaar/urlchain"
-	net "github.com/siegfried415/go-crawling-bazaar/net"
-
-	//wyong, 20201018
-	//"github.com/libp2p/go-libp2p-core/host" 
 )
 
 // DomainConfig defines the database config.
@@ -32,9 +29,6 @@ type DomainConfig struct {
 	DomainID             proto.DomainID
 	RootDir                string
 	DataDir                string
-
-	//wyong, 20210528 
-	//KayakMux               *DomainKayakMuxService
 
 	ChainMux               *sqlchain.MuxService
 	MaxWriteTimeGap        time.Duration
@@ -47,9 +41,5 @@ type DomainConfig struct {
 	IsolationLevel         int
 	SlowQueryTime          time.Duration
 
-	//wyong, 20200929 
-	//UrlChain		config.UrlChainConfig 
-
-	//wyong, 20201018
 	Host			net.RoutedHost 
 }

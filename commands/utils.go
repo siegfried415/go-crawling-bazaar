@@ -2,38 +2,24 @@
 package commands
 
 import (
-	"context" 
-        "fmt"
-	"time" 
-	"errors" 
-        "io"
-
-	//wyong, 20201022
-	//"sync/atomic"
-	"os" 
 	"bufio" 
+	"context" 
+	"errors" 
+        "fmt"
+        "io"
+	"os" 
 	"strings" 
 	"syscall" 
-
-	//wyong, 20200824 
+	"time" 
 	url "net/url" 	
 
 	"golang.org/x/crypto/ssh/terminal"
 
-	//wyong, 20201007 
-	//host "github.com/libp2p/go-libp2p-host"
-	//protocol "github.com/libp2p/go-libp2p-core/protocol" 
-
-        "github.com/siegfried415/go-crawling-bazaar/crypto/hash"
-
-        //"github.com/siegfried415/go-crawling-market/types"
-        pi "github.com/siegfried415/go-crawling-bazaar/presbyterian/interfaces"
         client "github.com/siegfried415/go-crawling-bazaar/client"
-
-        net "github.com/siegfried415/go-crawling-bazaar/net"
-
-	//wyong, 20201215 
+        "github.com/siegfried415/go-crawling-bazaar/crypto/hash"
+        pi "github.com/siegfried415/go-crawling-bazaar/presbyterian/interfaces"
         log "github.com/siegfried415/go-crawling-bazaar/utils/log"
+        net "github.com/siegfried415/go-crawling-bazaar/net"
 
 )
 
@@ -53,10 +39,11 @@ func wait(host net.RoutedHost, txHash hash.Hash) (err error) {
         defer cancel()
         var state pi.TransactionState
         state, err = client.WaitTxConfirmation(ctx, host, txHash)
-        //ConsoleLog.WithFields(logrus.Fields{
-        //        "tx_hash":  txHash,
-        //        "tx_state": state,
-        //}).WithError(err).Info("wait transaction confirmation")
+        log.WithFields(log.Fields{
+                "tx_hash":  txHash,
+                "tx_state": state,
+        }).WithError(err).Info("wait transaction confirmation")
+
         if err == nil && state != pi.TransactionStateConfirmed {
                 err = errors.New("bad transaction state")
         }
@@ -66,32 +53,19 @@ func wait(host net.RoutedHost, txHash hash.Hash) (err error) {
 func getConn(host net.RoutedHost, protocol string,  dsn string) (c *client.Conn, err error) {
         cfg := client.NewConfig()
         cfg.DomainID = dsn
-
-	//wyong, 20201007
 	cfg.Host = host
-
-	//wyong, 20201008
 	cfg.Protocol = protocol 
 
-        //if s.mirrorServerAddr != "" {
-        //        cfg.Mirror = s.mirrorServerAddr
-        //}
-
-	//wyong, 20200819 
-        //var cfg *client.Config
-        //if cfg, err = client.ParseDSN(dsn); err != nil {
-        //        return
-        //}
-
-	//wyong, 20201021 
-        //if atomic.LoadUint32(&driverInitialized) == 0 {
-        //        err = defaultInit(host)
-        //        if err != nil && err != ErrAlreadyInitialized {
-        //                return
-        //        }
-        //}
-
         return client.NewConn(cfg)
+}
+
+// IsURL returns true if the string represents a valid URL that the
+// urlstore can handle.  More specifically it returns true if a string
+// begins with 'http://' or 'https://'.
+func IsURL(str string) bool {
+	return (len(str) > 7 && str[0] == 'h' && str[1] == 't' && str[2] == 't' && str[3] == 'p') &&
+			((len(str) > 8 && str[4] == 's' && str[5] == ':' && str[6] == '/' && str[7] == '/') ||
+					(str[4] == ':' && str[5] == '/' && str[6] == '/'))
 }
 
 
@@ -115,7 +89,7 @@ func readMasterKey(skip bool) string {
 	bytePwd, err := terminal.ReadPassword(int(syscall.Stdin))
 	fmt.Println()
 	if err != nil {
-		//ConsoleLog.Errorf("read master key failed: %v", err)
+		log.Errorf("read master key failed: %v", err)
 		//SetExitStatus(1)
 		//Exit()
 		os.Exit(1)
@@ -135,9 +109,7 @@ func askDeleteFile(file string) {
                 t, err := reader.ReadString('\n')
                 t = strings.Trim(t, "\n")
                 if err != nil {
-                        //ConsoleLog.WithError(err).Error("unexpected error")
-                        //SetExitStatus(1)
-                        //Exit()
+                        log.WithError(err).Error("unexpected error")
 			os.Exit(1)
 			return 
                 }

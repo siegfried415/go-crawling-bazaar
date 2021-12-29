@@ -86,7 +86,7 @@ func generateRandomTransfer() (tx *Transfer, err error) {
 	return
 }
 
-func generateRandomBlock(parent hash.Hash, isGenesis bool) (b *BPBlock, err error) {
+func generateRandomBlock(parent hash.Hash, isGenesis bool) (b *PBBlock, err error) {
 	// Generate key pair
 	priv, _, err := asymmetric.GenSecp256k1KeyPair()
 
@@ -97,9 +97,9 @@ func generateRandomBlock(parent hash.Hash, isGenesis bool) (b *BPBlock, err erro
 	h := hash.Hash{}
 	rand.Read(h[:])
 
-	b = &BPBlock{
-		SignedHeader: BPSignedHeader{
-			BPHeader: BPHeader{
+	b = &PBBlock{
+		SignedHeader: PBSignedHeader{
+			PBHeader: PBHeader{
 				Version:    0x01000000,
 				Producer:   proto.AccountAddress(h),
 				ParentHash: parent,

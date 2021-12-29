@@ -18,9 +18,6 @@ package client
 
 import (
 	"context"
-	//"database/sql"
-	//"database/sql/driver"
-	//"fmt"
 	"math/rand"
 	"strings"
 	"sync"
@@ -29,26 +26,18 @@ import (
 
 	"github.com/pkg/errors"
 
-	//wyong, 20201127 
-	//wyong, 20201008
-	//host "github.com/libp2p/go-libp2p-core/host" 
-
-	pb "github.com/siegfried415/go-crawling-bazaar/presbyterian"
-	"github.com/siegfried415/go-crawling-bazaar/presbyterian/interfaces"
 	"github.com/siegfried415/go-crawling-bazaar/conf"
 	"github.com/siegfried415/go-crawling-bazaar/crypto"
 	"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
 	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
+
 	"github.com/siegfried415/go-crawling-bazaar/kms"
+	net "github.com/siegfried415/go-crawling-bazaar/net"
 	"github.com/siegfried415/go-crawling-bazaar/proto"
 
-	//wyong, 20201127 
-	//"github.com/siegfried415/go-crawling-bazaar/route"
+	pb "github.com/siegfried415/go-crawling-bazaar/presbyterian"
+	"github.com/siegfried415/go-crawling-bazaar/presbyterian/interfaces"
 
-	//wyong, 20201008 
-	//rpc "github.com/siegfried415/go-crawling-bazaar/rpc/mux"
-	net "github.com/siegfried415/go-crawling-bazaar/net"
-	
 	"github.com/siegfried415/go-crawling-bazaar/types"
 	"github.com/siegfried415/go-crawling-bazaar/utils"
 	"github.com/siegfried415/go-crawling-bazaar/utils/log"
@@ -83,7 +72,7 @@ var (
 )
 
 func init() {
-	/* wyong, 20200802 
+	/* 
 	d := new(covenantSQLDriver)
 	sql.Register(DBScheme, d)
 	sql.Register(DBSchemeAlias, d)
@@ -91,7 +80,7 @@ func init() {
 	*/
 }
 
-/* wyong, 20200802 
+/* 
 // covenantSQLDriver implements sql.Driver interface.
 type covenantSQLDriver struct {
 }
@@ -122,7 +111,6 @@ type ResourceMeta struct {
 	TargetMiners           []proto.AccountAddress `json:"target-miners,omitempty"`        // designated miners
 	Node                   uint16                 `json:"node,omitempty"`                 // reserved node count
 
-	//wyong, 20200816
 	Domain			string			`json:"domain-name, omitempty"`
 
 	Space                  uint64                 `json:"space,omitempty"`                // reserved storage space in bytes
@@ -149,7 +137,7 @@ func defaultInit(host net.RoutedHost) (err error) {
 	return Init(host, configFile, []byte(""))
 }
 
-//todo, wyong, 20201022 
+//todo
 // Init defines init process for client.
 func Init(host net.RoutedHost, configFile string, masterKey []byte) (err error) {
 	if !atomic.CompareAndSwapUint32(&driverInitialized, 0, 1) {
@@ -162,7 +150,7 @@ func Init(host net.RoutedHost, configFile string, masterKey []byte) (err error) 
 		return
 	}
 
-	//todo, wyong, 20201110 
+	//todo
 	//route.InitKMS(conf.GConf.PubKeyStoreFile)
 	if err = kms.InitLocalKeyPair(conf.GConf.PrivateKeyFile, masterKey); err != nil {
 		return
@@ -182,9 +170,9 @@ func Init(host net.RoutedHost, configFile string, masterKey []byte) (err error) 
 }
 
 
-//todo, wyong, 20200728 
+//todo
 // CreateDomain sends create domain operation to presbyterian.
-func CreateDomain(host net.RoutedHost, meta ResourceMeta) (txHash hash.Hash, /* dsn string, wyong, 20200816  */  err error) {
+func CreateDomain(host net.RoutedHost, meta ResourceMeta) (txHash hash.Hash, /* dsn string */  err error) {
 	//if atomic.LoadUint32(&driverInitialized) == 0 {
 	//	err = ErrNotInitialized
 	//	return
@@ -199,31 +187,22 @@ func CreateDomain(host net.RoutedHost, meta ResourceMeta) (txHash hash.Hash, /* 
 		clientAddr proto.AccountAddress
 	)
 
-	log.Debugf("client/CreateDomain(10)\n") 
 	if privateKey, err = kms.GetLocalPrivateKey(); err != nil {
 		err = errors.Wrap(err, "get local private key failed")
-		log.Debugf("client/CreateDomain(15), err=%s\n", err ) 
 		return
 	}
-	log.Debugf("client/CreateDomain(20)\n") 
 	if clientAddr, err = crypto.PubKeyHash(privateKey.PubKey()); err != nil {
 		err = errors.Wrap(err, "get local account address failed")
-		log.Debugf("client/CreateDomain(25), err=%s\n", err ) 
 		return
 	}
-	log.Debugf("client/CreateDomain(30)\n") 
 	// allocate nonce
 	nonceReq.Addr = clientAddr
 
-	//wyong, 20201108 
-	//wyong, 20201021 
 	if err = host.RequestPB("MCC.NextAccountNonce", &nonceReq, &nonceResp); err != nil {
 		err = errors.Wrap(err, "allocate create database transaction nonce failed")
-		log.Debugf("client/CreateDomain(35), err=%s\n", err ) 
 		return
 	}
 
-	log.Debugf("client/CreateDomain(40)\n") 
 	if meta.GasPrice == 0 {
 		meta.GasPrice = DefaultGasPrice
 	}
@@ -231,7 +210,6 @@ func CreateDomain(host net.RoutedHost, meta ResourceMeta) (txHash hash.Hash, /* 
 		meta.AdvancePayment = DefaultAdvancePayment
 	}
 
-	log.Debugf("client/CreateDomain(50)\n") 
 	req.TTL = 1
 	req.Tx = types.NewCreateDomain(&types.CreateDomainHeader{
 		Owner: clientAddr,
@@ -239,10 +217,8 @@ func CreateDomain(host net.RoutedHost, meta ResourceMeta) (txHash hash.Hash, /* 
 			TargetMiners:           meta.TargetMiners,
 			Node:                   meta.Node,
 
-			//wyong, 20200816 
 			Domain:			meta.Domain, 	
 
-			//wyong, 20200815 
 			//Space:                  meta.Space,
 			//Memory:                 meta.Memory,
 			//LoadAvgPerCPU:          meta.LoadAvgPerCPU,
@@ -258,42 +234,33 @@ func CreateDomain(host net.RoutedHost, meta ResourceMeta) (txHash hash.Hash, /* 
 		Nonce:          nonceResp.Nonce,
 	})
 
-	log.Debugf("client/CreateDomain(60)\n") 
 	if err = req.Tx.Sign(privateKey); err != nil {
 		err = errors.Wrap(err, "sign request failed")
-		log.Debugf("client/CreateDomain(65), err=%s\n", err ) 
 		return
 	}
 
-	log.Debugf("client/CreateDomain(70)\n") 
-	//wyong, 20201108 
-	//wyong, 20201021 
 	if err = host.RequestPB("MCC.AddTx", &req, &resp); err != nil {
 		err = errors.Wrap(err, "call create database transaction failed")
-		log.Debugf("client/CreateDomain(75), err=%s\n", err ) 
 		return
 	}
 
-	log.Debugf("client/CreateDomain(80)\n") 
 	txHash = req.Tx.Hash()
 
 	//cfg := NewConfig()
 	//cfg.DomainID = string(proto.FromAccountAndNonce(clientAddr, uint32(nonceResp.Nonce)))
 	//dsn = cfg.FormatDSN()
 
-	log.Debugf("client/CreateDomain(90)\n") 
 	return
 }
 
 // WaitDomainCreation waits for domain creation complete.
 func WaitDomainCreation(ctx context.Context, host net.RoutedHost, dsn string) (err error) {
-	// wyong, 20200816 
 	//dsnCfg, err := ParseDSN(dsn)
 	//if err != nil {
 	//	return
 	//}
 
-	//todo, wyong, 20200813 
+	//todo
 	//db, err := sql.Open("covenantsql", dsn)
 	//defer db.Close()
 	//if err != nil {
@@ -308,9 +275,9 @@ func WaitDomainCreation(ctx context.Context, host net.RoutedHost, dsn string) (e
 // WaitPBDomainCreation waits for database creation complete.
 func WaitPBDomainCreation(
 	ctx context.Context,
-	host net.RoutedHost, //wyong, 20201008 
+	host net.RoutedHost, 
 	domainID proto.DomainID,
-	//db *sql.DB, wyong, 20200816 
+	//db *sql.DB, 
 	period time.Duration,
 ) (err error) {
 	var (
@@ -325,57 +292,43 @@ func WaitPBDomainCreation(
 	defer ticker.Stop()
 	defer log.Debugf("\n")
 
-	log.Debugf("WaitPBDomainCreation(10), query domainID(%s)\n", domainID ) 
 	for {
-		log.Debugf("WaitPBDomainCreation(20)\n") 
 		select {
 		case <-ticker.C:
-			log.Debugf("WaitPBDomainCreation(30)\n") 
 			count++
 
-			//wyong, 20201108 
 			if err = host.RequestPB("MCC.QuerySQLChainProfile", &req, &resp,); err != nil {
-				log.Debugf("WaitPBDomainCreation(40)\n") 
 				if !strings.Contains(err.Error(), pb.ErrDatabaseNotFound.Error()) {
 					// err != nil && err != ErrDatabaseNotFound (unexpected error)
-					log.Debugf("WaitPBDomainCreation(50)\n") 
 					return
 				}
 			} else {
-				/* wyong, 20200816 
-				log.Debugf("WaitPBDomainCreation(60), resp.Profile.ID=%s\n", resp.Profile.ID ) 
-				// err == nil (creation done on BP): try to use database connection
+				/* 
+				// err == nil (creation done on Presbyterian ): try to use database connection
 				if db == nil {
-					log.Debugf("WaitPBDomainCreation(70)\n") 
 					return
 				}
-				log.Debugf("WaitPBDomainCreation(80)\n") 
 				if _, err = db.ExecContext(ctx, "SHOW TABLES"); err == nil {
-					log.Debugf("WaitPBDomainCreation(90)\n") 
 					// err == nil (connect to Miner OK)
 					return
 				}
 				*/ 
-				log.Debugf("WaitPBDomainCreation(90)\n") 
 				return 
 			}
 
 			log.Debugf("\rQuerying SQLChain Profile %vs", count*int(period.Seconds()))
 
 		case <-ctx.Done():
-			log.Debugf("WaitPBDomainCreation(100)\n") 
 			if err != nil {
-				log.Debugf("WaitPBDomainCreation(110)\n") 
 				return errors.Wrapf(ctx.Err(), "last error: %s", err.Error())
 			}
-			log.Debugf("WaitPBDomainCreation(120)\n") 
 			return ctx.Err()
 		}
 	}
 }
 
 // Drop sends drop database operation to presbyterian.
-func Drop(dsn string) (txHash hash.Hash, err error) {
+func Drop(host net.RoutedHost, dsn string) (txHash hash.Hash, err error) {
 	if atomic.LoadUint32(&driverInitialized) == 0 {
 		err = ErrNotInitialized
 		return
@@ -394,7 +347,7 @@ func Drop(dsn string) (txHash hash.Hash, err error) {
 	return
 }
 
-/* wyong, 20201021 
+/* 
 // GetTokenBalance get the token balance of current account.
 func GetTokenBalance(tt types.TokenType) (balance uint64, err error) {
 	if atomic.LoadUint32(&driverInitialized) == 0 {
@@ -537,7 +490,7 @@ func TransferToken(targetUser proto.AccountAddress, amount uint64, tokenType typ
 
 
 // WaitTxConfirmation waits for the transaction with target hash txHash to be confirmed. It also
-// returns if any error occurs or a final state is returned from BP.
+// returns if any error occurs or a final state is returned from Presbyterian.
 func WaitTxConfirmation(
 	ctx context.Context, host net.RoutedHost, txHash hash.Hash) (state interfaces.TransactionState, err error,
 ) {
@@ -551,7 +504,6 @@ func WaitTxConfirmation(
 	defer ticker.Stop()
 	defer log.Debugf("\n")
 	for {
-		//wyong, 20201108 
 		if err = host.RequestPB("MCC.QueryTxState", req, resp); err != nil {
 			err = errors.Wrapf(err, "failed to call %s", "MCC.QueryTxState" )
 			return
@@ -560,7 +512,7 @@ func WaitTxConfirmation(
 		state = resp.State
 
 		count++
-		log.Debugf("\rWaiting blockproducers confirmation %vs, state: %v\033[0K", count, state)
+		log.Debugf("\rWaiting presbyterians confirmation %vs, state: %v\033[0K", count, state)
 		log.WithFields(log.Fields{
 			"tx_hash":  txHash,
 			"tx_state": state,
@@ -603,17 +555,15 @@ func getNonce(addr proto.AccountAddress) (nonce interfaces.AccountNonce, err err
 */
 
 
-//wyong, 20201008 
 //func requestPB(method route.RemoteFunc, request interface{}, response interface{}) (err error) {
-//	var bpNodeID proto.NodeID
-//	if bpNodeID, err = rpc.GetCurrentBP(); err != nil {
+//	var pbNodeID proto.NodeID
+//	if pbNodeID, err = rpc.GetCurrentPB(); err != nil {
 //		return
 //	}
 //
-//	return rpc.NewCaller().CallNode(bpNodeID, method.String(), request, response)
+//	return rpc.NewCaller().CallNode(pbNodeID, method.String(), request, response)
 //}
 
-//wyong, 20201021 
 func registerNode(host net.RoutedHost ) (err error) {
 	var nodeID proto.NodeID
 
@@ -627,8 +577,8 @@ func registerNode(host net.RoutedHost ) (err error) {
 	}
 
 	if nodeInfo.Role != proto.Leader && nodeInfo.Role != proto.Follower {
-		log.Infof("Self register to blockproducer: %v", conf.GConf.BP.NodeID)
-		err = host.PingPB(nodeInfo, conf.GConf.BP.NodeID)
+		log.Infof("Self register to presbyterian: %v", conf.GConf.PB.NodeID)
+		err = host.PingPB(nodeInfo, conf.GConf.PB.NodeID)
 	}
 
 	return
@@ -713,7 +663,6 @@ func cacheGetPeers(host net.RoutedHost, domainID proto.DomainID, privKey *asymme
 	return getPeers(host, domainID, privKey)
 }
 
-//wyong, 20201021 
 func getPeers(host net.RoutedHost, domainID proto.DomainID, privKey *asymmetric.PrivateKey) (peers *proto.Peers, err error) {
 	defer func() {
 		log.WithFields(log.Fields{
@@ -726,7 +675,6 @@ func getPeers(host net.RoutedHost, domainID proto.DomainID, privKey *asymmetric.
 	profileResp := types.QuerySQLChainProfileResp{}
 	profileReq.DomainID = domainID
 
-	//wyong, 20201108 
 	err = host.RequestPB("MCC.QuerySQLChainProfile", &profileReq, &profileResp)
 	if err != nil {
 		err = errors.Wrap(err, "get sqlchain profile failed in getPeers")

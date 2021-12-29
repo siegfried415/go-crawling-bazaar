@@ -7,33 +7,27 @@ import (
 	_ "net/http/pprof" // nolint: golint
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
-	//wyong, 20201022 
-	"path/filepath"
-
+	"github.com/pkg/errors"
 
 	cmdkit "github.com/ipfs/go-ipfs-cmdkit"
 	cmds "github.com/ipfs/go-ipfs-cmds"
 	cmdhttp "github.com/ipfs/go-ipfs-cmds/http"
 	writer "github.com/ipfs/go-log/writer"
+
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr-net"
-	"github.com/pkg/errors"
 
-	//wyong, 20201003 
 	"github.com/siegfried415/go-crawling-bazaar/conf"
-
-	//"github.com/siegfried415/go-crawling-bazaar/consensus"
+	env "github.com/siegfried415/go-crawling-bazaar/env" 
+        "github.com/siegfried415/go-crawling-bazaar/utils/log"
 	node "github.com/siegfried415/go-crawling-bazaar/node"
 	"github.com/siegfried415/go-crawling-bazaar/paths"
 	"github.com/siegfried415/go-crawling-bazaar/proto"
 	utils "github.com/siegfried415/go-crawling-bazaar/utils" 
-	env "github.com/siegfried415/go-crawling-bazaar/env" 
-
-	//wyong, 20201202 
-        "github.com/siegfried415/go-crawling-bazaar/utils/log"
 
 )
 
@@ -42,19 +36,14 @@ var daemonCmd = &cmds.Command{
 		Tagline: "Start a long-running daemon process",
 	},
 	Options: []cmdkit.Option{
-		//wyong, 20201125 
-		//cmdkit.StringOption(SwarmAddress, "multiaddress to listen on for filecoin network connections"),
-		//cmdkit.StringOption(SwarmPublicRelayAddress, "public multiaddress for routing circuit relay traffic.  Necessary for relay nodes to provide this if they are not publically dialable"),
+		cmdkit.StringOption(SwarmAddress, "multiaddress to listen on for filecoin network connections"),
+		cmdkit.StringOption(SwarmPublicRelayAddress, "public multiaddress for routing circuit relay traffic.  Necessary for relay nodes to provide this if they are not publically dialable"),
 
 		cmdkit.BoolOption(OfflineMode, "start the node without networking"),
 		cmdkit.BoolOption(ELStdout),
 		cmdkit.BoolOption(IsRelay, "advertise and allow filecoin network traffic to be relayed through this node"),
 
 		//cmdkit.StringOption(BlockTime, "time a node waits before trying to mine the next block").WithDefault(consensus.DefaultBlockTime.String()),
-
-		//wyong, 20201125 
-		//wyong, 20201030 
-		//cmdkit.StringOption(AdapterAddress, "multiaddress to listen on for application"),
 	},
 	Run: func(req *cmds.Request, re cmds.ResponseEmitter, env cmds.Environment) error {
 		return daemonRun(req, re)
@@ -66,18 +55,14 @@ var daemonCmd = &cmds.Command{
 
 func daemonRun(req *cmds.Request, re cmds.ResponseEmitter) error {
 	var (
-		//wyong, 20201125 
 		rawAdapterAddr string
-
 		err error
 	)
 
-	//wyong, 20201202
 	logLevel, _ := req.Options["log-level"].(string)
         log.SetStringLevel(logLevel, log.InfoLevel)
 
 	
-	//wyong, 20201028 
 	roleStr, _ := req.Options[OptionRole].(string)
 	role, err := proto.ParseServerRole (roleStr) 	
 	if err != nil {
@@ -94,53 +79,39 @@ func daemonRun(req *cmds.Request, re cmds.ResponseEmitter) error {
 		repoDir = utils.HomeDirExpand("~/.gcb")
 	}
 
-	//wyong, 20201027 
-	//repo, err := repo.OpenFSRepo(repoDir, repo.Version)
-	//if err != nil {
-	//	return err
-	//}
-
 	configFile := filepath.Join(repoDir, "config.yaml")
         conf.GConf, err = conf.LoadConfig(configFile)
         if err != nil {
-                //log.WithField("config", configFile).WithError(err).Fatal("load config failed")
+                log.WithField("config", configFile).WithError(err).Fatal("load config failed")
+		return err 
         }
 
         //log.Debugf("config:\n%#v", conf.GConf)
-	//wyong, 20201030 
 	if role == proto.Miner {	
 		if conf.GConf.Miner == nil {
-			//log.Fatal("miner config does not exists")
+			log.Fatal("miner config does not exists")
 		}
+
+		/*todo
 		if conf.GConf.Miner.ProvideServiceInterval.Seconds() <= 0 {
-			//log.Fatal("miner metric collect interval is invalid")
+			log.Fatal("miner metric collect interval is invalid")
 		}
 		if conf.GConf.Miner.MaxReqTimeGap.Seconds() <= 0 {
-			//log.Fatal("miner request time gap is invalid")
+			log.Fatal("miner request time gap is invalid")
 		}
 		if conf.GConf.Miner.DiskUsageInterval.Seconds() <= 0 {
 			// set to default disk usage interval
-			//log.Warning("miner disk usage interval not provided, set to default 10 minutes")
+			log.Warning("miner disk usage interval not provided, set to default 10 minutes")
 			conf.GConf.Miner.DiskUsageInterval = time.Minute * 10
 		}
+		*/
 	}
 
-	// get api/adapter address for daemon, wyong, 20201125 
-	// second highest precedence is env vars.
-	if envAPI := os.Getenv("FIL_API"); envAPI != "" {
-		rawAdapterAddr = envAPI
-	}
-
-	// highest precedence is cmd line flag.
+	rawAdapterAddr = conf.GConf.AdapterAddr 
 	if flagAPI, ok := req.Options[OptionAPI].(string); ok && flagAPI != "" {
 		//conf.GConf.AdapterAddr = flagAPI
 		rawAdapterAddr = flagAPI 
 	}
-
-        //lowest precedence is wyong, 20201125 
-        if len(rawAdapterAddr) == 0 {
-		rawAdapterAddr = conf.GConf.AdapterAddr 
-        }
 
 
 	if swarmAddress, ok := req.Options[SwarmAddress].(string); ok && swarmAddress != "" {
@@ -151,13 +122,7 @@ func daemonRun(req *cmds.Request, re cmds.ResponseEmitter) error {
 		conf.GConf.PublicRelayAddress = publicRelayAddress
 	}
 
-	//todo, wyong, 20201003 
-	//opts, err := node.OptionsFromRepo(rep)
-	//if err != nil {
-	//	return err
-	//}
 	var opts []node.BuilderOpt
-
 	if offlineMode, ok := req.Options[OfflineMode].(bool); ok {
 		opts = append(opts, node.OfflineMode(offlineMode))
 	}
@@ -166,13 +131,7 @@ func daemonRun(req *cmds.Request, re cmds.ResponseEmitter) error {
 		opts = append(opts, node.IsRelay())
 	}
 
-	//wyong, 20201125 
-	//wyong, 20201030 
-	//if adapterAddress, ok := req.Options[AdapterAddress].(string); ok && adapterAddress != "" {
-	//	conf.GConf.AdapterAddr = adapterAddress
-	//}
-
-	// wyong, 20200922 
+	//todo
 	//durStr, ok := req.Options[BlockTime].(string)
 	//if !ok {
 	//	return errors.New("Bad block time passed")
@@ -204,10 +163,7 @@ func daemonRun(req *cmds.Request, re cmds.ResponseEmitter) error {
 		writer.WriterGroup.AddWriter(os.Stdout)
 	}
 
-	fmt.Println("daemonRun(100), before call n.Start()")
-
 	//FIXME: if start all miners at same time, miners will fail to start
-	//wyong, 20201206 
 	time.Sleep(time.Second * 3 ) 
 
 	// Start the node.
@@ -216,89 +172,51 @@ func daemonRun(req *cmds.Request, re cmds.ResponseEmitter) error {
 	}
 	defer n.Stop(req.Context)
 
-	//wyong, 20201125 
-	fmt.Println("daemonRun(110), after call n.Start()")
 
 	// Run API server around the node.
 	ready := make(chan interface{}, 1)
 	go func() {
 		<-ready
-
-		//wyong, 20201027 
 		_ = re.Emit(fmt.Sprintf("API server listening on %s\n", rawAdapterAddr))
 	}()
-
-	fmt.Println("daemonRun(120)")
 
 	var terminate = make(chan os.Signal, 1)
 	signal.Notify(terminate, os.Interrupt, syscall.SIGTERM)
 	defer signal.Stop(terminate)
 
-	fmt.Println("daemonRun(130)")
 	// The request is expected to remain open so the daemon uses the request context.
 	// Pass a new context here if the flow changes such that the command should exit while leaving
 	// a forked deamon running.
-	return RunAPIAndWait(req.Context, n, repoDir, /* conf.GConf.API, wyong, 20201125 */ rawAdapterAddr, ready, terminate)
+	return RunAPIAndWait(req.Context, n, repoDir, rawAdapterAddr, ready, terminate)
 }
-
-/*
-func getRepo(req *cmds.Request) (repo.Repo, error) {
-	repoDir, _ := req.Options[OptionRepoDir].(string)
-	repoDir, err := paths.GetRepoPath(repoDir)
-	if err != nil {
-		return nil, err
-	}
-	return repo.OpenFSRepo(repoDir, repo.Version)
-}
-*/
-
 
 // RunAPIAndWait starts an API server and waits for it to finish.
 // The `ready` channel is closed when the server is running and its API address has been
 // saved to the node's repo.
 // A message sent to or closure of the `terminate` channel signals the server to stop.
-func RunAPIAndWait(ctx context.Context, nd *node.Node, repoDir string, /* config *conf.APIConfig, wyong, 20201125 */ rawAdapterAddr string,  ready chan interface{}, terminate chan os.Signal) error {
+func RunAPIAndWait(ctx context.Context, nd *node.Node, repoDir string, rawAdapterAddr string, ready chan interface{}, terminate chan os.Signal) error {
 
-	fmt.Println("RunAPIAndWait(10)")
-	// wyong, 20200921 
-	//servenv := &Env{
-	//	blockMiningAPI: nd.BlockMining.BlockMiningAPI,
-	//	ctx:            ctx,
-	//	inspectorAPI:   NewInspectorAPI(nd.Repo),
-	//	porcelainAPI:   nd.PorcelainAPI,
-	//
-	//	//wyong, 20200410 
-	//	//retrievalAPI:   nd.RetrievalProtocol.RetrievalAPI,
-	//	//storageAPI:     nd.StorageProtocol.StorageAPI,
-	//}
-
-	//wyong, 20201126 
-	//wyong, 20201022 
-	servenv := env.NewClientEnv(ctx, nd.Role, nd.Host,  nd.Frontera, nd.DAG )
+	servenv := env.NewClientEnv(ctx, nd.Role, nd.Host, nd.Frontera, nd.DAG )
 
 	cfg := cmdhttp.NewServerConfig()
 	cfg.APIPath = APIPrefix
 
-	//todo, wyong, 20201125 
+	//todo
 	//cfg.SetAllowedOrigins(config.AccessControlAllowOrigin...)
 	//cfg.SetAllowedMethods(config.AccessControlAllowMethods...)
 	//cfg.SetAllowCredentials(config.AccessControlAllowCredentials)
 
-	fmt.Println("RunAPIAndWait(20)")
-	//wyong, 20201125 
 	maddr, err := ma.NewMultiaddr(rawAdapterAddr )
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("RunAPIAndWait(30)")
 	// Listen on the configured address in order to bind the port number in case it has
 	// been configured as zero (i.e. OS-provided)
 	apiListener, err := manet.Listen(maddr)
 	if err != nil {
 		return err
 	}
-	fmt.Println("RunAPIAndWait(40)")
 
 	handler := http.NewServeMux()
 	handler.Handle("/debug/pprof/", http.DefaultServeMux)
@@ -308,7 +226,6 @@ func RunAPIAndWait(ctx context.Context, nd *node.Node, repoDir string, /* config
 		Handler: handler,
 	}
 
-	fmt.Println("RunAPIAndWait(50)")
 	go func() {
 		err := apiserv.Serve(manet.NetListener(apiListener))
 		if err != nil && err != http.ErrServerClosed {
@@ -316,15 +233,11 @@ func RunAPIAndWait(ctx context.Context, nd *node.Node, repoDir string, /* config
 		}
 	}()
 
-	fmt.Println("RunAPIAndWait(60), before SetAPIAddr, rawAdapterAddr=%s", rawAdapterAddr)
 	// Write the resolved API address to the repo
-	//wyong, 20201125 
-	//config.Address = apiListener.Multiaddr().String()
 	if err := conf.SetAPIAddr(repoDir, rawAdapterAddr); err != nil {
 		return errors.Wrap(err, "Could not save API address to repo")
 	}
 
-	fmt.Println("RunAPIAndWait(70)")
 	// Signal that the sever has started and then wait for a signal to stop.
 	close(ready)
 	received := <-terminate

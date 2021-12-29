@@ -17,9 +17,9 @@ import (
 // swarmCmd contains swarm commands.
 var swarmCmd = &cmds.Command{
 	Helptext: cmdkit.HelpText{
-		Tagline: "Interact with the swarm",
+		Tagline: "Interact with other go-crawling-bazaar node",
 		ShortDescription: `
-'go-filecoin swarm' is a tool to manipulate the libp2p swarm. The swarm is the
+'gcb swarm' is a tool to manipulate the libp2p swarm. The swarm is the
 component that opens, listens for, and maintains connections to other
 libp2p peers on the internet.
 `,
@@ -47,7 +47,6 @@ var swarmPeersCmd = &cmds.Command{
 		latency, _ := req.Options["latency"].(bool)
 		streams, _ := req.Options["streams"].(bool)
 
-		//out, err := GetPorcelainAPI(env).NetworkPeers(req.Context, verbose, latency, streams)
                 e := cmdenv.(*env.Env)
 		host := e.Host()
                 out, err := host.Peers(req.Context, verbose, latency, streams)
@@ -92,18 +91,17 @@ var swarmConnectCmd = &cmds.Command{
 	Helptext: cmdkit.HelpText{
 		Tagline: "Open connection to a given address.",
 		ShortDescription: `
-'go-filecoin swarm connect' opens a new direct connection to a peer address.
+'gcb swarm connect' opens a new direct connection to a peer address.
 
 The address format is a multiaddr:
 
-go-filecoin swarm connect /ip4/104.131.131.82/tcp/4001/ipfs/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ
+gcb swarm connect /ip4/104.131.131.82/tcp/4001/ipfs/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ
 `,
 	},
 	Arguments: []cmdkit.Argument{
 		cmdkit.StringArg("address", true, true, "Address of peer to connect to.").EnableStdin(),
 	},
 	Run: func(req *cmds.Request, re cmds.ResponseEmitter, cmdenv cmds.Environment) error {
-		//results, err := GetPorcelainAPI(env).NetworkConnect(req.Context, req.Arguments)
 		e := cmdenv.(*env.Env)
 		host := e.Host()
 
@@ -117,15 +115,10 @@ go-filecoin swarm connect /ip4/104.131.131.82/tcp/4001/ipfs/QmaCpDMGvV2BGHeYERUE
 			return err
 		}
 
-		//todo, wyong, 20201112 
-		//for result := range results {
-		//	if result.Err != nil {
-		//		return result.Err
-		//	}
-		//	if err := re.Emit(result.PeerID); err != nil {
-		//		return err
-		//	}
-		//}
+		peerID := peer.ID(addrInfo.ID.Pretty())
+		if err := re.Emit(peerID); err != nil {
+			return err
+		}
 
 		return nil
 	},

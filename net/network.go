@@ -6,20 +6,15 @@ import (
 	"sort"
 	"sync"
 
-	//wyong, 20200110 
 	logging "github.com/ipfs/go-log"
 
 	"github.com/libp2p/go-libp2p-core/host"
-	//"github.com/libp2p/go-libp2p-core/metrics"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-swarm"
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/pkg/errors"
-
-	//"github.com/siegfried415/go-crawling-bazaar/net/pubsub"
 )
 
-//wyong, 20200110 
 var lognetwork = logging.Logger("net.network")
 
 // SwarmConnInfo represents details about a single swarm connection.
@@ -68,38 +63,12 @@ func (ci SwarmConnInfos) Swap(i, j int) {
 // Network is a unified interface for dealing with libp2p
 type Network struct {
 	host host.Host
-	//*pubsub.Subscriber
-	//*pubsub.Publisher
-	//metrics.Reporter
-
-	//wyong, 20201107
-	//*Router 
-
-	//*Pinger
 }
 
 // New returns a new Network
-func New(
-	host host.Host,
-	//publisher *pubsub.Publisher,
-	//subscriber *pubsub.Subscriber,
-
-	//wyong, 20201107 
-	//router *Router,
-
-	//reporter metrics.Reporter,
-	//pinger *Pinger,
-) *Network {
+func New( host host.Host) *Network {
 	return &Network{
 		host:       host,
-		//Pinger:     pinger,
-		//Publisher:  publisher,
-		//Reporter:   reporter,
-
-		//wyong, 20201107
-		//Router:     router,
-
-		//Subscriber: subscriber,
 	}
 }
 
@@ -113,12 +82,6 @@ func (network *Network) GetPeerID() peer.ID {
 	return network.host.ID()
 }
 
-/*
-// GetBandwidthStats gets stats on the current bandwidth usage of the network
-func (network *Network) GetBandwidthStats() metrics.Stats {
-	return network.Reporter.GetBandwidthTotals()
-}
-*/
 // ConnectionResult represents the result of an attempted connection from the
 // Connect method.
 type ConnectionResult struct {
@@ -128,17 +91,6 @@ type ConnectionResult struct {
 
 // Connect connects to peers at the given addresses. Does not retry.
 func (network *Network) Connect(ctx context.Context, addrs []string) (<-chan ConnectionResult, error) {
-	//wyong, 20200110 
-	/*
-        ctx = lognetwork.Start(ctx, "swarmConnectCmdTo")
-        defer func() {
-                lognetwork.FinishWithErr(ctx, nil )
-        }()
-
-	//todo, get first one only now, wyong, 20200110 
-	lognetwork.SetTag(ctx, "to", addrs[0] )
-	*/
-
         lognetwork.Event(ctx, "swarmConnectCmdTo", func() logging.Loggable {
                 return logging.Metadata{"to": addrs[0]}
         }())

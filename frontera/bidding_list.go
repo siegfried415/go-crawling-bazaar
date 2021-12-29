@@ -7,71 +7,53 @@ import (
 	"time" 
 	"sync"
 
-	cid "github.com/ipfs/go-cid"
-        //peer "github.com/libp2p/go-libp2p-peer"
-	"github.com/siegfried415/go-crawling-bazaar/proto" 
-
-        //wyong, 20200218
         "github.com/mfonda/simhash"
 
-        //wyong, 20210220
-        log "github.com/siegfried415/go-crawling-bazaar/utils/log"
+	cid "github.com/ipfs/go-cid"
 
-	//wyong, 20211124
-        //asymmetric "github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
+        //log "github.com/siegfried415/go-crawling-bazaar/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/proto" 
+
 )
 
 
-//wyong, 20190114 
 type BidEntry struct {
 	Cid	cid.Cid 
-	Hash	uint64	//wyong, 20210206 
+	Hash	uint64	
 	From	proto.NodeID 
 
-	VerifiedCount int //wyong,  20210220 
-	//Signature 	asymmetric.Signature	//wyong, 2021124 
+	VerifiedCount int 
+	//Signature 	asymmetric.Signature	
 }
 
-//wyong, 20190118
 func NewBidEntry(cid cid.Cid, hash uint64, from proto.NodeID ) *BidEntry {
 	return &BidEntry{
 		Cid:      cid,
-		Hash:	  hash, //wyong, 20210206 
+		Hash:	  hash, 
 		From: 	  from,
-		VerifiedCount : 1 , 	//wyong, 20210220
+		VerifiedCount : 1 , 	
 	}
 }
 
-//wyong, 20190119 
 func( bid *BidEntry)GetCid() cid.Cid {
 	return bid.Cid
 }
 
 type BiddingEntry struct {
 	Url	string 
-	ParentUrl	string 	//wyong, 20210204
-
-	Probability float64	//int, wyong, 20200827 
-
-	//wyong, 20210203 
-	//SesTrk map[proto.DomainID]struct{}
+	ParentUrl	string 	
+	Probability float64	
 
 	// Trash in a book-keeping field
 	Trash bool
 
-	//wyong, 20190131
 	Seen bool 
-
-	//wyong, 20190114
 	Bids map[proto.NodeID]*BidEntry  
-
-	DomainID proto.DomainID		//wyong, 20210203 
-	ExpectCrawlerCount	int	//wyong, 20210203 
-
-	LastBroadcastTime	time.Time	//wyong, 20210204 
-
-	Hash	[]byte 		//wyong, 20210205 
-	Proof 	[]byte		//wyong, 20210205  
+	DomainID proto.DomainID		
+	ExpectCrawlerCount	int	
+	LastBroadcastTime	time.Time	
+	Hash	[]byte 		
+	Proof 	[]byte		
 
 }
 
@@ -79,19 +61,13 @@ type BiddingEntry struct {
 func NewBiddingEntry(url string, parentUrl string, p float64, domainID proto.DomainID, expectCrawlerCount int , lastBroadcastTime time.Time  ) *BiddingEntry {
 	return &BiddingEntry{
 		Url:      url,
-		ParentUrl : parentUrl, //wyong, 20210204 
-
+		ParentUrl : parentUrl, 
 		Probability: p,
-		
-		//wyong, 20210203 
-		//SesTrk:   make(map[proto.DomainID]struct{}),
-
-		Seen: false, //wyong, 20190131 
-		Bids : 	  make(map[proto.NodeID]*BidEntry), //wyong, 20190125 
-
-		DomainID : domainID,		//wyong, 20210203 
-		ExpectCrawlerCount : expectCrawlerCount, //wyong, 20210203
-		LastBroadcastTime  : lastBroadcastTime,  //wyong, 20210204 
+		Seen: false, 
+		Bids : 	  make(map[proto.NodeID]*BidEntry), 
+		DomainID : domainID,		
+		ExpectCrawlerCount : expectCrawlerCount, 
+		LastBroadcastTime  : lastBroadcastTime, 
 	}
 }
 
@@ -101,21 +77,18 @@ func (bidding *BiddingEntry) GetUrl() string {
 }
 
 
-//wyong, 20190115 
 func (bidding *BiddingEntry) AddBid(url string, cid cid.Cid, from proto.NodeID, hash uint64) bool {
-	bidding.Seen = false	//wyong, 20190131 
+	bidding.Seen = false	
 
 	if _, ok := bidding.Bids[from]; ok {
 		return false
 	}
 
 	verifiedCount := 1 
-	//Update VerifiedCount of other bids, wyong, 20210220 
+	//Update VerifiedCount of other bids
 	if len(bidding.Bids) > 0 {
 		for _, bid := range bidding.Bids{
-			//log.Debugf("BiddingClient/NeedCrawlMore(40), j=%d\n", j )
 			if simhash.Compare(hash,  bid.Hash) < 2 {
-				log.Debugf("BiddingClient/NeedCrawlMore(50)\n")
 				verifiedCount ++
 				bid.VerifiedCount++
 			}
@@ -125,14 +98,12 @@ func (bidding *BiddingEntry) AddBid(url string, cid cid.Cid, from proto.NodeID, 
 	bidding.Bids[from] = &BidEntry{
 		Cid:  cid ,
 		From: from, 
-		
-		VerifiedCount : verifiedCount , //wyong, 20210220 
+		VerifiedCount : verifiedCount, 
 	}
 
 	return true
 }
 
-//wyong, 20210220 
 func (bidding *BiddingEntry) GetMaxVerifiedBid() ( *BidEntry, error ) {
 	if len(bidding.Bids) == 0 {
 		return nil, nil 
@@ -150,27 +121,20 @@ func (bidding *BiddingEntry) GetMaxVerifiedBid() ( *BidEntry, error ) {
 	return bidding.Bids[maxVerifiedNodeID], nil 
 }
 
-//wyong, 20210220 
 func (bidding *BiddingEntry) NeedCrawlMore() (int, error ) {
 	needCrawlCount := bidding.ExpectCrawlerCount 
-	log.Debugf("BiddingEntry/NeedCrawlMore(10), needCrawlCount=%d\n", needCrawlCount )
 
 	if len(bidding.Bids) > 0 {
-		log.Debugf("BiddingEntry/NeedCrawlMore(20), len(bidding.Bids)=%d\n", len(bidding.Bids))
 		maxVerifiedBid, _ := bidding.GetMaxVerifiedBid() 
-			
-		log.Debugf("BiddingEntry/NeedCrawlMore(30), maxVerifiedCount=%d\n", maxVerifiedBid.VerifiedCount )
 		needCrawlCount -= maxVerifiedBid.VerifiedCount 
 		if needCrawlCount < 0 {
 			needCrawlCount = 0 
 		}
 	}
 
-	log.Debugf("BiddingEntry/NeedCrawlMore(40), needCrawlCount=%d\n", needCrawlCount)
 	return needCrawlCount, nil 
 }
 
-//wyong, 20190115 
 func (bidding *BiddingEntry) GetBids() []*BidEntry {
 	bids := make([]*BidEntry, 0, len(bidding.Bids))
 	for _, bid := range bidding.Bids{
@@ -179,30 +143,10 @@ func (bidding *BiddingEntry) GetBids() []*BidEntry {
 	return bids
 }
 
-//wyong, 20190115 
 func (bidding *BiddingEntry) CountOfBids() int {
 	return len(bidding.Bids)
 }
 
-//todo, wyong, 20210204
-//func(bidding *BiddingEntry) NeedCrawlMore() int {
-//	return 0 
-//}
-
-//wyong, 20200828 
-//func(bidding *BiddingEntry) GetCid() cid.Cid {
-//	c := cid.Cid{}
-//	for _, bid := range bidding.Bids{
-//		if c == cid.Undef { 
-//			c = bid.Cid 
-//		} else if c != bid.Cid {
-//			return cid.Cid{}
-//		}
-//	}
-//	return c
-//}
-
-//wyong, 20210220 
 func(bidding *BiddingEntry) GetCid() (cid.Cid, error) {
 	maxVerifiedBid, err := bidding.GetMaxVerifiedBid() 
 	if err != nil {
@@ -241,11 +185,9 @@ func (w *ThreadSafe) Add(url string, parentUrl string,  probability float64, dom
 	w.lk.Lock()
 	defer w.lk.Unlock()
 	if e, ok := w.set[url]; ok {
-		//e.SesTrk[domain] = struct{}{}
-		e.DomainID = domain 	//wyong, 20210203 
-		e.Seen = false		//wyong, 20190131 
+		e.DomainID = domain 	
+		e.Seen = false	
 		
-		//wyong, 20210204
 		e.LastBroadcastTime = lastBroadcastTime
 
 		return false
@@ -253,20 +195,13 @@ func (w *ThreadSafe) Add(url string, parentUrl string,  probability float64, dom
 
 	w.set[url] = &BiddingEntry{
 		Url:      url,
-		ParentUrl: parentUrl, 	//wyong, 20210204 
+		ParentUrl: parentUrl, 	
 		Probability: probability,
-		Seen: false, //wyong, 20190131 
+		Seen: false, 
 
-		//wyong, 20210203 
-		//SesTrk:   map[proto.DomainID]struct{}{domain: struct{}{}},
 		DomainID : domain, 
-
-		//wyong, 20210204 
 		ExpectCrawlerCount : expectCrawlerCount,
-
-		Bids : map[proto.NodeID]*BidEntry{}, //wyong, 20200831 
-
-		//wyong, 20210204
+		Bids : map[proto.NodeID]*BidEntry{}, 
 		LastBroadcastTime : lastBroadcastTime, 
 	}
 
@@ -278,20 +213,13 @@ func (w *ThreadSafe) AddBiddingEntry(e *BiddingEntry, domain proto.DomainID ) bo
 	w.lk.Lock()
 	defer w.lk.Unlock()
 	if ex, ok := w.set[e.Url]; ok {
-		//wyong, 20210203 
-		//ex.SesTrk[domain] = struct{}{}
 		ex.DomainID = domain 
-		e.Seen = false	//wyong, 20190131 
-
-		//wyong, 20210204
+		e.Seen = false	
 		ex.LastBroadcastTime = e.LastBroadcastTime
 
 		return false
 	}
 	w.set[e.Url] = e
-
-	//wyong, 20210203 
-	//e.SesTrk[domain] = struct{}{}
 	e.DomainID = domain 
 	
 	return true
@@ -309,13 +237,8 @@ func (w *ThreadSafe) Remove(url string, domain proto.DomainID ) bool {
 		return false
 	}
 
-	//wyong, 20210203 
-	//delete(e.SesTrk, domain )
-	//if len(e.SesTrk) == 0 {
-		delete(w.set, url)
-		return true
-	//}
-	//return false
+	delete(w.set, url)
+	return true
 }
 
 // Contains returns true if the given cid is in the biddinglist tracked by one or
@@ -366,19 +289,19 @@ func (w *BiddingList) Len() int {
 
 func (w *BiddingList) Add(url string, parentUrl string, probability float64, expectCrawlerCount int,  hash []byte, proof []byte  ) bool {
 	if be, ok := w.set[url]; ok {
-		be.Seen = false 	//wyong, 20190131 
+		be.Seen = false 	
 		return false
 	}
 
 	w.set[url] = &BiddingEntry{
 		Url:      url,
-		ParentUrl : parentUrl, 	//wyong, 20210204 
+		ParentUrl : parentUrl, 	
 		Probability: probability,
-		Seen: false, 	//wyong, 20190131 
-		ExpectCrawlerCount : expectCrawlerCount, //wyong, 20210204 
-		Bids : map[proto.NodeID]*BidEntry{}, //wyong, 20200831 
-		Hash : hash,		//wyong, 20210205  
-		Proof : proof, 		//wyong, 20210205 
+		Seen: false, 	
+		ExpectCrawlerCount : expectCrawlerCount, 
+		Bids : map[proto.NodeID]*BidEntry{}, 
+		Hash : hash,		
+		Proof : proof, 	
 	}
 
 	return true
@@ -386,7 +309,7 @@ func (w *BiddingList) Add(url string, parentUrl string, probability float64, exp
 
 func (w *BiddingList) AddBiddingEntry(e *BiddingEntry) bool {
 	if be, ok := w.set[e.Url]; ok {
-		be.Seen = false		//wyong, 20190131 
+		be.Seen = false	
 		return false
 	}
 	w.set[e.Url] = e
@@ -415,14 +338,6 @@ func (w *BiddingList) BiddingEntries() []*BiddingEntry {
 	}
 	return es
 }
-
-//wyong, 20190131
-//func (w *BiddingList) SeenEntries() bool {
-//	for _, e := range w.set {
-//		e.Seen = true 	
-//	}
-//	return true  
-//}
 
 
 func (w *BiddingList) SortedBiddingEntries() []*BiddingEntry {

@@ -26,7 +26,7 @@ import (
 // AdviseNewBlockReq defines a request of the AdviseNewBlock RPC method.
 type AdviseNewBlockReq struct {
 	proto.Envelope
-	Block *BPBlock
+	Block *PBBlock
 }
 
 // AdviseNewBlockResp defines a response of the AdviseNewBlock RPC method.
@@ -45,7 +45,7 @@ type FetchBlockResp struct {
 	proto.Envelope
 	Height uint32
 	Count  uint32
-	Block  *BPBlock
+	Block  *PBBlock
 }
 
 // FetchLastIrreversibleBlockReq defines a request of the FetchLastIrreversibleBlock RPC method.
@@ -59,7 +59,7 @@ type FetchLastIrreversibleBlockResp struct {
 	proto.Envelope
 	Count     uint32
 	Height    uint32
-	Block     *BPBlock
+	Block     *PBBlock
 	SQLChains []*SQLChainProfile
 }
 
@@ -96,7 +96,7 @@ type NextAccountNonceResp struct {
 type AddTxReq struct {
 	proto.Envelope
 
-	TTL uint32 // defines the broadcast TTL on BP network.
+	TTL uint32 // defines the broadcast TTL on Presbyterian network.
 	Tx  interfaces.Transaction
 }
 
@@ -151,7 +151,6 @@ type QueryAccountTokenBalanceResp struct {
 }
 
 
-//wyong, 20210706 
 // QueryAccountTokenBalanceReq defines a request of the QueryAccountTokenBalance RPC method.
 type QueryDomainAccountTokenBalanceAndTotalReq struct {
 	proto.Envelope
@@ -160,7 +159,6 @@ type QueryDomainAccountTokenBalanceAndTotalReq struct {
 	TokenType TokenType
 }
 
-//wyong, 20210706 
 // QueryAccountTokenBalanceResp defines a request of the QueryAccountTokenBalance RPC method.
 type QueryDomainAccountTokenBalanceAndTotalResp struct {
 	proto.Envelope

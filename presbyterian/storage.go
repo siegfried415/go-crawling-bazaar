@@ -172,7 +172,7 @@ func openStorage(path string) (st si.Storage, err error) {
 	return
 }
 
-func addBlock(height uint32, b *types.BPBlock) storageProcedure {
+func addBlock(height uint32, b *types.PBBlock) storageProcedure {
 	var (
 		enc *bytes.Buffer
 		err error
@@ -209,7 +209,7 @@ func addTx(t pi.Transaction) storageProcedure {
 	}
 }
 
-func buildBlockIndex(height uint32, b *types.BPBlock) storageProcedure {
+func buildBlockIndex(height uint32, b *types.PBBlock) storageProcedure {
 	return func(tx *sql.Tx) (err error) {
 		var p = b.Producer()
 		if _, err = tx.Exec(`INSERT OR REPLACE INTO "indexed_blocks"
@@ -453,10 +453,10 @@ func loadTxPool(st si.Storage) (txPool map[hash.Hash]pi.Transaction, err error) 
 	return
 }
 
-func loadBlock(st si.Storage, hash hash.Hash) (block *types.BPBlock, err error) {
+func loadBlock(st si.Storage, hash hash.Hash) (block *types.PBBlock, err error) {
 	var (
 		enc []byte
-		dec = &types.BPBlock{}
+		dec = &types.PBBlock{}
 	)
 	if err = st.Reader().QueryRow(
 		`SELECT "encoded" FROM "blocks" WHERE "hash"=?`, hash.String(),
@@ -509,7 +509,7 @@ func loadBlocks(
 		if err = hash.Decode(&ph, pnHex); err != nil {
 			return
 		}
-		var dec = &types.BPBlock{}
+		var dec = &types.PBBlock{}
 		if err = utils.DecodeMsgPack(enc, dec); err != nil {
 			return
 		}

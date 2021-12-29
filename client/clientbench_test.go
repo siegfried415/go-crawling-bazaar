@@ -58,7 +58,7 @@ func BenchmarkCovenantSQLDriver(b *testing.B) {
 	// wait for chain service
 	var ctx1, cancel1 = context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel1()
-	err = test.WaitBPChainService(ctx1, 3*time.Second)
+	err = test.WaitPBChainService(ctx1, 3*time.Second)
 	if err != nil {
 		b.Fatalf("wait for chain service failed: %v", err)
 	}

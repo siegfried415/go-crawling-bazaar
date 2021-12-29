@@ -20,13 +20,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/siegfried415/go-crawling-bazaar/proto"
-
-	//wyong, 20201008
-	//rpc "github.com/siegfried415/go-crawling-bazaar/rpc/mux"
-
-	"github.com/siegfried415/go-crawling-bazaar/types"
 	"github.com/siegfried415/go-crawling-bazaar/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/proto"
+	"github.com/siegfried415/go-crawling-bazaar/types"
 )
 
 // MuxService defines multiplexing service of xenomint chain.
@@ -37,15 +33,10 @@ type MuxService struct {
 }
 
 // NewMuxService returns a new MuxService instance and registers it to server.
-func NewMuxService(name string /*, server *rpc.Server, wyong, 20201008 */ ) (service *MuxService, err error) {
+func NewMuxService(name string ) (service *MuxService, err error) {
 	var s = &MuxService{
 		ServiceName: name,
 	}
-
-	//wyong, 20201008 
-	//if err = server.RegisterService(name, s); err != nil {
-	//	return
-	//}
 
 	service = s
 	return

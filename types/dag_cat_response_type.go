@@ -23,29 +23,20 @@ import (
 
 	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
 	"github.com/siegfried415/go-crawling-bazaar/proto"
+
 )
 
 //go:generate hsp
 
-type UrlBid struct {
-	Url    	string 
-	Cid 	string	
-	
-	Hash	[]byte
-	Proof 	[]byte 
-
-	SimHash uint64
-}
-
 // ResponsePayload defines column names and rows of query response.
-type UrlBidPayload struct {
-	Bids	    []UrlBid		`json:"b"`
+type DagCatResponsePayload struct {
+	Data	  []byte	`json:"d"`
 }
 
 // ResponseHeader defines a query response header.
-type UrlBidHeader struct {
+type DagCatResponseHeader struct {
+	Request         DagCatRequestHeader        `json:"r"`
 	RequestHash     hash.Hash            `json:"rh"`
-	Target		proto.NodeID	     `json:"tg"` 
 	NodeID          proto.NodeID         `json:"id"` // response node id
 	Timestamp       time.Time            `json:"t"`  // time in UTC zone
 	RowCount        uint64               `json:"c"`  // response row count of payload
@@ -57,46 +48,46 @@ type UrlBidHeader struct {
 }
 
 // GetRequestHash returns the request hash.
-func (h *UrlBidHeader) GetRequestHash() hash.Hash {
+func (h *DagCatResponseHeader) GetRequestHash() hash.Hash {
 	return h.RequestHash
 }
 
 // GetRequestTimestamp returns the request timestamp.
-func (h *UrlBidHeader) GetRequestTimestamp() time.Time {
-	return h.Timestamp
+func (h *DagCatResponseHeader) GetRequestTimestamp() time.Time {
+	return h.Request.Timestamp
 }
 
 // SignedResponseHeader defines a signed query response header.
-type UrlBidSignedHeader struct {
-	UrlBidHeader
-	UrlBidHash hash.Hash
+type DagCatSignedResponseHeader struct {
+	DagCatResponseHeader
+	DagCatResponseHash hash.Hash
 }
 
 // Hash returns the response header hash.
-func (sh *UrlBidSignedHeader) Hash() hash.Hash {
-	return sh.UrlBidHash
+func (sh *DagCatSignedResponseHeader) Hash() hash.Hash {
+	return sh.DagCatResponseHash
 }
 
 // VerifyHash verify the hash of the response.
-func (sh *UrlBidSignedHeader) VerifyHash() (err error) {
-	return errors.Wrap(verifyHash(&sh.UrlBidHeader, &sh.UrlBidHash),
+func (sh *DagCatSignedResponseHeader) VerifyHash() (err error) {
+	return errors.Wrap(verifyHash(&sh.DagCatResponseHeader, &sh.DagCatResponseHash),
 		"verify response header hash failed")
 }
 
 // BuildHash computes the hash of the response header.
-func (sh *UrlBidSignedHeader) BuildHash() (err error) {
-	return errors.Wrap(buildHash(&sh.UrlBidHeader, &sh.UrlBidHash),
+func (sh *DagCatSignedResponseHeader) BuildHash() (err error) {
+	return errors.Wrap(buildHash(&sh.DagCatResponseHeader, &sh.DagCatResponseHash),
 		"compute response header hash failed")
 }
 
 // Response defines a complete query response.
-type UrlBidMessage struct {
-	Header  UrlBidSignedHeader `json:"h"`
-	Payload UrlBidPayload      `json:"p"`
+type DagCatResponse struct {
+	Header  DagCatSignedResponseHeader `json:"h"`
+	Payload DagCatResponsePayload      `json:"p"`
 }
 
 // BuildHash computes the hash of the response.
-func (r *UrlBidMessage) BuildHash() (err error) {
+func (r *DagCatResponse) BuildHash() (err error) {
 	// set rows count
 	//r.Header.RowCount = uint64(len(r.Payload.Rows))
 
@@ -111,7 +102,7 @@ func (r *UrlBidMessage) BuildHash() (err error) {
 }
 
 // VerifyHash verify the hash of the response.
-func (r *UrlBidMessage) VerifyHash() (err error) {
+func (r *DagCatResponse) VerifyHash() (err error) {
 	if err = verifyHash(&r.Payload, &r.Header.PayloadHash); err != nil {
 		err = errors.Wrap(err, "verify response payload hash failed")
 		return
@@ -121,6 +112,6 @@ func (r *UrlBidMessage) VerifyHash() (err error) {
 }
 
 // Hash returns the response header hash.
-func (r *UrlBidMessage) Hash() hash.Hash {
+func (r *DagCatResponse) Hash() hash.Hash {
 	return r.Header.Hash()
 }

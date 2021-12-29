@@ -19,20 +19,15 @@ package node
 import (
 	"context"
 	"database/sql"
-	//"os"
-	//"sync"
-	//"time"
 
 	"github.com/pkg/errors"
 
 	"github.com/siegfried415/go-crawling-bazaar/net/consistent"
+	//"github.com/siegfried415/go-crawling-bazaar/utils/log"
 	"github.com/siegfried415/go-crawling-bazaar/kms"
 	"github.com/siegfried415/go-crawling-bazaar/proto"
-	//"github.com/siegfried415/go-crawling-bazaar/route"
-	//rpc "github.com/siegfried415/go-crawling-bazaar/rpc/mux"
 	"github.com/siegfried415/go-crawling-bazaar/storage"
 	"github.com/siegfried415/go-crawling-bazaar/utils"
-	//"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 // LocalStorage holds consistent and storage struct.
@@ -76,13 +71,12 @@ func (s *LocalStorage) SetNode(node *proto.Node) (err error) {
 		return
 	}
 
-	//wyong, 20201112 
 	//err = route.SetNodeAddrCache(node.ID.ToRawNodeID(), node.Addr)
 	//if err != nil {
-	//	//log.WithFields(log.Fields{
-	//	//	"id":   node.ID,
-	//	//	"addr": node.Addr,
-	//	//}).WithError(err).Error("set node addr cache failed")
+	//	log.WithFields(log.Fields{
+	//		"id":   node.ID,
+	//		"addr": node.Addr,
+	//	}).WithError(err).Error("set node addr cache failed")
 	//}
 
 	err = kms.SetNode(node)

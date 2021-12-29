@@ -18,53 +18,20 @@ package frontera
 
 import (
 	"context"
-
-	//wyong, 20210528 
-	//"os"
-	//"path/filepath"
-
-	//"sync"
 	"sync/atomic"
 	"time"
 	"fmt"
 	"math/big" 
 
-	//wyong, 20210125 
-	//"sort" 
-
 	"github.com/pkg/errors"
-
-	//wyong, 20201018
-	//"github.com/libp2p/go-libp2p-core/host"
-
-	//wyong, 20200929 
-	//"github.com/siegfried415/go-crawling-bazaar/conf"
-
-
-	//wyong, 20201002 
-	//"github.com/siegfried415/go-crawling-bazaar/crypto" 
-	//"github.com/siegfried415/go-crawling-bazaar/crypto/asymmetric"
-	//"github.com/siegfried415/go-crawling-bazaar/kms"
-
-	//"github.com/siegfried415/go-crawling-bazaar/kayak"
-	//kt "github.com/siegfried415/go-crawling-bazaar/kayak/types"
-	//kl "github.com/siegfried415/go-crawling-bazaar/kayak/wal"
-	//"github.com/siegfried415/go-crawling-bazaar/proto"
-	//urlchain "github.com/siegfried415/go-crawling-bazaar/urlchain"
-	//"github.com/siegfried415/go-crawling-bazaar/storage"
-	"github.com/siegfried415/go-crawling-bazaar/types"
-	"github.com/siegfried415/go-crawling-bazaar/utils/log"
-	s "github.com/siegfried415/go-crawling-bazaar/state"
-	//net "github.com/siegfried415/go-crawling-bazaar/net"
-
-	//wyong, 20200805 
-	//lru "github.com/hashicorp/golang-lru"
-
-	//wyong, 20200818
+        cache "github.com/patrickmn/go-cache"
 	cid "github.com/ipfs/go-cid"
 
-	//wyong, 20210122
-        cache "github.com/patrickmn/go-cache"
+	"github.com/siegfried415/go-crawling-bazaar/utils/log"
+	"github.com/siegfried415/go-crawling-bazaar/types"
+	s "github.com/siegfried415/go-crawling-bazaar/state"
+
+
 
 )
 
@@ -100,13 +67,11 @@ const (
 	// SlowQuerySampleSize defines the maximum slow query log size (default: 1KB).
 	SlowQuerySampleSize = 1 << 10
 
-	//wyong, 20200805 
 	activeBiddingsLimit = 16
 )
 */
 
 
-//wyong, 20210122 
 func (domain *Domain) InitTables() (err error) {
 	domain.InitUrlNodeTable()
 	domain.InitUrlGraphTable() 
@@ -114,10 +79,10 @@ func (domain *Domain) InitTables() (err error) {
 	return nil 
 }
 
-//todo, wyong, 20210122 
+//todo
 func (domain *Domain) InitUrlNodeTable() (err error) {
 
-	//create urlNode cache, wyong, 20210206
+	//create urlNode cache
 	domain.urlNodeCache = cache.New(5*time.Minute, 10*time.Minute)
 
 	// build query 
@@ -132,11 +97,6 @@ func (domain *Domain) InitUrlNodeTable() (err error) {
                                 QueryType:    types.WriteQuery,
                                 NodeID:       domain.nodeID,
                                 DomainID:     domain.domainID,
-
-				//todo, wyong, 20200817 
-                                //ConnectionID: connID,
-                                //SeqNo:        seqNo,
-                                //Timestamp:    getLocalTime(),
                         },
                 },
                 Payload: types.RequestPayload{
@@ -152,10 +112,10 @@ func (domain *Domain) InitUrlNodeTable() (err error) {
 	return 
 }
 
-//todo, wyong, 20210122 
+//todo
 func (domain *Domain) InitUrlGraphTable() (err error) {
 
-	//create urlNode cache, wyong, 20210206
+	//create urlNode cache
 	domain.urlGraphCache = cache.New(5*time.Minute, 10*time.Minute)
 
 	// build query 
@@ -185,17 +145,14 @@ func (domain *Domain) InitUrlGraphTable() (err error) {
 	return 
 }
 
-//wyong, 20200817 
 func (domain *Domain) InitUrlCidTable() (err error) {
 
-	//create urlNode cache, wyong, 20210206
+	//create urlNode cache
 	domain.urlCidCache = cache.New(5*time.Minute, 10*time.Minute)
 
 	// build query 
 	query := types.Query {
 		Pattern : "CREATE TABLE urlcid (url TEXT PRIMARY KEY NOT NULL, cid CHAR(64))",
-		//todo, check max width of from/vhash/proof/chash , wyong, 20210122 
-		//Pattern : "CREATE TABLE urlcid (url TEXT PRIMARY KEY NOT NULL, cid CHAR(64), from CHAR(?), vhash CHAR(?), proof CHAR(?), chash CHAR(?))",
 	}
 
         // build request
@@ -205,11 +162,6 @@ func (domain *Domain) InitUrlCidTable() (err error) {
                                 QueryType:    types.WriteQuery,
                                 NodeID:       domain.nodeID,
                                 DomainID:     domain.domainID,
-
-				//todo, wyong, 20200817 
-                                //ConnectionID: connID,
-                                //SeqNo:        seqNo,
-                                //Timestamp:    getLocalTime(),
                         },
                 },
                 Payload: types.RequestPayload{
@@ -225,18 +177,13 @@ func (domain *Domain) InitUrlCidTable() (err error) {
 	return 
 }
 
-//todo, wyong, 20210126
 func (domain *Domain) CreateUrlNode(url string, lastRequestedHeight uint32, lastCrawledHeight uint32, retrivedCount uint32, crawlInterval uint32  ) (*types.UrlNode, error ) {
-	//todo, create and insert it into urlnode . wyong, 20210126
-	log.Debugf("Domain/CreateUrlNode(10), url=%s\n", url) 
-
-	//todo, build query , wyong, 20210122 
+	//build query 
 	q := fmt.Sprintf( "INSERT INTO urlnode VALUES('%s',%d, %d, %d, %d )", url, lastRequestedHeight, lastCrawledHeight, retrivedCount, crawlInterval  ) 
 	query := types.Query {
 		Pattern : q ,
 	}
 
-	log.Debugf("Domain/CreateUrlNode(20), q=%s\n", q ) 
         // build request
         request := &types.Request{
                 Header: types.SignedRequestHeader{
@@ -251,18 +198,13 @@ func (domain *Domain) CreateUrlNode(url string, lastRequestedHeight uint32, last
                 },
         }
 
-	log.Debugf("Domain/CreateUrlNode(30)\n") 
 	request.SetContext(context.Background())
-
-	//_, err := domain.Query(request)
 	_, _, err := domain.chain.Query(request, true)
 	if  err != nil {
-		log.Debugf("Domain/CreateUrlNode(35)\n") 
 		err = errors.Wrap(err, "failed to execute with eventual consistency")
 		return nil, err
 	}
 
-	log.Debugf("Domain/CreateUrlNode(40)\n" ) 
 	urlNode := &types.UrlNode {
 		Url: url, 
 		LastRequestedHeight: lastRequestedHeight,
@@ -271,22 +213,17 @@ func (domain *Domain) CreateUrlNode(url string, lastRequestedHeight uint32, last
 		CrawlInterval : crawlInterval, 
 	}
 
-	//wyong, 20210205 
 	domain.urlNodeCache.Set(url, urlNode, cache.DefaultExpiration) 
-
 	return urlNode, nil  
 }
 
 func (domain *Domain) UpdateUrlNode(urlNode *types.UrlNode ) error {
-	log.Debugf("Domain/updateUrlNode(10), urlNode=%s\n", urlNode) 
-
-	//build query , wyong, 20210223
+	//build query 
 	q := fmt.Sprintf( "UPDATE urlnode SET LastRequestedHeight = '%d', LastCrawledHeight = '%d', RetrivedCount = '%d', CrawlInterval = '%d' WHERE Url = '%s' ", urlNode.LastRequestedHeight, urlNode.LastCrawledHeight, urlNode.RetrivedCount, urlNode.CrawlInterval , urlNode.Url  ) 
 	query := types.Query {
 		Pattern : q ,
 	}
 
-	log.Debugf("Domain/updateUrlNode(20), q = %s \n", q ) 
         // build request
         request := &types.Request{
                 Header: types.SignedRequestHeader{
@@ -301,130 +238,97 @@ func (domain *Domain) UpdateUrlNode(urlNode *types.UrlNode ) error {
                 },
         }
 
-	log.Debugf("Domain/updateUrlNode(30)\n") 
 
-	//todo, wyong, 20210223 
-	//_, err := domain.Query(request)
 	request.SetContext(context.Background())
 	_, _, err := domain.chain.Query(request, true)
 	if  err != nil {
-		log.Debugf("Domain/updateUrlNode(35)\n") 
 		err = errors.Wrap(err, "failed to execute with eventual consistency")
 		return err
 	}
 
-	log.Debugf("Domain/updateUrlNode(40)\n" ) 
 	domain.urlNodeCache.Set(urlNode.Url, urlNode, cache.DefaultExpiration) 
-	log.Debugf("Domain/updateUrlNode(50)\n" ) 
 	return nil 
 }
 
 
-//wyong, 20210130
 func (domain *Domain) SetLastRequestedHeight(url string, height uint32) error {
-	log.Debugf("Domain/SetLastRequestedHeight(10), url=%s, LastRequestedHeight=%d\n", url, height ) 
         urlNode, err := domain.GetUrlNode(url)
         if err != nil {
 		return err
         }
 
-	log.Debugf("Domain/SetLastRequestedHeight(20), urlNode.LastRequestedHeight(%d) is set to %d\n", urlNode.LastRequestedHeight, height) 
 	urlNode.LastCrawledHeight = height  
-
 	err = domain.UpdateUrlNode(urlNode) 
 	if err != nil { 
-		log.Debugf("Domain/SetLastRequestedHeight(30), err=%s\n", err.Error) 
 		return err
 	}
 
-	log.Debugf("Domain/SetLastRequestedHeight(40)\n") 
 	return nil  
 }
 
-//wyong, 20210130
 func (domain *Domain) SetLastCrawledHeight(url string, height uint32) error {
-	log.Debugf("Domain/SetLastCrawledHeight(10), url=%s, LastCrawledHeight=%d \n", url, height ) 
         urlNode, err := domain.GetUrlNode(url)
         if err != nil {
 		return err
         }
 
-	log.Debugf("Domain/SetLastCrawledHeight(20), urlNode.LastCrawledHeight(%d) is set to %d\n", urlNode.LastCrawledHeight, height) 
 	urlNode.LastCrawledHeight = height  
-
 	err = domain.UpdateUrlNode(urlNode) 
 	if err != nil {
-		log.Debugf("Domain/SetLastCrawledHeight(30), err = %s \n", err.Error()) 
 		return err 
 	}
 
-	log.Debugf("Domain/SetLastCrawledHeight(40)\n" ) 
 	return nil 
 }
 
 
-//wyong, 20210130
 func (domain *Domain) SetRetrivedCount(url string, count uint32 ) error  {
-	log.Debugf("Domain/SetRetrivedCount(10), url=%s, RetrivedCount=%d\n", url, count ) 
         urlNode, err := domain.GetUrlNode(url)
         if err != nil {
 		return err
         }
 	
-	log.Debugf("Domain/SetRetrivedCount(20), urlNode.RetrivedCount(%d) is set to %d\n", urlNode.RetrivedCount, count) 
 	urlNode.RetrivedCount = count  
-
 	err = domain.UpdateUrlNode(urlNode) 
 	if err != nil { 
-		log.Debugf("Domain/SetRetrivedCount(30), err=%s\n", err.Error()) 
 		return err
 	} 
 
-	log.Debugf("Domain/SetRetrivedCount(40)\n") 
 	return nil 
 }
 
-//todo, wyong, 20210130
 func (domain *Domain) SetCrawlInterval(url string, interval uint32 ) error {
-	log.Debugf("Domain/SetCrawlInterval(10), url=%s, Interval=%d\n", url, interval ) 
         urlNode, err := domain.GetUrlNode(url)
         if err != nil {
 		return err
         }
 	
-	log.Debugf("Domain/SetCrawlInterval(20), urlNode.CrawlInterval(%d) is set to %d\n", urlNode.CrawlInterval, interval ) 
 	urlNode.CrawlInterval = interval 
-
 	err = domain.UpdateUrlNode(urlNode ) 
 	if err != nil { 
-		log.Debugf("Domain/SetCrawlInterval(30), err=%s\n", err.Error()) 
 		return err 
 	} 
 
-	log.Debugf("Domain/SetCrawlInterval(40)\n" ) 
 	return nil 
 }
 
-//wyong, 20210224 
 func ToU32( value interface{}) uint32 {
 	return uint32(value.(int64))
 }
 
-//todo, wyong, 20210117
 func (domain *Domain) GetUrlNode(url string ) (*types.UrlNode, error ) {
-	//get UlrNode from domain.urlNodeCache first. wyong, 20210122
+	//get UlrNode from domain.urlNodeCache first. 
         urlNodeCache, found := domain.urlNodeCache.Get(url)
         if found {
 		return urlNodeCache.(*types.UrlNode), nil 
         }
 
-	//if not found, get it from urlchain, wyong, 20210122 
+	//if not found, get it from urlchain
 	q := fmt.Sprintf( "SELECT LastRequestedHeight, LastCrawledHeight, RetrivedCount, CrawlInterval FROM urlnode where url='%s'" , url ) 
 	query := types.Query {
 		Pattern : q ,
 	}
 
-	log.Debugf("Domain/GetUrlNode(20), q=%s\n", q ) 
 	// build request
 	request := &types.Request{
 		Header: types.SignedRequestHeader{
@@ -439,25 +343,19 @@ func (domain *Domain) GetUrlNode(url string ) (*types.UrlNode, error ) {
 		},
 	}
 
-	log.Debugf("Domain/GetUrlNode(30)\n") 
 	request.SetContext(context.Background())
-
-	//resp, err := domain.Query(request)
 	_, resp, err := domain.chain.Query(request, true)
 	if  err != nil {
-		log.Debugf("Domain/GetUrlNode(35)\n") 
 		err = errors.Wrap(err, "failed to execute with eventual consistency")
 		return nil, err 
 	}
 
-	log.Debugf("Domain/GetUrlNode(40)\n") 
-	//result process , wyong, 20200817 
+	//result process 
 	rows := resp.Payload.Rows //all the rows 
 	if rows==nil  || len(rows) <= 0 {
 		return nil, err
 	}
 
-	log.Debugf("Domain/GetUrlNode(50), rows =%s\n", rows) 
 	r0 := rows[0] 
 	if len(r0.Values) <=0 {
 		return nil, errors.New("there are errors in url chain result")
@@ -473,27 +371,20 @@ func (domain *Domain) GetUrlNode(url string ) (*types.UrlNode, error ) {
 		CrawlInterval : ToU32(r0.Values[3]),
 	}
 
-	log.Debugf("Domain/GetUrlNode(60), urlNode =%s\n", urlNode) 
-
-	//update cache, wyong, 20210130 
+	//update cache
 	domain.urlNodeCache.Set(url, urlNode, cache.DefaultExpiration) 
 
 	return urlNode, nil 
 }
 
-//wyong, 20210130
 func (domain *Domain) SetUrlLinksCount(parenturl string, url string,  linksCount uint32 ) error {
-	//todo, create and insert it into urlnode . wyong, 20210126
-	log.Debugf("Domain/SetUrlLinksCount(10), url=%s\n", url) 
-
-	//todo, build query , wyong, 20210122 
+	//build query 
 	q := fmt.Sprintf( "UPDATE urlgraph SET count = %d WHERE url ='%s' and child='%s' ", linksCount, parenturl, url ) 
 
 	query := types.Query {
 		Pattern : q ,
 	}
 
-	log.Debugf("Domain/SetUrlLinksCount(20), q=%s\n", q ) 
         // build request
         request := &types.Request{
                 Header: types.SignedRequestHeader{
@@ -508,29 +399,20 @@ func (domain *Domain) SetUrlLinksCount(parenturl string, url string,  linksCount
                 },
         }
 
-	log.Debugf("Domain/SetUrlLinksCount(30)\n") 
 	request.SetContext(context.Background())
-
-	//_, err := domain.Query(request)
 	_, _, err := domain.chain.Query(request, true)
 	if  err != nil {
-		log.Debugf("Domain/SetUrlLinksCount(35)\n") 
 		err = errors.Wrap(err, "failed to execute with eventual consistency")
 		return err 
 	}
 
-	log.Debugf("Domain/SetUrlLinksCount(40)\n" ) 
-
-	//todo, wyong, 20210205 
 	domain.urlGraphCache.Set(parenturl+url, linksCount, cache.DefaultExpiration) 
-
 	return nil 
 }
 
-//wyong, 20210117
 func (domain *Domain) GetUrlLinksCount(parentUrl string , url string) (uint32, error ) {
 	//links count are forward count from parent ulr Node to url node ,
-	//get it from domain.urlGraphCache first. wyong, 20210122
+	//get it from domain.urlGraphCache first
         linksCount, found := domain.urlGraphCache.Get(parentUrl+url)
         if found {
                 //fmt.Println(foo)
@@ -538,13 +420,12 @@ func (domain *Domain) GetUrlLinksCount(parentUrl string , url string) (uint32, e
         }
 
 
-	//if not found, get it from urlchain, wyong, 20210122 
+	//if not found, get it from urlchain
 	q := fmt.Sprintf( "SELECT count FROM urlgraph where url = '%s' and child = '%s'" , parentUrl, url ) 
 	query := types.Query {
 		Pattern : q ,
 	}
 
-	log.Debugf("Domain/GetUrlLinksCount(20), q=%s\n", q ) 
 	// build request
 	request := &types.Request{
 		Header: types.SignedRequestHeader{
@@ -559,26 +440,20 @@ func (domain *Domain) GetUrlLinksCount(parentUrl string , url string) (uint32, e
 		},
 	}
 
-	log.Debugf("Domain/GetUrlLinksCount(30)\n") 
 	request.SetContext(context.Background())
-
-	//resp, err := domain.Query(request)
 	_, resp, err := domain.chain.Query(request, true)
 	if  err != nil {
-		log.Debugf("Domain/GetUrlLinksCount(35), err = %s\n", err.Error()) 
 		err = errors.Wrap(err, "failed to execute with eventual consistency")
 		return 0, err 
 	}
 
-	log.Debugf("Domain/GetUrlLinksCount(40)\n") 
-	//result process , wyong, 20200817 
+	//result process 
 	rows := resp.Payload.Rows //all the rows 
 	if rows==nil  || len(rows) <= 0 {
 		//return 0, errors.New("result error") 
 		return 0, nil 
 	}
 
-	log.Debugf("Domain/GetUrlLinksCount(50), first row =%s\n", rows[0]) 
 	r0 := rows[0]		//first row
 	if len(r0.Values) <=0 {
 		return 0, errors.New("result error") 
@@ -586,15 +461,12 @@ func (domain *Domain) GetUrlLinksCount(parentUrl string , url string) (uint32, e
 
 	//todo, get linkscount from fr.Values.  
 	//reference client/rows.go 
-	result := ToU32(r0.Values[0])	//uint32((fr.Values[0]).(int64))
+	result := ToU32(r0.Values[0])	
 
-	//todo, wyong, 20210205 
 	domain.urlGraphCache.Set(parentUrl+url, result, cache.DefaultExpiration ) 
-
 	return result, nil 
 }
 
-//wyong, 20210224
 func (domain *Domain) AddUrlLinksCount(parentUrl string, url string ) error {
 
 	linksCount, err := domain.GetUrlLinksCount(parentUrl, url) 
@@ -610,61 +482,41 @@ func (domain *Domain) AddUrlLinksCount(parentUrl string, url string ) error {
 	return nil 
 }
 
-//todo, is math/big is necessary? wyong, 20210117
 func (domain *Domain) GetProbability(parentUrl string, parentProb float64, url string ) (float64, error ) {
-	log.Debugf("GetProbability(10)\n")
-
-        //wyong, 20200416
         forwardProbability := big.NewFloat(0)
-
-        //wyong, 20210125
         parentProbability := big.NewFloat(parentProb)
 
         parentRetrivedCount := big.NewFloat(2)
         forwardCount := big.NewFloat(1)
 
-        //parentUrlNode, ok := state.UrlNodes[parentUrl]
         parentUrlNode, err := domain.GetUrlNode(parentUrl)
         if err != nil  {
-                log.Debugf("GetProbability(20)\n")
 		prc := big.NewInt(int64(parentUrlNode.RetrivedCount)) 
-                parentRetrivedCount.Add(parentRetrivedCount,  new(big.Float).SetInt( /* int(parentUrlNode.RetrivedCount)*/ prc ))
+                parentRetrivedCount.Add(parentRetrivedCount,  new(big.Float).SetInt(prc))
 
-                //todo, wyong, 20210122
-                //linkCount, ok := parentUrlNode.LinksCount[url]
                 linksCount, err := domain.GetUrlLinksCount(parentUrl, url )
-
-                //bugfix, wyong, 20200313
                 if err != nil  {
 			lc := big.NewInt(int64(linksCount)) 
                         forwardCount.Add(forwardCount, new(big.Float).SetInt(/* int(linksCount) */ lc ))
                 }
         }
-        log.Debugf("GetProbability(30), parentRetrivedCount=%s, forwardCount=%s \n",
-                                        parentRetrivedCount.String(), forwardCount.String())
 
         forwardProbability.Quo(forwardCount, parentRetrivedCount)
         forwardProbability.Mul(forwardProbability, parentProbability)
 
-        log.Debugf("GetProbability(40), forwardProbability=%s\n", forwardProbability.String())
 	result, _ := forwardProbability.Float64()
-
         return result , nil
 
 }
 
 
-//wyong, 20200821
 func (domain *Domain) SetCid( url string, c cid.Cid) (err error) {
-	log.Debugf("Domain/SetCid(10), url=%s\n", url) 
-
-	//todo, build query , wyong, 20210122 
+	//build query
 	q := fmt.Sprintf( "INSERT INTO urlcid (url, cid) VALUES('%s', '%s')", url, c.String()) 
 	query := types.Query {
 		Pattern : q ,
 	}
 
-	log.Debugf("Domain/SetCid(20), q=%s\n", q ) 
         // build request
         request := &types.Request{
                 Header: types.SignedRequestHeader{
@@ -672,11 +524,6 @@ func (domain *Domain) SetCid( url string, c cid.Cid) (err error) {
                                 QueryType:    types.WriteQuery,
                                 NodeID:       domain.nodeID,
                                 DomainID:     domain.domainID,
-
-				//todo, wyong, 20200817 
-                                //ConnectionID: connID,
-                                //SeqNo:        seqNo,
-                                //Timestamp:    getLocalTime(),
                         },
                 },
                 Payload: types.RequestPayload{
@@ -684,24 +531,19 @@ func (domain *Domain) SetCid( url string, c cid.Cid) (err error) {
                 },
         }
 
-	log.Debugf("Domain/SetCid(30)\n") 
 	request.SetContext(context.Background())
 	_, _, err = domain.chain.Query(request, true)
 	if  err != nil {
-		log.Debugf("Domain/SetCid(35), err = %s\n", err.Error()) 
 		err = errors.Wrap(err, "failed to execute with eventual consistency")
 		return 
 	}
 
-	log.Debugf("Domain/SetCid(40)\n" ) 
-
-	//todo, update cache, wyong, 20210130 
+	//update cache
 	domain.urlCidCache.Set(url, c, cache.DefaultExpiration ) 
 
 	return 
 }
 
-//wyong, 20201208 
 func B2S(bs []uint8) string {
 	ba := []byte{}
 	for _, b := range bs {
@@ -711,12 +553,9 @@ func B2S(bs []uint8) string {
 }
 
 
-//wyong, 20200817
 func (domain *Domain) GetCid(url string) (c cid.Cid, err error) {
 
-	log.Debugf("Domain/GetCid(10), url=%s\n", url) 
 	if urlcid, found := domain.urlCidCache.Get(url); found {
-		log.Debugf("Domain/GetCid(15), cid=%s\n", urlcid.(cid.Cid).String()) 
 		return urlcid.(cid.Cid), nil 
 	} 
 
@@ -725,7 +564,6 @@ func (domain *Domain) GetCid(url string) (c cid.Cid, err error) {
 		Pattern : q ,
 	}
 
-	log.Debugf("Domain/GetCid(20), q=%s\n", q ) 
 	// build request
 	request := &types.Request{
 		Header: types.SignedRequestHeader{
@@ -733,11 +571,6 @@ func (domain *Domain) GetCid(url string) (c cid.Cid, err error) {
 				QueryType:    types.ReadQuery,
 				NodeID:       domain.nodeID,
 				DomainID:     domain.domainID,
-
-				//todo, wyong, 20200817 
-				//ConnectionID: connID,
-				//SeqNo:        seqNo,
-				//Timestamp:    getLocalTime(),
 			},
 		},
 		Payload: types.RequestPayload{
@@ -745,47 +578,33 @@ func (domain *Domain) GetCid(url string) (c cid.Cid, err error) {
 		},
 	}
 
-	log.Debugf("Domain/GetCid(30)\n") 
 	request.SetContext(context.Background())
 	_, resp, err := domain.chain.Query(request, true)
 	if  err != nil {
-		log.Debugf("Domain/GetCid(35)\n") 
 		err = errors.Wrap(err, "failed to execute with eventual consistency")
 		return cid.Cid{}, err 
 	}
 
-	log.Debugf("Domain/GetCid(40)\n") 
-	//result process , wyong, 20200817 
+	//result process 
 	rows := resp.Payload.Rows //all the rows 
 	if rows==nil  || len(rows) <= 0 {
 		return cid.Cid{}, errors.New("there are errors in url chain result")
 	}
 
-	log.Debugf("Domain/GetCid(50)\n") 
 	r0 := rows[0]		//first row
 	if len(r0.Values) <=0 {
 		return cid.Cid{}, errors.New("there are errors in url chain result")
 	} 
 
-	log.Debugf("Domain/GetCid(60), first row =%s\n", r0) 
 
-	//bugfix, wyong, 20201208 
-	//r0c0 := r0.Values[0].(string)	//first column of first row 
 	r0c0 := B2S((r0.Values[0]).([]uint8))	//first column of first row 
-
-	log.Debugf("Domain/GetCid(70), first column of first row =%s\n", r0c0 ) 
 	c, err  = cid.Decode(r0c0)	//convert it to cid 
 	if  err != nil {
-		log.Debugf("Domain/GetCid(75)\n") 
 		return cid.Cid{}, err  
 	}
 
-	log.Debugf("Domain/GetCid(80), cid=%s\n", c.String()) 
-
-	//todo, put urlcid to urlCidCache, wyong, 20210122 
+	//put urlcid to urlCidCache
 	domain.urlCidCache.Set(url, c, cache.DefaultExpiration) 
-
-	log.Debugf("Domain/GetCid(90)\n") 
 	return c, nil 
 
 }
@@ -859,7 +678,7 @@ func (domain *Domain) Query(request *types.Request) (response *types.Response, e
 			return
 		}
 	case types.WriteQuery:
-		//we use EventualConsistency only,  wyong, 20210528 
+		//we use EventualConsistency only.  
 		//if domain.cfg.UseEventualConsistency {
 			// reset context
 			request.SetContext(context.Background())
@@ -879,7 +698,7 @@ func (domain *Domain) Query(request *types.Request) (response *types.Response, e
 		return nil, errors.Wrap(ErrInvalidRequest, "invalid query type")
 	}
 
-	//todo, wyong, 20200930 
+	//todo
 	response.Header.ResponseAccount = domain.accountAddr
 
 	// build hash
@@ -888,7 +707,6 @@ func (domain *Domain) Query(request *types.Request) (response *types.Response, e
 		return
 	}
 
-	//todo, got error here, wyong, 20210223  
 	if err = domain.chain.AddResponse(&response.Header); err != nil {
 		log.WithError(err).Debug("failed to add response to index")
 		return
@@ -897,46 +715,6 @@ func (domain *Domain) Query(request *types.Request) (response *types.Response, e
 
 	return
 }
-
-/* wyong, 20210528 
-func (domain *Domain) writeQuery(request *types.Request) (tracker *s.QueryTracker, response *types.Response, err error) {
-	// check database size first, wal/kayak/chain database size is not included
-	if domain.cfg.SpaceLimit > 0 {
-		path := filepath.Join(domain.cfg.DataDir, StorageFileName)
-		var statInfo os.FileInfo
-		if statInfo, err = os.Stat(path); err != nil {
-			if !os.IsNotExist(err) {
-				return
-			}
-		} else {
-			if uint64(statInfo.Size()) > domain.cfg.SpaceLimit {
-				// rejected
-				err = ErrSpaceLimitExceeded
-				return
-			}
-		}
-	}
-
-	// call kayak runtime Process
-	var result interface{}
-	if result, _, err = domain.kayakRuntime.Apply(request.GetContext(), request); err != nil {
-		err = errors.Wrap(err, "apply failed")
-		return
-	}
-
-	var (
-		tr *TrackerAndResponse
-		ok bool
-	)
-	if tr, ok = (result).(*TrackerAndResponse); !ok {
-		err = errors.Wrap(err, "invalid response type")
-		return
-	}
-	tracker = tr.Tracker
-	response = tr.Response
-	return
-}
-*/
 
 
 func (domain *Domain) saveAck(ackHeader *types.SignedAckHeader) (err error) {

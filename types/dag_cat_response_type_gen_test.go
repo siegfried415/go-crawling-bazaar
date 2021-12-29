@@ -9,8 +9,8 @@ import (
 	"testing"
 )
 
-func TestMarshalHashBPBlock(t *testing.T) {
-	v := BPBlock{}
+func TestMarshalHashDagCatResponse(t *testing.T) {
+	v := DagCatResponse{}
 	binary.Read(rand.Reader, binary.BigEndian, &v)
 	bts1, err := v.MarshalHash()
 	if err != nil {
@@ -25,8 +25,8 @@ func TestMarshalHashBPBlock(t *testing.T) {
 	}
 }
 
-func BenchmarkMarshalHashBPBlock(b *testing.B) {
-	v := BPBlock{}
+func BenchmarkMarshalHashDagCatResponse(b *testing.B) {
+	v := DagCatResponse{}
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -34,8 +34,8 @@ func BenchmarkMarshalHashBPBlock(b *testing.B) {
 	}
 }
 
-func BenchmarkAppendMsgBPBlock(b *testing.B) {
-	v := BPBlock{}
+func BenchmarkAppendMsgDagCatResponse(b *testing.B) {
+	v := DagCatResponse{}
 	bts := make([]byte, 0, v.Msgsize())
 	bts, _ = v.MarshalHash()
 	b.SetBytes(int64(len(bts)))
@@ -46,8 +46,8 @@ func BenchmarkAppendMsgBPBlock(b *testing.B) {
 	}
 }
 
-func TestMarshalHashBPHeader(t *testing.T) {
-	v := BPHeader{}
+func TestMarshalHashDagCatResponseHeader(t *testing.T) {
+	v := DagCatResponseHeader{}
 	binary.Read(rand.Reader, binary.BigEndian, &v)
 	bts1, err := v.MarshalHash()
 	if err != nil {
@@ -62,8 +62,8 @@ func TestMarshalHashBPHeader(t *testing.T) {
 	}
 }
 
-func BenchmarkMarshalHashBPHeader(b *testing.B) {
-	v := BPHeader{}
+func BenchmarkMarshalHashDagCatResponseHeader(b *testing.B) {
+	v := DagCatResponseHeader{}
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -71,8 +71,8 @@ func BenchmarkMarshalHashBPHeader(b *testing.B) {
 	}
 }
 
-func BenchmarkAppendMsgBPHeader(b *testing.B) {
-	v := BPHeader{}
+func BenchmarkAppendMsgDagCatResponseHeader(b *testing.B) {
+	v := DagCatResponseHeader{}
 	bts := make([]byte, 0, v.Msgsize())
 	bts, _ = v.MarshalHash()
 	b.SetBytes(int64(len(bts)))
@@ -83,8 +83,8 @@ func BenchmarkAppendMsgBPHeader(b *testing.B) {
 	}
 }
 
-func TestMarshalHashBPSignedHeader(t *testing.T) {
-	v := BPSignedHeader{}
+func TestMarshalHashDagCatResponsePayload(t *testing.T) {
+	v := DagCatResponsePayload{}
 	binary.Read(rand.Reader, binary.BigEndian, &v)
 	bts1, err := v.MarshalHash()
 	if err != nil {
@@ -99,8 +99,8 @@ func TestMarshalHashBPSignedHeader(t *testing.T) {
 	}
 }
 
-func BenchmarkMarshalHashBPSignedHeader(b *testing.B) {
-	v := BPSignedHeader{}
+func BenchmarkMarshalHashDagCatResponsePayload(b *testing.B) {
+	v := DagCatResponsePayload{}
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -108,8 +108,45 @@ func BenchmarkMarshalHashBPSignedHeader(b *testing.B) {
 	}
 }
 
-func BenchmarkAppendMsgBPSignedHeader(b *testing.B) {
-	v := BPSignedHeader{}
+func BenchmarkAppendMsgDagCatResponsePayload(b *testing.B) {
+	v := DagCatResponsePayload{}
+	bts := make([]byte, 0, v.Msgsize())
+	bts, _ = v.MarshalHash()
+	b.SetBytes(int64(len(bts)))
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		bts, _ = v.MarshalHash()
+	}
+}
+
+func TestMarshalHashDagCatSignedResponseHeader(t *testing.T) {
+	v := DagCatSignedResponseHeader{}
+	binary.Read(rand.Reader, binary.BigEndian, &v)
+	bts1, err := v.MarshalHash()
+	if err != nil {
+		t.Fatal(err)
+	}
+	bts2, err := v.MarshalHash()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(bts1, bts2) {
+		t.Fatal("hash not stable")
+	}
+}
+
+func BenchmarkMarshalHashDagCatSignedResponseHeader(b *testing.B) {
+	v := DagCatSignedResponseHeader{}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		v.MarshalHash()
+	}
+}
+
+func BenchmarkAppendMsgDagCatSignedResponseHeader(b *testing.B) {
+	v := DagCatSignedResponseHeader{}
 	bts := make([]byte, 0, v.Msgsize())
 	bts, _ = v.MarshalHash()
 	b.SetBytes(int64(len(bts)))

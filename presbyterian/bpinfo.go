@@ -22,7 +22,7 @@ import (
 	"github.com/siegfried415/go-crawling-bazaar/proto"
 )
 
-type blockProducerInfo struct {
+type PresbyterianInfo struct {
 	rank   uint32
 	total  uint32
 	role   string
@@ -30,14 +30,14 @@ type blockProducerInfo struct {
 }
 
 // String implements fmt.Stringer.
-func (i *blockProducerInfo) String() string {
+func (i *PresbyterianInfo) String() string {
 	return fmt.Sprintf("[%d/%d|%s] %s", i.rank+1, i.total, i.role, i.nodeID)
 }
 
-func buildBlockProducerInfos(
+func buildPresbyterianInfos(
 	localNodeID proto.NodeID, peers *proto.Peers, isAPINode bool,
 ) (
-	localBPInfo *blockProducerInfo, bpInfos []*blockProducerInfo, err error,
+	localPBInfo *PresbyterianInfo, pbInfos []*PresbyterianInfo, err error,
 ) {
 	var (
 		total = len(peers.PeersHeader.Servers)
@@ -45,13 +45,13 @@ func buildBlockProducerInfos(
 		found bool
 	)
 
-	bpInfos = make([]*blockProducerInfo, total)
+	pbInfos = make([]*PresbyterianInfo, total)
 	for i, v := range peers.PeersHeader.Servers {
 		var role = "F"
 		if v == peers.Leader {
 			role = "L"
 		}
-		bpInfos[i] = &blockProducerInfo{
+		pbInfos[i] = &PresbyterianInfo{
 			rank:   uint32(i),
 			total:  uint32(total),
 			role:   role,
@@ -60,13 +60,13 @@ func buildBlockProducerInfos(
 	}
 
 	if isAPINode {
-		localBPInfo = &blockProducerInfo{
+		localPBInfo = &PresbyterianInfo{
 			rank:   0,
 			total:  uint32(total),
 			role:   "A",
 			nodeID: localNodeID,
 		}
-		return localBPInfo, bpInfos, nil
+		return localPBInfo, pbInfos, nil
 	}
 
 	if index, found = peers.Find(localNodeID); !found {
@@ -74,7 +74,7 @@ func buildBlockProducerInfos(
 		return
 	}
 
-	localBPInfo = bpInfos[index]
+	localPBInfo = pbInfos[index]
 
 	return
 }

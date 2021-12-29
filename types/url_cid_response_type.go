@@ -24,24 +24,13 @@ import (
 	"github.com/siegfried415/go-crawling-bazaar/crypto/hash"
 	"github.com/siegfried415/go-crawling-bazaar/proto"
 
-	//wyong, 20200820 
-	//"github.com/ipfs/go-cid"
-
 )
 
 //go:generate hsp
 
-// ResponseRow defines single row of query response.
-//type ResponseRow struct {
-//	Values []interface{}
-//}
-
 // ResponsePayload defines column names and rows of query response.
 type UrlCidResponsePayload struct {
-	//Columns   []string      `json:"c"`
-	//DeclTypes []string      `json:"t"`
-	//Rows      []ResponseRow `json:"r"`
-	Cids	  []string	`json:"c"`	//wyong, 20200907 
+	Cids	  []string	`json:"c"`
 }
 
 // ResponseHeader defines a query response header.

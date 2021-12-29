@@ -2,33 +2,20 @@
 package node 
 
 import (
-        //"fmt"
-        //"syscall"
-        //"time"
-
-        //"github.com/pkg/errors"
-        //"golang.org/x/crypto/ssh/terminal"
-
-        //"github.com/siegfried415/go-crawling-bazaar/api"
-        //pb "github.com/siegfried415/go-crawling-bazaar/presbyterian"
         "github.com/siegfried415/go-crawling-bazaar/conf"
-        //"github.com/siegfried415/go-crawling-bazaar/crypto/kms"
+        log "github.com/siegfried415/go-crawling-bazaar/utils/log"
         "github.com/siegfried415/go-crawling-bazaar/proto"
-        //"github.com/siegfried415/go-crawling-bazaar/route"
-        //rpc "github.com/siegfried415/go-crawling-bazaar/rpc/mux"
         "github.com/siegfried415/go-crawling-bazaar/types"
-        //"github.com/siegfried415/go-crawling-bazaar/utils"
-        //"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 
-func loadGenesis() (genesis *types.BPBlock, err error) {
-        genesisInfo := conf.GConf.BP.BPGenesis
-        //log.WithField("config", genesisInfo).Info("load genesis config")
+func loadGenesis() (genesis *types.PBBlock, err error) {
+        genesisInfo := conf.GConf.PB.PBGenesis
+        log.WithField("config", genesisInfo).Info("load genesis config")
 
-        genesis = &types.BPBlock{
-                SignedHeader: types.BPSignedHeader{
-                        BPHeader: types.BPHeader{
+        genesis = &types.PBBlock{
+                SignedHeader: types.PBSignedHeader{
+                        PBHeader: types.PBHeader{
                                 Version:   genesisInfo.Version,
                                 Timestamp: genesisInfo.Timestamp,
                         },
@@ -36,11 +23,12 @@ func loadGenesis() (genesis *types.BPBlock, err error) {
         }
 
         for _, ba := range genesisInfo.BaseAccounts {
-                //log.WithFields(log.Fields{
-                //        "address":             ba.Address.String(),
-                //        "stableCoinBalance":   ba.StableCoinBalance,
-                //        "covenantCoinBalance": ba.CovenantCoinBalance,
-                //}).Debug("setting one balance fixture in genesis block")
+                log.WithFields(log.Fields{
+                        "address":             ba.Address.String(),
+                        "stableCoinBalance":   ba.StableCoinBalance,
+                        "covenantCoinBalance": ba.CovenantCoinBalance,
+                }).Debug("setting one balance fixture in genesis block")
+
                 genesis.Transactions = append(genesis.Transactions, types.NewBaseAccount(
                         &types.Account{
                                 Address:      proto.AccountAddress(ba.Address),

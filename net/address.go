@@ -5,7 +5,6 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 )
 
-//wyong, 20201110 
 func PeerAddrToAddrInfo(addr string) (*peer.AddrInfo, error) {
 	a, err := ma.NewMultiaddr(addr)
 	if err != nil {
@@ -26,7 +25,6 @@ func PeerAddrToAddrInfo(addr string) (*peer.AddrInfo, error) {
 func PeerAddrsToAddrInfo(addrs []string) ([]peer.AddrInfo, error) {
 	var pis []peer.AddrInfo
 	for _, addr := range addrs {
-		//wyong, 20201110 
 		pinfo, err := PeerAddrToAddrInfo(addr)
 		if err!= nil {
 			return nil, err 

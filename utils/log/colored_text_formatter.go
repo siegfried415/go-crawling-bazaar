@@ -6,14 +6,12 @@ import (
 	"io"
 	"os"
 	"runtime"
-	//"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 	"unicode/utf8"
 
-	//wyong, 20201213 
         "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh/terminal"
 )
@@ -28,9 +26,7 @@ const (
 	cyan   = 36
 )
 
-//wyong, 20201213 
 var ColorArray [7]int  
-
 var baseTimestamp time.Time
 
 func init() {
@@ -124,7 +120,6 @@ type ColoredTextFormatter struct {
 }
 
 
-//wyong, 20201213 
 func (f *ColoredTextFormatter) checkIfTerminal(w io.Writer) bool {
 	switch v := w.(type) {
 	case *os.File:
@@ -173,7 +168,7 @@ func (f *ColoredTextFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 		data[k] = v
 	}
 
-	//todo, wyong, 20201213
+	//todo
 	//logrus.prefixFieldClashes(data, f.FieldMap, entry.HasCaller())
 
 	keys := make([]string, 0, len(data))
@@ -213,7 +208,7 @@ func (f *ColoredTextFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	} 
 	*/
 
-	/* wyong, 20201213 
+	/* 
 	if !f.DisableSorting {
 		if f.SortingFunc == nil {
 			sort.Strings(keys)
@@ -277,14 +272,12 @@ func (f *ColoredTextFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	} 
 	*/
 
-	//wyong, 20201213 
 	f.printColored(b, entry, keys, data, timestampFormat)
 
 	b.WriteByte('\n')
 	return b.Bytes(), nil
 }
 
-//wyong, 20201213 
 func (f *ColoredTextFormatter) getMessageColor(goid int ) int {
 	return ColorArray[goid % 7] 
 }
@@ -346,9 +339,7 @@ func (f *ColoredTextFormatter) printColored(b *bytes.Buffer, entry *logrus.Entry
 		goid = 0  
 	}
 
-	//wyong, 20201213
 	messageColor := f.getMessageColor(goid.(int))
-
 	prefix , ok := entry.Data["Prefix"]
 	if !ok {
 		prefix = ""
@@ -368,7 +359,7 @@ func (f *ColoredTextFormatter) printColored(b *bytes.Buffer, entry *logrus.Entry
 		fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m[%d]%s \x1b[%dm%-44s\x1b[0m ", levelColor, levelText, /*entry.Time.Format(timestampFormat)*/ goid, /* caller */ prefix, messageColor, entry.Message)
 	}
 
-	// todo, wyong, 20201214 
+	// todo
 	//for _, k := range keys {
 	//	v := data[k]
 	//	fmt.Fprintf(b, " \x1b[%dm%s\x1b[0m=", /* levelColor */ messageColor, k)

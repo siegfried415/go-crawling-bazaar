@@ -34,7 +34,7 @@ type blockNode struct {
 	block   atomic.Value
 }
 
-func newBlockNode(h uint32, b *types.BPBlock, p *blockNode) (node *blockNode) {
+func newBlockNode(h uint32, b *types.PBBlock, p *blockNode) (node *blockNode) {
 	node = &blockNode{
 		parent: p,
 
@@ -53,19 +53,19 @@ func newBlockNode(h uint32, b *types.BPBlock, p *blockNode) (node *blockNode) {
 	return
 }
 
-// newNonCacheBlockNode returns a block node without the *types.BPBlock cached.
-func newNonCacheBlockNode(h uint32, b *types.BPBlock, p *blockNode) (node *blockNode) {
+// newNonCacheBlockNode returns a block node without the *types.PBBlock cached.
+func newNonCacheBlockNode(h uint32, b *types.PBBlock, p *blockNode) (node *blockNode) {
 	node = newBlockNode(h, b, p)
 	node.clear()
 	return
 }
 
-func (n *blockNode) load() *types.BPBlock {
-	return n.block.Load().(*types.BPBlock)
+func (n *blockNode) load() *types.PBBlock {
+	return n.block.Load().(*types.PBBlock)
 }
 
 func (n *blockNode) clear() {
-	n.block.Store((*types.BPBlock)(nil))
+	n.block.Store((*types.PBBlock)(nil))
 }
 
 // fetchNodeList returns the block node list within range [from, n.count] from node head n.

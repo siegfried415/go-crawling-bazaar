@@ -18,39 +18,23 @@ package node
 
 import (
 	"context"
-	//"database/sql"
-	//"os"
 	"sync"
 	"time"
 
 	"github.com/pkg/errors"
 
-	//wyong, 20201021
-	//host "github.com/libp2p/go-libp2p-core/host"
-	//peer "github.com/libp2p/go-libp2p-core/peer"
+	//"github.com/siegfried415/go-crawling-bazaar/utils/log"
 	protocol "github.com/libp2p/go-libp2p-core/protocol"
-
-	//"github.com/siegfried415/go-crawling-bazaar/consistent"
-	//"github.com/siegfried415/go-crawling-bazaar/kms"
 	"github.com/siegfried415/go-crawling-bazaar/proto"
-	//"github.com/siegfried415/go-crawling-bazaar/route"
-
-	//wyong, 20201021 
-	//rpc "github.com/siegfried415/go-crawling-bazaar/rpc/mux"
 	net "github.com/siegfried415/go-crawling-bazaar/net"
-
 	"github.com/siegfried415/go-crawling-bazaar/storage"
 	"github.com/siegfried415/go-crawling-bazaar/utils"
-	//"github.com/siegfried415/go-crawling-bazaar/utils/log"
 )
 
 // KVServer holds LocalStorage instance and implements consistent persistence interface.
 type KVServer struct {
 	current   proto.NodeID
-	
-	//wyong, 20201021
 	host	net.RoutedHost
-
 	peers     *proto.Peers
 	storage   *LocalStorage
 	ctx       context.Context
@@ -65,10 +49,7 @@ func NewKVServer(host net.RoutedHost, currentNode proto.NodeID, peers *proto.Pee
 
 	return &KVServer{
 		current:   currentNode,
-
-		//wyong, 20201021
 		host : 	   host,
-
 		peers:     peers,
 		storage:   storage,
 		ctx:       ctx,
@@ -102,10 +83,9 @@ func (s *KVServer) SetNodeEx(node *proto.Node, ttl uint32, origin proto.NodeID) 
 	//	"origin": origin,
 	//}).Debug("update node to kv storage")
 
-	//wyong, 20201112 
 	router := s.host.Router()
 	
-	//node.ID.ToRawNodeID() -> &node.ID, wyong, 20201114 
+	//node.ID.ToRawNodeID() -> &node.ID
         err = router.SetNodeAddrCache(&node.ID, node.Addr)
         if err != nil {
                 //log.WithFields(log.Fields{
@@ -208,8 +188,6 @@ func (s *KVServer) nonBlockingSync(node *proto.Node, origin proto.NodeID, ttl ui
 			go func(node proto.NodeID) {
 				defer s.wg.Done()
 
-				//wyong, 20201021 
-				//_ = rpc.NewCaller().CallNodeWithContext(c, node, route.DHTGSetNode.String(), req, nil)
 				s, err := s.host.NewStreamExt(c, node, protocol.ID("DHTG.SetNode"))
 				if err != nil {
 					return

@@ -161,7 +161,6 @@ func readSingle(
 		return
 	}
 
-	//wyong, 20200612 
 	log.WithFields(log.Fields{
                                 "pattern":       pattern,
                                 "args":        args,
@@ -352,7 +351,6 @@ func (s *State) writeSingle(
 		return
 	}
 
-	//wyong, 20200612 
 	log.WithFields(log.Fields{
                                 "pattern":       pattern,
                                 "args":        args,
@@ -383,7 +381,6 @@ func (s *State) write(
 		lockAcquired, writeDone, enqueued, lockReleased, respBuilt time.Duration
 	)
 
-	//wyong, 20200612 
 	log.Debug("xenomint/state.write() called")
 
 	defer func() {
@@ -467,7 +464,6 @@ func (s *State) write(
 		}
 		writeDone = time.Since(start)
 		if isLeader {
-			//wyong, 20200612 
 			log.WithFields(log.Fields{
 						"lastSeq":       lastSeq,
 						"query":        query,
@@ -636,9 +632,7 @@ func (s *State) CommitExWithContext(
 		lockAcquired, committed, poolCleaned, lockReleased time.Duration
 	)
 
-	//wyong, 20200612 
 	log.Debug("xenomint/state, CommitExWithContext() called")
-
 	defer func() {
 		var fields = log.Fields{}
 		fields["1#lockAcquired"] = float64(lockAcquired.Nanoseconds()) / 1000
