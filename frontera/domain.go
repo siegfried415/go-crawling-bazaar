@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 The CovenantSQL Authors.
+ * Copyright 2022 https://github.com/siegfried415
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -392,10 +393,11 @@ func (domain *Domain) run(ctx context.Context) {
 					}
 				}
 
+				//NOTE, what if urlNode created by current bidding?  
 				//read last requested height, and filter out urls which crawled too fast, 
-				if (urlNode.LastRequestedHeight + IncrementalCrawlingInterval) < currentHeight { 
-					continue 
-				} 
+				//if (urlNode.LastRequestedHeight + IncrementalCrawlingInterval) > currentHeight { 
+				//	continue 
+				//} 
 
 				if bidding.Probability <= MinFrowardProbability { 
 					continue 
@@ -412,7 +414,6 @@ func (domain *Domain) run(ctx context.Context) {
 
 		case bid := <-domain.bidIncoming:
 			domain.tick.Stop()
-
 			if bid.from != "" {
 				domain.addActivePeer(bid.from)
 			}

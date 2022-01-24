@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 https://github.com/siegfried415
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package commands
 
 import (
@@ -92,53 +108,28 @@ const (
 // command object for the local cli
 var rootCmd = &cmds.Command{
 	Helptext: cmdkit.HelpText{
-		Tagline: "A decentralized storage network",
+		Tagline: "A decentralized crawling bazaar",
 		Subcommands: `
-START RUNNING FILECOIN
-  go-filecoin init                   - Initialize a filecoin repo
-  go-filecoin config <key> [<value>] - Get and set filecoin config values
-  go-filecoin daemon                 - Start a long-running daemon process
-  go-filecoin wallet                 - Manage your filecoin wallets
-  go-filecoin address                - Interact with addresses
+NODE COMMANDS  
+  gcb init                   - Initialize a filecoin repo
+  gcb daemon                 - Start a long-running daemon process
 
-STORE AND RETRIEVE DATA
-  go-filecoin client                 - Make deals, store data, retrieve data
-  go-filecoin retrieval-client       - Manage retrieval client operations
+CRAWLING BAZAAR 
+  gcb domain 		     - Create or drop crawling domain 
+  gcb urlrequest	     - Make url request to crawling bazaar by client 
+  gcb bidding		     - put or get bidding from crawling bazaar 
+  gcb bid 		     - put or get bid from crawling bazaar 
 
-MINE
-  go-filecoin miner                  - Manage a single miner actor
-  go-filecoin mining                 - Manage all mining operations for a node
-
-VIEW DATA STRUCTURES
-  go-filecoin chain                  - Inspect the filecoin blockchain
-  go-filecoin dag                    - Interact with IPLD DAG objects
-  go-filecoin deals                  - Manage deals made by or with this node
-  go-filecoin show                   - Get human-readable representations of filecoin objects
+DATA STRUCTURE 
+  gcb urlgraph 		     - hold cid information of url
+  gcb dag                    - Interact with IPLD DAG objects
 
 NETWORK COMMANDS
-  go-filecoin bitswap                - Explore libp2p bitswap
-  go-filecoin bootstrap              - Interact with bootstrap addresses
-  go-filecoin dht                    - Interact with the dht
-  go-filecoin id                     - Show info about the network peers
-  go-filecoin ping <peer ID>...      - Send echo request packets to p2p network members
-  go-filecoin swarm                  - Interact with the swarm
-  go-filecoin stats                  - Monitor statistics on your network usage
-
-ACTOR COMMANDS
-  go-filecoin actor                  - Interact with actors. Actors are built-in smart contracts
-  go-filecoin paych                  - Payment channel operations
-
-MESSAGE COMMANDS
-  go-filecoin message                - Manage messages
-  go-filecoin mpool                  - Manage the message pool
-  go-filecoin outbox                 - Manage the outbound message queue
+  gcb id                     - Show info about the network peers
+  gcb swarm                  - Interact with the swarm
 
 TOOL COMMANDS
-  go-filecoin inspect                - Show info about the go-filecoin node
-  go-filecoin leb128                 - Leb128 cli encode/decode
-  go-filecoin log                    - Interact with the daemon event log output
-  go-filecoin protocol               - Show protocol parameter details
-  go-filecoin version                - Show go-filecoin version information
+  gcb version                - Show gcb version information
 `,
 	},
 	Options: []cmdkit.Option{

@@ -1243,6 +1243,8 @@ func (s *metaState) apply(t pi.Transaction, height uint32) (err error) {
 		"addr":  addr,
 		"nonce": nonce,
 	}).Infof("apply tx")
+
+	/*todo, 20220105 
 	// Check account nonce
 	var nextNonce pi.AccountNonce
 	if nextNonce, err = s.nextNonce(addr); err != nil {
@@ -1260,14 +1262,21 @@ func (s *metaState) apply(t pi.Transaction, height uint32) (err error) {
 		}).WithError(err).Debug("nonce not match during transaction apply")
 		return
 	}
+	*/
+
 	// Try to apply transaction to metaState
 	if err = s.applyTransaction(t, height); err != nil {
-		log.WithError(err).Debug("apply transaction failed")
+		//log.WithError(err).Debug("apply transaction failed")
+		log.Debug("apply transaction failed, err=%s", err.Error())
 		return
 	}
+
+	/*todo, 20220105 
 	if err = s.increaseNonce(addr); err != nil {
 		return
 	}
+	*/
+
 	return
 }
 

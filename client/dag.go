@@ -1,3 +1,18 @@
+/*
+ * Copyright 2022 https://github.com/siegfried415
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package client
 
@@ -7,10 +22,13 @@ import (
 
         //"github.com/ipfs/go-cid"
 
+	
+	//log "github.com/siegfried415/go-crawling-bazaar/utils/log"
 	"github.com/siegfried415/go-crawling-bazaar/types"
 )
 
 func (c *Conn) sendDagCatRequest(ctx context.Context, request types.DagCatRequest ) (result []byte, err error) {
+
 	var uc *pconn // peer connection used to execute the queries
 	uc = c.leader
 
@@ -60,8 +78,8 @@ func (c *Conn) sendDagCatRequest(ctx context.Context, request types.DagCatReques
 		return
 	}
 
-	var response types.UrlCidResponse
-	uc.pCaller.RecvMsg(ctx, &response) 
+	var response types.DagCatResponse
+	err = uc.pCaller.RecvMsg(ctx, &response) 
 	if err != nil {
 		return
 	}
@@ -71,6 +89,9 @@ func (c *Conn) sendDagCatRequest(ctx context.Context, request types.DagCatReques
 	//if len(cids) > 0 {
 	//	result, _  = cid.Decode(cids[0])
 	//}
+
+	//20220116
+	result = response.Payload.Data 
 
 	return
 }

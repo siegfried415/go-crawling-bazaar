@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The CovenantSQL Authors.
+ * Copyright 2022 https://github.com/siegfried415 
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,13 @@ package node
 
 import (
         "context"
+	"io/ioutil" 
 
         cid "github.com/ipfs/go-cid"
         protocol "github.com/libp2p/go-libp2p-core/protocol"
 
 	dag "github.com/siegfried415/go-crawling-bazaar/dag" 
+	//log "github.com/siegfried415/go-crawling-bazaar/utils/log" 
         net "github.com/siegfried415/go-crawling-bazaar/net"
         "github.com/siegfried415/go-crawling-bazaar/types"
 )
@@ -53,6 +55,7 @@ func NewDagService(serviceName string, h net.RoutedHost,  d *dag.DAG) (*DagServi
 }
 
 func (ds *DagService) DagCatHandler (s net.Stream) {
+
         ctx := context.Background()
         var req types.DagCatRequestMessage
 
@@ -72,8 +75,8 @@ func (ds *DagService) DagCatHandler (s net.Stream) {
                 return
         }
 
-	var out []byte 
-	_, err = dagReader.Read(out)
+	//20220116 
+	out, err := ioutil.ReadAll(dagReader)  	
 	if err != nil {
                 return
         }
@@ -95,6 +98,8 @@ func (ds *DagService) DagCatHandler (s net.Stream) {
 
         s.SendMsg(ctx, res)
 }
+
+
 /*
 func (ds *DagService) DagImportDataHandler (s net.Stream) {
         ctx := context.Background()

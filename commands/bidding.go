@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 https://github.com/siegfried415
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package commands
 
 import (
@@ -11,7 +27,7 @@ import (
 	cmdkit "github.com/ipfs/go-ipfs-cmdkit"
 
 	env "github.com/siegfried415/go-crawling-bazaar/env" 
-	log "github.com/siegfried415/go-crawling-bazaar/utils/log" 
+	//log "github.com/siegfried415/go-crawling-bazaar/utils/log" 
 	proto "github.com/siegfried415/go-crawling-bazaar/proto" 
 	types "github.com/siegfried415/go-crawling-bazaar/types" 
 )
@@ -107,22 +123,20 @@ Put bidding for a url:
 			}
                 }
 
-		log.Debugf("BiddingPutCmd, Run(20)") 
                 //send bidding request with client to random peers 
                 err = ce.Frontera().PutBidding(req.Context, domain, urlrequests, parenturlrequest)
                 if err != nil {
-                      log.Debugf("BiddingPutCmd, Run(30)")
                       return err
                 }
 
-		//log.Debugf("BiddingPutCmd, Run(40)") 
 		return cmds.EmitOnce(res, 0)
 	},
 
 }
 
-type BiddingUrl struct {
+type Bidding struct {
 	Url string  
+	Probability float64 
 }
 
 var BiddingGetCmd = &cmds.Command{
@@ -156,34 +170,37 @@ Get biddings :
 		}
 
 		if len(output) ==  0 {
-			if err := res.Emit(&BiddingUrl{Url:""}); err != nil  {
+			if err := res.Emit([]Bidding{}); err != nil  {
 				return err
 			}
 		}else {
+			biddings := make([]Bidding, 0, len(output))
 			for _, v := range output {
-				if err := res.Emit(&BiddingUrl{v.GetUrl()}); err != nil  {
-					return err
-				}
-
+				biddings = append(biddings, Bidding{Url:v.GetUrl(), 
+								Probability: v.Probability })
 			}
+
+			if err := res.Emit(biddings); err != nil  {
+				return err
+			}
+
 		}
 
 		return nil
 	},
 
 	Encoders: cmds.EncoderMap{
-		cmds.Text: cmds.MakeEncoder(func(req *cmds.Request, w io.Writer, v interface{}) error{
-			u, ok := v.(*BiddingUrl)
-			if !ok {
-				return fmt.Errorf("cast error, got type %T", v)
+		cmds.Text: cmds.MakeTypedEncoder(func(req *cmds.Request, w io.Writer, biddings []Bidding ) error{
+			fmt.Fprintf(w, "[") 
+			for _, bidding := range biddings { 
+				fmt.Fprintf(w, "{Url:\"%s\", Probability:%f},", bidding.Url, bidding.Probability )
 			}
-
-			fmt.Fprintln(w, "url:%s}",  u.Url )
+			fmt.Fprintf(w, "]") 
 			return nil 
 		}),
 	},
 
-	Type: &BiddingUrl{},
+	Type: []Bidding{},
 }
 
 var BiddingDelCmd = &cmds.Command{

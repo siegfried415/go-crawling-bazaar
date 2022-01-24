@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 The CovenantSQL Authors.
+ * Copyright 2022 https://github.com/siegfried415
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -494,6 +495,7 @@ func (f *Frontera) initDomains ( meta *FronteraMeta, profiles map[proto.DomainID
 	wg := &sync.WaitGroup{}
 
 	for id, profile := range profiles {
+		log.Debugf("Frontera/initDomains, process domain %s", profile.ID ) 
 		currentInstance[id] = true
 		var instance *types.ServiceInstance
 		if instance, err = f.buildSQLChainServiceInstance(profile); err != nil {
@@ -524,18 +526,25 @@ func (f *Frontera) initDomains ( meta *FronteraMeta, profiles map[proto.DomainID
 
 	// drop domain
 	for domainID := range toDropInstance {
-		if err = f.Drop(domainID); err != nil {
-			return
+		log.Debugf("Frontera/initDomains, Drop domain %s", domainID ) 
+		err = f.Drop(domainID)
+		if err != nil {
+			//if err != ErrNotExists {
+			//	return
+			//}
+			log.Debugf("Frontera/initDomains, Drop domain err=%s ", err.Error()) 
 		}
 	}
 
-	return
+	return nil 
 }
 
 // Create add new domain to the miner .
 func (f *Frontera) Create(instance *types.ServiceInstance, cleanup bool) (err error) {
 
+	log.Debugf("Frontera/Create begin ... ")
 	if _, alreadyExists := f.getMeta(instance.DomainID); alreadyExists {
+		log.Debugf("Frontera/Create, domain already exist")
 		return ErrAlreadyExists
 	}
 
@@ -591,6 +600,8 @@ func (f *Frontera) Create(instance *types.ServiceInstance, cleanup bool) (err er
 	}
 
 	if domain, err = NewDomain(domainCfg, f, instance.Peers, instance.GenesisBlock); err != nil {
+		log.Debugf("Frontera/Create, NewDomain failed, err = %s", err )
+
 		return
 	}
 
@@ -804,6 +815,7 @@ type biddingRequest struct {
 // GetBlock attempts to retrieve a particular block from peers within the
 // deadline enforced by the context.
 func (f *Frontera) PutBidding(ctx context.Context, domainName string, requests []types.UrlRequest, parentUrlRequest types.UrlRequest ) (err error) {
+
 	domain, exist := f.DomainForUrl(domainName ) 
 	if exist != true {
 		err = errors.New("domain not exist") 
@@ -965,6 +977,14 @@ func (f *Frontera) receiveBidFrom(ctx context.Context,  from proto.NodeID, url s
 }
 
 func (f *Frontera) DomainForID(id proto.DomainID ) (domain *Domain, exists bool )  {
+	//todo, just for debug, 20220103
+	f.domainMap.Range(func(key , value interface{}) bool {
+		domainID := key.(proto.DomainID)
+		//d := rawDomain.(*Domain)
+		log.Debugf("DomainForID, iter domain, %s", domainID )
+		return true 
+	})
+
 	var rawDomain interface{}
 	if rawDomain, exists = f.domainMap.Load(id); !exists {
 		return
@@ -997,6 +1017,7 @@ func(f *Frontera) PutBid(ctx context.Context, url string, cid cid.Cid) error {
 }
 
 func(f *Frontera) RetriveUrlCid(ctx context.Context, req *types.UrlCidRequestMessage ) (res *types.UrlCidResponse, err error) {
+	log.Debugf("Frontera/RetriveUrlCid begin, domain = %s", req.Header.DomainID) 
 	domain, exist := f.DomainForID(req.Header.DomainID) 
 	if exist != true {
 		err = errors.New("domain not exist") 

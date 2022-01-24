@@ -602,8 +602,12 @@ func (c *Chain) syncHead() (err error) {
 
 	var (
 		peers = c.rt.getPeers()
-		l     = len(peers.Servers)
-		le    = c.logEntryWithHeadState()
+
+		//todo 
+		//l     = len(peers.Servers)
+
+		//todo
+		//le    = c.logEntryWithHeadState()
 
 		child, cancel = context.WithTimeout(c.rt.ctx, c.rt.tick)
 		wg            = &sync.WaitGroup{}
@@ -630,11 +634,15 @@ func (c *Chain) syncHead() (err error) {
 			continue
 		}
 
+		//todo, 20220103 
+		log.Debugf("syncHead, begin sync with %s", s.String()) 
+
 		wg.Add(1)
 		go func(i int, node proto.NodeID) {
 			defer wg.Done()
 			var (
-				ile = le.WithFields(log.Fields{"remote": fmt.Sprintf("[%d/%d] %s", i, l, node)})
+				//todo 
+				//ile = le.WithFields(log.Fields{"remote": fmt.Sprintf("[%d/%d] %s", i, l, node)})
 				req = MuxFetchBlockReq{
 					DomainID: c.domainID,
 					FetchBlockReq: FetchBlockReq{
@@ -645,26 +653,38 @@ func (c *Chain) syncHead() (err error) {
 			)
 
 			atomic.AddUint32(&totalCount, 1)
+
+			//todo, 20220103 
+			log.Debugf("syncHead, before open stream to %s", node.String()) 
 			s, err := c.host.NewStreamExt(child, node, protocol.ID("URLC.FetchBlock"))
 			if err != nil {
-				ile.WithError(err).Error("error opening push stream")
+				//todo, ile->log, 20220103 
+				log.WithError(err).Error("error opening push stream")
+
+				log.Debugf("syncHead, failed to open stream to %s, err = %s", node.String(), err.Error()) 
+
 				return 
 			}
 
+			//todo, 20220103 
+			log.Debugf("syncHead, after open stream to %s", node.String()) 
+
 	                if _, err := s.SendMsg(child, &req ) ; err != nil { 
-				ile.WithError(err).Error("failed to fetch block from peer")
+				//todo, ile -> log 
+				log.WithError(err).Error("failed to fetch block from peer")
 				return 
 			}
 
 
 			err = s.RecvMsg(child, &resp) 
 			if err != nil {
-				ile.WithError(err).Error("failed to get response")
+				//todo, ile -> log 
+				log.WithError(err).Error("failed to get response")
 				return 
 			}
 
 			if resp.Block == nil {
-				ile.Debug("fetch block request reply: no such block")
+				log.Debug("fetch block request reply: no such block")
 				// If block is nil, resp.Height returns the current head height of the remote peer
 				if resp.Height <= req.Height {
 					atomic.AddUint32(&initiatingCount, 1)
@@ -674,7 +694,8 @@ func (c *Chain) syncHead() (err error) {
 				return
 			}
 
-			ile.WithFields(log.Fields{
+			//todo, ile 
+			log.WithFields(log.Fields{
 				"parent": resp.Block.ParentHash().Short(4),
 				"hash":   resp.Block.BlockHash().Short(4),
 			}).Debug("fetch block request reply: found block")
@@ -682,7 +703,8 @@ func (c *Chain) syncHead() (err error) {
 			case c.blocks <- resp.Block:
 				atomic.AddUint32(&succCount, 1)
 			case <-child.Done():
-				le.WithError(child.Err()).Info("abort head block synchronizing")
+				//todo, le
+				log.WithError(child.Err()).Info("abort head block synchronizing")
 				return
 			}
 		}(i, s)

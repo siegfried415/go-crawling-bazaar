@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 The CovenantSQL Authors.
+ * Copyright 2022 https://github.com/siegfried415 
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +34,6 @@ import (
 	net "github.com/siegfried415/go-crawling-bazaar/net"
 	"github.com/siegfried415/go-crawling-bazaar/proto"
 	"github.com/siegfried415/go-crawling-bazaar/types"
-	"github.com/siegfried415/go-crawling-bazaar/utils/callinfo"
 	"github.com/siegfried415/go-crawling-bazaar/utils/log"
 	"github.com/siegfried415/go-crawling-bazaar/utils/trace"
 
@@ -422,6 +422,7 @@ func (c *Conn) PutUrlRequest(ctx context.Context, parent types.UrlRequest, reque
 	}
 
 	if err = reqMsg.Sign(c.privKey); err != nil {
+		log.WithError(err).Error("sendUrlCidRequest Sign failed")
 		return
 	}
 
@@ -434,12 +435,14 @@ func (c *Conn) PutUrlRequest(ctx context.Context, parent types.UrlRequest, reque
 
 	
 	if _, err = uc.pCaller.SendMsg(ctx, reqMsg ); err != nil {
+		log.WithError(err).Error("sendUrlCidRequest Send Msg failed")
 		return
 	}
 
 	var response types.UrlCidResponse
 	uc.pCaller.RecvMsg(ctx, &response) 
 	if err != nil {
+		log.WithError(err).Error("sendUrlCidRequest Recv Msg failed")
 		return
 	}
 
@@ -484,6 +487,7 @@ func (c *Conn) GetCidByUrl(ctx context.Context, url string ) (/* result driver.R
 
 	if atomic.LoadInt32(&c.closed) != 0 {
 		err = driver.ErrBadConn
+		log.WithError(err).Error("GetCidByUrl, bad connection!")
 		return
 	}
 
@@ -503,6 +507,7 @@ func (c *Conn) GetCidByUrl(ctx context.Context, url string ) (/* result driver.R
 	//}
 
 	if result,  err = c.sendUrlCidRequest(ctx, request); err != nil {
+		log.WithError(err).Error("GetCidByUrl, sendUrlCidRequest failed")
 		return
 	}
 
@@ -583,7 +588,7 @@ func (c *Conn) ExecContext(ctx context.Context, query string, args []driver.Name
 
 	//log.SetOutput(os.Stdout) 
 	//log.WithField("query", query).Debug("ExecContext called...")
-	log.Debugf("ExecContext called, query=%s\n, stack=%s", query, callinfo.Stacks()) 
+	//log.Debugf("ExecContext called, query=%s\n, stack=%s", query, callinfo.Stacks()) 
 
 	if atomic.LoadInt32(&c.closed) != 0 {
 		err = driver.ErrBadConn
@@ -611,7 +616,7 @@ func (c *Conn) QueryContext(ctx context.Context, query string, args []driver.Nam
 
 	//log.SetOutput(os.Stdout) 
 	//log.WithField("query", query).Debug("QueryContext called...")
-	log.Debugf("QueryContext called, query=%s\n, stack=%s", query, callinfo.Stacks()) 
+	//log.Debugf("QueryContext called, query=%s\n, stack=%s", query, callinfo.Stacks()) 
 
 	if atomic.LoadInt32(&c.closed) != 0 {
 		err = driver.ErrBadConn

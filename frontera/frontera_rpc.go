@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 The CovenantSQL Authors.
+ * Copyright 2022 https://github.com/siegfried415
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +23,7 @@ import (
 	metrics "github.com/rcrowley/go-metrics"
 	protocol "github.com/libp2p/go-libp2p-core/protocol"
 
-	//log "github.com/siegfried415/go-crawling-bazaar/utils/log"
+	log "github.com/siegfried415/go-crawling-bazaar/utils/log"
 	net "github.com/siegfried415/go-crawling-bazaar/net"
 	"github.com/siegfried415/go-crawling-bazaar/proto"
 	"github.com/siegfried415/go-crawling-bazaar/types"
@@ -80,7 +81,6 @@ func (rpc *FronteraRPCService) UrlRequestHandler (s net.Stream) {
                 return
         }
 
-
 	var res *types.UrlResponse
 	if err = rpc.frontera.PutBidding(ctx, 
 			string(req.Header.DomainID), 
@@ -110,11 +110,13 @@ func (rpc *FronteraRPCService) UrlCidRequestHandler ( s net.Stream) {
 
         err := s.RecvMsg(ctx, &req)
         if err != nil {
+		log.Debugf("UrlCidRequestHandler, RecvMsg failed, err = %s", err ) 
                 return
         }
 
 	var res *types.UrlCidResponse
 	if res, err = rpc.frontera.RetriveUrlCid(ctx, &req); err != nil {
+		log.Debugf("UrlCidRequestHandler, RetriveUrlCid failed, err = %s", err ) 
 		return
 	}
 
@@ -122,6 +124,8 @@ func (rpc *FronteraRPCService) UrlCidRequestHandler ( s net.Stream) {
 }
 
 func (rpc *FronteraRPCService) BiddingMessageHandler ( s net.Stream) {
+	log.Debugf("BiddingMessageHandler(10)!") 
+
         ctx := context.Background()
         var req types.UrlBiddingMessage 
 

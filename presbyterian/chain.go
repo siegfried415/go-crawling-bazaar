@@ -512,7 +512,8 @@ func (c *Chain) processAddTxReq(addTxReq *types.AddTxReq) {
 			"type":    tx.GetTransactionType(),
 		})
 
-		base pi.AccountNonce
+		//base pi.AccountNonce
+
 		err  error
 	)
 
@@ -532,10 +533,13 @@ func (c *Chain) processAddTxReq(addTxReq *types.AddTxReq) {
 		le.WithError(err).Warn("failed to verify transaction")
 		return
 	}
+
+	/* TODO, 20220104 
 	if base, err = c.immutableNextNonce(addr); err != nil {
 		le.WithError(err).Warn("failed to load base nonce of transaction account")
 		return
 	}
+
 	if nonce < base || nonce >= base+conf.MaxPendingTxsPerAccount {
 		// TODO(leventeliu): should persist to somewhere for tx query?
 		le.WithFields(log.Fields{
@@ -544,6 +548,7 @@ func (c *Chain) processAddTxReq(addTxReq *types.AddTxReq) {
 		}).Warn("invalid transaction nonce")
 		return
 	}
+	*/
 
 	// Broadcast to other presbyterians  
 	if ttl > conf.MaxTxBroadcastTTL {

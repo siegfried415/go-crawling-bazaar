@@ -1,7 +1,23 @@
-// Package commands implements the command to print the blockchain.
+/*
+ * Copyright 2022 https://github.com/siegfried415
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package commands
 
 import (
+        "encoding/json"
 	"errors" 
 	"fmt" 
         "io"
@@ -81,36 +97,70 @@ only argument should be the CID to return.
 
 Examples:
 
-  > gcb dag cat #####################################
+  > gcb dag cat parent_url url  #####################################
     (############################ is the cid of content of http://www.foo.com/index.html)
 
 `,
 	},
 	Arguments: []cmdkit.Argument{
-		cmdkit.StringArg("cid", true, false, "CID of page content"),
+                cmdkit.StringArg("parent", true, false, "the parent url to be get from crawling bazaar"),
+                cmdkit.StringArg("url", true, false, "the url to be get from crawling bazaar"),
+
+		cmdkit.StringArg("cid", true, false, "CID of url content"),
 	},
 	Run: func(req *cmds.Request, re cmds.ResponseEmitter, cmdenv cmds.Environment) error {
 
 		e := cmdenv.(*env.Env)
 		role := e.Role() 
+		
+                //parenturl := req.Arguments[0]
+		var parenturl string 
+		if err := json.Unmarshal([]byte(req.Arguments[0]), &parenturl); err != nil {
+			return err
+		}
+
+                //url := req.Arguments[1]
+		var url string 
+		if err := json.Unmarshal([]byte(req.Arguments[1]), &url); err != nil {
+			return err
+		}
+
+		//get domain of this url request 
+		var domain string 
+		if parenturl != "" { 
+			domain, _ = domainForUrl(parenturl) 
+		}
+
+		if domain == "" {
+			if url != "" { 
+				var err error 
+				domain, err = domainForUrl(url) 
+				if err != nil {
+					return err 
+				}
+			}
+		}
+
+		if domain == "" {
+			return errors.New("can't get domain of this url request!")
+		}
 
 		switch role {
 		case proto.Client : 
 			host := e.Host()
 
-			//todo
-			conn, err := getConn(host, "DAG.CatRequest", /* domain */ "" )
+			conn, err := getConn(host, "DAG.Cat", domain )
 			if err != nil {
 				return err 
 			}
 			defer conn.Close()
 
-			result, err := conn.DagCat(req.Context, req.Arguments[0]) 
+			result, err := conn.DagCat(req.Context, req.Arguments[2]) 
 			if err != nil {
 				return err  
 			}
 
-			return re.Emit(result)
+			return re.Emit(string(result)) 
 
 		case proto.Leader:
 			fallthrough 
@@ -118,7 +168,7 @@ Examples:
 			return nil 
 
 		case proto.Miner: 
-			c, err := cid.Decode(req.Arguments[0])
+			c, err := cid.Decode(req.Arguments[2])
 			if err != nil {
 				return err
 			}
@@ -160,9 +210,10 @@ Examples:
 `,
 	},
 	Arguments: []cmdkit.Argument{
-		cmdkit.FileArg("file", true, false, "Path to file to import").EnableStdin(),
+		cmdkit.FileArg("file", true, false, "Path of file to import").EnableStdin(),
 	},
 	Run: func(req *cmds.Request, re cmds.ResponseEmitter, cmdenv cmds.Environment) error {
+
 		e := cmdenv.(*env.Env)
 		role := e.Role() 
 		if role != proto.Miner {

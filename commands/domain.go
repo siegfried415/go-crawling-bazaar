@@ -1,3 +1,18 @@
+/*
+ * Copyright 2022 https://github.com/siegfried415
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package commands
 
@@ -69,7 +84,6 @@ confirmation before the creation takes effect.
 
 	Run: func(req *cmds.Request, res cmds.ResponseEmitter, cmdenv cmds.Environment) error {
 		domain_name := req.Arguments[0]
-		log.Debugf("DomainCreateCmd, domain_name =%s\n", domain_name ) 
 
 		nodeCnt, err := strconv.ParseInt(req.Arguments[1], 10, 32) 
 		if err != nil {
@@ -77,7 +91,6 @@ confirmation before the creation takes effect.
 		}
 
 
-		log.Debugf("DomainCreateCmd, nodeCnt=%d\n", nodeCnt ) 
 		e := cmdenv.(*env.Env)
 		host := e.Host()
 
@@ -87,18 +100,19 @@ confirmation before the creation takes effect.
 
 		txHash, err := client.CreateDomain(host, meta)
 		if err != nil {
+			log.Error("create database failed, err= %s", err )
 			return err 
 		}
 
-		waitTxConfirmation, _ := req.Options[waitTxConfirmationOptionName].(bool)
+		waitTxConfirmation, _ := req.Options["wait-tx-confirm"].(bool)
 		if waitTxConfirmation {
+			log.Debugf("DomainCreateCmd, wait presbyterian ... \n") 
 			err = wait(host, txHash)
 			if err != nil {
-				log.WithError(err).Error("create database failed durating bp creation")
+				log.WithError(err).Error("create database failed durating presbyterian creation")
 				return err 
 			}
 
-			log.Debugf("\nThe domain is accecpted by presbyterian\n")
 			var ctx, cancel = context.WithTimeout(context.Background(), waitTxConfirmationMaxDuration)
 			defer cancel()
 			err = client.WaitDomainCreation(ctx, host, domain_name )

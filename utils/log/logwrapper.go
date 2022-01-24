@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 The CovenantSQL Authors.
+ * Copyright 2022 https://github.com/siegfried415
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +22,14 @@ import (
 	"io"
 	"path/filepath"
 	"runtime"
+        "strconv"
 	"strings"
+
 	"time"
 	//"os" 
 
 	"github.com/sirupsen/logrus"
-        "github.com/siegfried415/go-crawling-bazaar/utils/callinfo"
+        //"github.com/siegfried415/go-crawling-bazaar/utils/callinfo"
 
 )
 
@@ -55,11 +58,12 @@ var (
 	PkgDebugLogFilter = map[string]logrus.Level{
 		"metric": InfoLevel,
 		"rpc":    InfoLevel,
+		"main":   WarnLevel, 
 	}
 
 	// SimpleLog is the flag of simple log format
 	// "Y" for true, "N" for false. defined in `go build`
-	SimpleLog = "Y"
+	SimpleLog = "N"
 )
 
 // Logger wraps logrus logger type.
@@ -68,14 +72,15 @@ type Logger logrus.Logger
 // Fields defines the field map to pass to `WithFields`.
 type Fields logrus.Fields
 
-// CallerHook defines caller awareness hook for logrus.
-type CallerHook struct {
+// CallInfoHook defines caller awareness hook for logrus.
+type CallInfoHook struct {
 	StackLevels []logrus.Level
 }
 
 func init() {
-	AddHook(StandardCallerHook())
+	AddHook(StandardCallInfoHook())
 	SetFormatter(&ColoredTextFormatter{})
+	//SetLevel(DebugLevel)
 }
 
 var (
@@ -93,22 +98,22 @@ func (l *Logger) Printf(format string, args ...interface{}) {
 	Printf(format, args...)
 }
 
-// NewCallerHook creates new CallerHook.
-func NewCallerHook(stackLevels []logrus.Level) *CallerHook {
-	return &CallerHook{
+// NewCallInfoHook creates new CallInfoHook.
+func NewCallInfoHook(stackLevels []logrus.Level) *CallInfoHook {
+	return &CallInfoHook{
 		StackLevels: stackLevels,
 	}
 }
 
-// StandardCallerHook is a convenience initializer for LogrusStackHook{} with
+// StandardCallInfoHook is a convenience initializer for LogrusStackHook{} with
 // default args.
-func StandardCallerHook() *CallerHook {
+func StandardCallInfoHook() *CallInfoHook {
 	// defined in `go build`
 	if SimpleLog == "Y" {
-		return NewCallerHook([]logrus.Level{})
+		return NewCallInfoHook([]logrus.Level{})
 	}
 
-	return NewCallerHook(
+	return NewCallInfoHook(
 		[]logrus.Level{
 			logrus.PanicLevel, 
 			logrus.FatalLevel, 
@@ -120,25 +125,38 @@ func StandardCallerHook() *CallerHook {
 			logrus.DebugLevel,
 		},
 	)
+	//return NewCallInfoHook( logrus.AllLevels ) 
+}
+
+func (hook *CallInfoHook) ShouldNotOutputEntryByPkg(entry *logrus.Entry, pkg string) bool {
+        level, ok := PkgDebugLogFilter[pkg ]
+        if ok && entry.Level > level {
+                return true
+        }
+        return false
 }
 
 // Fire defines hook event handler.
-func (hook *CallerHook) Fire(entry *logrus.Entry) error {
-	funcDesc, caller := hook.caller(entry)
+func (hook *CallInfoHook) Fire(entry *logrus.Entry) error {
+	
+	funcDesc, _ := hook.caller(entry)
 	fields := strings.SplitN(funcDesc, ".", 2)
 	if len(fields) > 0 {
-		level, ok := PkgDebugLogFilter[fields[0]]
-		if ok && entry.Level > level {
+		//level, ok := PkgDebugLogFilter[fields[0]]
+		//if ok && entry.Level > level {
+                if hook.ShouldNotOutputEntryByPkg(entry, fields[0]) {
 			nilLogger := logrus.New()
 			nilLogger.Formatter = &NilFormatter{}
 			entry.Logger = nilLogger
 			return nil
 		}
 	}
-	entry.Data["caller"] = caller
+
+	//entry.Data["caller"] = caller
+	//hook.caller(entry)
 
 	//var cMsg string 
-	//cMsg := fmt.Sprintf(" \x1b[%dm%s\x1b[0m=", 36, entry.Message)
+	////cMsg = fmt.Sprintf(" \x1b[%dm%s\x1b[0m=", 36, entry.Message)
 	//fmt.Sprintf(cMsg, "\033[1;34m %s \033[0m", entry.Message) 
 	//entry.Message = cMsg 
 
@@ -146,7 +164,7 @@ func (hook *CallerHook) Fire(entry *logrus.Entry) error {
 }
 
 // Levels define hook applicable level.
-func (hook *CallerHook) Levels() []logrus.Level {
+func (hook *CallInfoHook) Levels() []logrus.Level {
 	// defined in `go build`
 	if SimpleLog == "Y" {
 		return []logrus.Level{}
@@ -161,10 +179,38 @@ func (hook *CallerHook) Levels() []logrus.Level {
 		logrus.InfoLevel,
 		logrus.DebugLevel,
 	}
+	//return logrus.AllLevels
 }
 
-func (hook *CallerHook) caller(entry *logrus.Entry) (relFuncName, caller string) {
+func Goid() int {
+        defer func()  {
+                if err := recover(); err != nil {
+                        fmt.Println("panic recover:panic info:%v", err)     }
+        }()
+
+        var buf [64]byte
+        n := runtime.Stack(buf[:], false)
+        idField := strings.Fields(strings.TrimPrefix(string(buf[:n]), "goroutine "))[0]
+        id, err := strconv.Atoi(idField)
+        if err != nil {
+                panic(fmt.Sprintf("cannot get goroutine id: %v", err))
+        }
+
+        return id
+}
+
+func (hook *CallInfoHook) ShouldOutputStack(level logrus.Level) bool {
+        for _, l := range hook.StackLevels {
+                if l == level {
+                        return true
+                }
+        }
+        return false
+}
+
+func (hook *CallInfoHook) caller(entry *logrus.Entry) (relFuncName, caller string) {
 	var skipFrames int
+
 	if len(entry.Data) == 0 {
 		// When WithField(s) is not used, we have 8 logrus frames to skip.
 		skipFrames = 8
@@ -177,6 +223,8 @@ func (hook *CallerHook) caller(entry *logrus.Entry) (relFuncName, caller string)
 	stacks := make([]runtime.Frame, 0, 12)
 	if runtime.Callers(skipFrames, pcs) > 0 {
 		var foundCaller bool
+        	var prefix string
+
 		_frames := runtime.CallersFrames(pcs)
 		for {
 			f, more := _frames.Next()
@@ -189,29 +237,34 @@ func (hook *CallerHook) caller(entry *logrus.Entry) (relFuncName, caller string)
 			}
 			if foundCaller {
 				stacks = append(stacks, f)
+				prefix += " "
 			}
 			if !more {
+				entry.Data["_prefix"] = prefix  
 				break
 			}
 		}
 	}
 
-	if len(stacks) > 0 {
-		for _, level := range hook.StackLevels {
-			if entry.Level == level {
-				stacksStr := make([]string, 0, len(stacks))
-				for i, s := range stacks {
-					if s.Line > 0 {
-						fName := strings.TrimPrefix(s.Function, "github.com/siegfried415/go-crawling-bazaar/")
-						stackStr := fmt.Sprintf("#%d %s@%s:%d     ", i, fName, filepath.Base(s.File), s.Line)
-						stacksStr = append(stacksStr, stackStr)
-					}
-				}
-				entry.Data["stack"] = stacksStr
-				break
-			}
-		}
-	}
+        if len(stacks) > 0 {
+                if _, ok := entry.Data["stack"]; ok {
+                        if hook.ShouldOutputStack(entry.Level) {
+                                stacksStr := make([]string, 0, len(stacks))
+                                for i, s := range stacks {
+                                        if s.Line > 0 {
+                                                fName := strings.TrimPrefix(s.Function, "github.com/siegfried415/go-crawling-bazaar/")
+                                                stackStr := fmt.Sprintf("#%d %s@%s:%d     ", i, fName, filepath.Base(s.File), s.Line)
+                                                stacksStr = append(stacksStr, stackStr)
+                                        }
+                                }
+
+                                entry.Data["stack"] = stacksStr
+                        }
+                }
+        }
+
+	//set goid 
+	entry.Data["_gid"] = Goid() 
 
 	return relFuncName, caller
 }
@@ -280,6 +333,13 @@ func WithFields(fields Fields) *Entry {
 	return (*Entry)(logrus.WithFields(logrus.Fields(fields)))
 }
 
+//WithStack add stack frames info to log entry. 
+func WithStack() *Entry {
+        return (*Entry)(logrus.WithFields(logrus.Fields{
+                "stack": "",
+        }))
+}
+
 // WithTime add time fields to log entry.
 func WithTime(t time.Time) *Entry {
 	return (*Entry)(logrus.WithTime(t))
@@ -287,155 +347,80 @@ func WithTime(t time.Time) *Entry {
 
 // Debug logs a message at level Debug on the standard logger.
 func Debug(args ...interface{}) {
-	//logrus.Debug(args...)
-	entry := (*Entry)(logrus.WithFields(logrus.Fields{
-                "Prefix":    callinfo.Prefix(),
-                "Goid": callinfo.Goid(),
-        }))
-	entry.Debug(args...) 
+	logrus.Debug(args...)
 }
 
 // Print logs a message at level Info on the standard logger.
 func Print(args ...interface{}) {
-	//logrus.Print(args...)
-	entry := (*Entry)(logrus.WithFields(logrus.Fields{
-                "Prefix":    callinfo.Prefix(),
-                "Goid": callinfo.Goid(),
-        }))
-	entry.Print(args...) 
+	logrus.Print(args...)
 }
 
 // Info logs a message at level Info on the standard logger.
 func Info(args ...interface{}) {
-	//logrus.Info(args...)
-	entry := (*Entry)(logrus.WithFields(logrus.Fields{
-                "Prefix":    callinfo.Prefix(),
-                "Goid": callinfo.Goid(),
-        }))
-	entry.Info(args...) 
+	logrus.Info(args...)
 }
 
 // Warn logs a message at level Warn on the standard logger.
 func Warn(args ...interface{}) {
-	//logrus.Warn(args...)
-	entry := (*Entry)(logrus.WithFields(logrus.Fields{
-                "Prefix":    callinfo.Prefix(),
-                "Goid": callinfo.Goid(),
-        }))
-	entry.Warn(args...) 
+	logrus.Warn(args...)
 }
 
 // Warning logs a message at level Warn on the standard logger.
 func Warning(args ...interface{}) {
-	//logrus.Warning(args...)
-	entry := (*Entry)(logrus.WithFields(logrus.Fields{
-                "Prefix":    callinfo.Prefix(),
-                "Goid": callinfo.Goid(),
-        }))
-	entry.Warning(args...) 
+	logrus.Warning(args...)
 }
 
 // Error logs a message at level Error on the standard logger.
 func Error(args ...interface{}) {
 	//std.WithField("Func", getFuncPath(2)).Error(args...)
-	//logrus.Error(args...)
-	entry := (*Entry)(logrus.WithFields(logrus.Fields{
-                "Prefix":    callinfo.Prefix(),
-                "Goid": callinfo.Goid(),
-        }))
-	entry.Error(args...) 
+	logrus.Error(args...)
 }
 
 // Fatal logs a message at level Fatal on the standard logger.
 func Fatal(args ...interface{}) {
 	//std.WithField("Func", getFuncPath(2)).Fatal(args...)
-	//logrus.Fatal(args...)
-	entry := (*Entry)(logrus.WithFields(logrus.Fields{
-                "Prefix":    callinfo.Prefix(),
-                "Goid": callinfo.Goid(),
-        }))
-	entry.Fatal(args...) 
+	logrus.Fatal(args...)
 }
 
 // Panic logs a message at level Panic on the standard logger.
 func Panic(args ...interface{}) {
 	//std.WithField("Func", getFuncPath(2)).Panic(args...)
-	//logrus.Panic(args...)
-	entry := (*Entry)(logrus.WithFields(logrus.Fields{
-                "Prefix":    callinfo.Prefix(),
-                "Goid": callinfo.Goid(),
-        }))
-	entry.Panic(args...) 
+	logrus.Panic(args...)
 }
 
 // Debugf logs a message at level Debug on the standard logger.
 func Debugf(format string, args ...interface{}) {
-	//logrus.Debugf(format, args...)
-	entry := (*Entry)(logrus.WithFields(logrus.Fields{
-                "Prefix":    callinfo.Prefix(),
-                "Goid": callinfo.Goid(),
-        }))
-	entry.Debugf(format, args...) 
+	logrus.Debugf(format, args...)
 }
 
 // Printf logs a message at level Info on the standard logger.
 func Printf(format string, args ...interface{}) {
-	//logrus.Printf(format, args...)
-	entry := (*Entry)(logrus.WithFields(logrus.Fields{
-                "Prefix":    callinfo.Prefix(),
-                "Goid": callinfo.Goid(),
-        }))
-	entry.Printf(format, args...) 
+	logrus.Printf(format, args...)
 }
 
 // Infof logs a message at level Info on the standard logger.
 func Infof(format string, args ...interface{}) {
-	//logrus.Infof(format, args...)
-	entry := (*Entry)(logrus.WithFields(logrus.Fields{
-                "Prefix":    callinfo.Prefix(),
-                "Goid": callinfo.Goid(),
-        }))
-	entry.Infof(format, args...) 
+	logrus.Infof(format, args...)
 }
 
 // Warnf logs a message at level Warn on the standard logger.
 func Warnf(format string, args ...interface{}) {
-	//logrus.Warnf(format, args...)
-	entry := (*Entry)(logrus.WithFields(logrus.Fields{
-                "Prefix":    callinfo.Prefix(),
-                "Goid": callinfo.Goid(),
-        }))
-	entry.Warnf(format, args...) 
+	logrus.Warnf(format, args...)
 }
 
 // Warningf logs a message at level Warn on the standard logger.
 func Warningf(format string, args ...interface{}) {
-	//logrus.Warningf(format, args...)
-	entry := (*Entry)(logrus.WithFields(logrus.Fields{
-                "Prefix":    callinfo.Prefix(),
-                "Goid": callinfo.Goid(),
-        }))
-	entry.Warningf(format, args...) 
+	logrus.Warningf(format, args...)
 }
 
 // Errorf logs a message at level Error on the standard logger.
 func Errorf(format string, args ...interface{}) {
-	//logrus.Errorf(format, args...)
-	entry := (*Entry)(logrus.WithFields(logrus.Fields{
-                "Prefix":    callinfo.Prefix(),
-                "Goid": callinfo.Goid(),
-        }))
-	entry.Errorf(format, args...) 
+	logrus.Errorf(format, args...)
 }
 
 // Fatalf logs a message at level Fatal on the standard logger.
 func Fatalf(format string, args ...interface{}) {
-	//logrus.Fatalf(format, args...)
-	entry := (*Entry)(logrus.WithFields(logrus.Fields{
-                "Prefix":    callinfo.Prefix(),
-                "Goid": callinfo.Goid(),
-        }))
-	entry.Fatalf(format, args...) 
+	logrus.Fatalf(format, args...)
 }
 
 // Panicf logs a message at level Panic on the standard logger.

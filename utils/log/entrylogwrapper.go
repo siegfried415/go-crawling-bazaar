@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 The CovenantSQL Authors.
+ * Copyright 2022 https://github.com/siegfried415 
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +22,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-        "github.com/siegfried415/go-crawling-bazaar/utils/callinfo"
+        //"github.com/siegfried415/go-crawling-bazaar/utils/callinfo"
 )
 
 // Entry defines alias for logrus entry.
@@ -61,166 +62,93 @@ func (entry *Entry) WithTime(t time.Time) *Entry {
 	return &Entry{Logger: entry.Logger, Data: entry.Data, Time: t}
 }
 
+
+func (entry *Entry) WithStack() *Entry {
+        return (*Entry)((*logrus.Entry)(entry).WithFields(logrus.Fields{
+                "stack": "", 
+        }))
+}
+
 // Debug record a new debug level log.
 func (entry *Entry) Debug(args ...interface{}) {
-	//(*logrus.Entry)(entry).Debug(args...)
-	e := (*logrus.Entry)(entry.WithFields(Fields{
-                "Prefix":    callinfo.Prefix(),
-                "Goid": callinfo.Goid(),
-        }))
-	e.Debug(args...) 
+	(*logrus.Entry)(entry).Debug(args...)
 }
 
 // Print record a new non-level log.
 func (entry *Entry) Print(args ...interface{}) {
-	//(*logrus.Entry)(entry).Print(args...)
-	e := (*logrus.Entry)(entry.WithFields(Fields{
-                "Prefix":    callinfo.Prefix(),
-                "Goid": callinfo.Goid(),
-        }))
-	e.Print(args...) 
+	(*logrus.Entry)(entry).Print(args...)
 }
 
 // Info record a new info level log.
 func (entry *Entry) Info(args ...interface{}) {
-	//(*logrus.Entry)(entry).Info(args...)
-	e := (*logrus.Entry)(entry.WithFields(Fields{
-                "Prefix":    callinfo.Prefix(),
-                "Goid": callinfo.Goid(),
-        }))
-	e.Info(args...) 
+	(*logrus.Entry)(entry).Info(args...)
 }
 
 // Warn record a new warning level log.
 func (entry *Entry) Warn(args ...interface{}) {
-	//(*logrus.Entry)(entry).Warn(args...)
-	e := (*logrus.Entry)(entry.WithFields(Fields{
-                "Prefix":    callinfo.Prefix(),
-                "Goid": callinfo.Goid(),
-        }))
-	e.Warn(args...) 
+	(*logrus.Entry)(entry).Warn(args...)
 }
 
 // Warning record a new warning level log.
 func (entry *Entry) Warning(args ...interface{}) {
-	//(*logrus.Entry)(entry).Warning(args...)
-	e := (*logrus.Entry)(entry.WithFields(Fields{
-                "Prefix":    callinfo.Prefix(),
-                "Goid": callinfo.Goid(),
-        }))
-	e.Warning(args...) 
+	(*logrus.Entry)(entry).Warning(args...)
 }
 
 // Error record a new error level log.
 func (entry *Entry) Error(args ...interface{}) {
-	//(*logrus.Entry)(entry).Error(args...)
-	e := (*logrus.Entry)(entry.WithFields(Fields{
-                "Prefix":    callinfo.Prefix(),
-                "Goid": callinfo.Goid(),
-        }))
-	e.Error(args...) 
+	(*logrus.Entry)(entry).Error(args...)
 }
 
 // Fatal record a fatal level log.
 func (entry *Entry) Fatal(args ...interface{}) {
-	//(*logrus.Entry)(entry).Fatal(args...)
-	e := (*logrus.Entry)(entry.WithFields(Fields{
-                "Prefix":    callinfo.Prefix(),
-                "Goid": callinfo.Goid(),
-        }))
-	e.Fatal(args...) 
+	(*logrus.Entry)(entry).Fatal(args...)
 }
 
 // Panic record a panic level log.
 func (entry *Entry) Panic(args ...interface{}) {
-	//(*logrus.Entry)(entry).Panic(args...)
-	e := (*logrus.Entry)(entry.WithFields(Fields{
-                "Prefix":    callinfo.Prefix(),
-                "Goid": callinfo.Goid(),
-        }))
-	e.Panic(args...) 
+	(*logrus.Entry)(entry).Panic(args...)
 }
 
 // Entry Printf family functions
 
 // Debugf record a debug level log.
 func (entry *Entry) Debugf(format string, args ...interface{}) {
-	//(*logrus.Entry)(entry).Debugf(format, args...)
-	e := (*logrus.Entry)(entry.WithFields(Fields{
-                "Prefix":    callinfo.Prefix(),
-                "Goid": callinfo.Goid(),
-        }))
-	e.Debugf(format, args...) 
+	(*logrus.Entry)(entry).Debugf(format, args...)
 }
 
 // Infof record a info level log.
 func (entry *Entry) Infof(format string, args ...interface{}) {
-	//(*logrus.Entry)(entry).Infof(format, args...)
-	e := (*logrus.Entry)(entry.WithFields(Fields{
-                "Prefix":    callinfo.Prefix(),
-                "Goid": callinfo.Goid(),
-        }))
-	e.Infof(format, args...) 
+	(*logrus.Entry)(entry).Infof(format, args...)
 }
 
 // Printf record a new non-level log.
 func (entry *Entry) Printf(format string, args ...interface{}) {
-	//(*logrus.Entry)(entry).Printf(format, args...)
-	e := (*logrus.Entry)(entry.WithFields(Fields{
-                "Prefix":    callinfo.Prefix(),
-                "Goid": callinfo.Goid(),
-        }))
-	e.Printf(format, args...) 
+	(*logrus.Entry)(entry).Printf(format, args...)
 }
 
 // Warnf record a warning level log.
 func (entry *Entry) Warnf(format string, args ...interface{}) {
-	//(*logrus.Entry)(entry).Warnf(format, args...)
-	e := (*logrus.Entry)(entry.WithFields(Fields{
-                "Prefix":    callinfo.Prefix(),
-                "Goid": callinfo.Goid(),
-        }))
-	e.Warnf(format, args...) 
+	(*logrus.Entry)(entry).Warnf(format, args...)
 }
 
 // Warningf record a warning level log.
 func (entry *Entry) Warningf(format string, args ...interface{}) {
-	//(*logrus.Entry)(entry).Warningf(format, args...)
-	e := (*logrus.Entry)(entry.WithFields(Fields{
-                "Prefix":    callinfo.Prefix(),
-                "Goid": callinfo.Goid(),
-        }))
-	e.Warningf(format, args...) 
+	(*logrus.Entry)(entry).Warningf(format, args...)
 }
 
 // Errorf record a error level log.
 func (entry *Entry) Errorf(format string, args ...interface{}) {
-	//(*logrus.Entry)(entry).Errorf(format, args...)
-	e := (*logrus.Entry)(entry.WithFields(Fields{
-                "Prefix":    callinfo.Prefix(),
-                "Goid": callinfo.Goid(),
-        }))
-	e.Errorf(format, args...) 
+	(*logrus.Entry)(entry).Errorf(format, args...)
 }
 
 // Fatalf record a fatal level log.
 func (entry *Entry) Fatalf(format string, args ...interface{}) {
-	//(*logrus.Entry)(entry).Fatalf(format, args...)
-	e := (*logrus.Entry)(entry.WithFields(Fields{
-                "Prefix":    callinfo.Prefix(),
-                "Goid": callinfo.Goid(),
-        }))
-	e.Fatalf(format, args...) 
+	(*logrus.Entry)(entry).Fatalf(format, args...)
 }
 
 // Panicf record a panic level log.
 func (entry *Entry) Panicf(format string, args ...interface{}) {
-	//(*logrus.Entry)(entry).Panicf(format, args...)
-	e := (*logrus.Entry)(entry.WithFields(Fields{
-                "Prefix":    callinfo.Prefix(),
-                "Goid": callinfo.Goid(),
-        }))
-	e.Panicf(format, args...) 
+	(*logrus.Entry)(entry).Panicf(format, args...)
 }
 
 // Entry Println family functions

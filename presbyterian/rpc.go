@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 The CovenantSQL Authors.
+ * Copyright 2022 https://github.com/siegfried415 
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -258,6 +259,11 @@ func (cs *ChainRPCService) QuerySQLChainProfileHandler( s net.Stream ) {
 		err = errors.Wrap(ErrDatabaseNotFound, "rpc query sqlchain profile failed")
 		return
 	}
+
+	log.WithFields(log.Fields{
+		"ID": p.ID,
+		"Address" : p.Address.String(), 
+	}).Debugf("ChainRPCService/QuerySQLChainProfileHandler")
 
 	var resp = types.QuerySQLChainProfileResp {
 		Profile: *p, 

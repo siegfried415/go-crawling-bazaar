@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 https://github.com/siegfried415
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package commands
 import (
 	"errors" 
@@ -9,7 +25,7 @@ import (
         "github.com/ipfs/go-ipfs-cmdkit"
 
 	env "github.com/siegfried415/go-crawling-bazaar/env" 
-	//log "github.com/siegfried415/go-crawling-bazaar/utils/log" 
+	log "github.com/siegfried415/go-crawling-bazaar/utils/log" 
 	proto "github.com/siegfried415/go-crawling-bazaar/proto" 
 
 )
@@ -63,12 +79,14 @@ Examples:
 		host := ce.Host()
 		conn, err := getConn(host, "FRT.UrlCidRequest", domain )
 		if err != nil {
+			log.Debugf("UrlGraphGetCidByUrlCmd, get Conn failed, err=%s ", err.Error()) 
 			return err 
 		}
 		defer conn.Close()
 
 		result, err := conn.GetCidByUrl(req.Context, req.Arguments[0]) 
 		if err != nil {
+			log.Debugf("UrlGraphGetCidByUrlCmd, GetCidByUrl failed, err=%s ", err.Error()) 
 			return err 
 		}
 

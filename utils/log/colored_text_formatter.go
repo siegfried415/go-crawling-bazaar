@@ -1,3 +1,20 @@
+/*
+ * Copyright 2022 https://github.com/siegfried415
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 package log
 
 import (
@@ -6,6 +23,7 @@ import (
 	"io"
 	"os"
 	"runtime"
+	"sort" 
 	"strconv"
 	"strings"
 	"sync"
@@ -143,8 +161,8 @@ func (f *ColoredTextFormatter) init(entry *logrus.Entry) {
 	}
 }
 
-/*
 func (f *ColoredTextFormatter) isColored() bool {
+	/*
 	isColored := f.ForceColors || (f.isTerminal && (runtime.GOOS != "windows"))
 
 	if f.EnvironmentOverrideColors {
@@ -157,8 +175,11 @@ func (f *ColoredTextFormatter) isColored() bool {
 	}
 
 	return isColored && !f.DisableColors
+	*/
+
+	return true 
+
 }
-*/
 
 
 // Format renders a single log entry
@@ -176,8 +197,7 @@ func (f *ColoredTextFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 		keys = append(keys, k)
 	}
 
-	//var funcVal, fileVal string
-
+	var funcVal, fileVal string
 	fixedKeys := make([]string, 0, 4+len(data))
 	if !f.DisableTimestamp {
 		fixedKeys = append(fixedKeys, f.FieldMap.resolve(logrus.FieldKeyTime))
@@ -187,10 +207,10 @@ func (f *ColoredTextFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 		fixedKeys = append(fixedKeys, f.FieldMap.resolve(logrus.FieldKeyMsg))
 	}
 
-	/*
-	if entry.err != "" {
-		fixedKeys = append(fixedKeys, f.FieldMap.resolve(logrus.FieldKeyLogrusError))
-	}
+	//if entry.err != "" {
+	//	fixedKeys = append(fixedKeys, f.FieldMap.resolve(logrus.FieldKeyLogrusError))
+	//}
+
 	if entry.HasCaller() {
 		if f.CallerPrettyfier != nil {
 			funcVal, fileVal = f.CallerPrettyfier(entry.Caller)
@@ -206,25 +226,22 @@ func (f *ColoredTextFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 			fixedKeys = append(fixedKeys, f.FieldMap.resolve(logrus.FieldKeyFile))
 		}
 	} 
-	*/
 
-	/* 
 	if !f.DisableSorting {
 		if f.SortingFunc == nil {
 			sort.Strings(keys)
 			fixedKeys = append(fixedKeys, keys...)
 		} else {
-			//if !f.isColored() {
-			//	fixedKeys = append(fixedKeys, keys...)
-			//	f.SortingFunc(fixedKeys)
-			//} else {
+			if !f.isColored() {
+				fixedKeys = append(fixedKeys, keys...)
+				f.SortingFunc(fixedKeys)
+			} else {
 				f.SortingFunc(keys)
-			//}
+			}
 		}
 	} else {
 		fixedKeys = append(fixedKeys, keys...)
 	}
-	*/
 
 	fixedKeys = append(fixedKeys, keys...)
 
@@ -244,7 +261,6 @@ func (f *ColoredTextFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 		timestampFormat = time.RFC3339
 	}
 
-	/*
 	if f.isColored() {
 		f.printColored(b, entry, keys, data, timestampFormat)
 	}  else {
@@ -258,8 +274,8 @@ func (f *ColoredTextFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 				value = entry.Level.String()
 			case key == f.FieldMap.resolve(logrus.FieldKeyMsg):
 				value = entry.Message
-			case key == f.FieldMap.resolve(logrus.FieldKeyLogrusError):
-				value = entry.err
+			//case key == f.FieldMap.resolve(logrus.FieldKeyLogrusError):
+			//	value = entry.err
 			case key == f.FieldMap.resolve(logrus.FieldKeyFunc) && entry.HasCaller():
 				value = funcVal
 			case key == f.FieldMap.resolve(logrus.FieldKeyFile) && entry.HasCaller():
@@ -270,9 +286,8 @@ func (f *ColoredTextFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 			f.appendKeyValue(b, key, value)
 		}
 	} 
-	*/
 
-	f.printColored(b, entry, keys, data, timestampFormat)
+	//f.printColored(b, entry, keys, data, timestampFormat)
 
 	b.WriteByte('\n')
 	return b.Bytes(), nil
@@ -315,7 +330,6 @@ func (f *ColoredTextFormatter) printColored(b *bytes.Buffer, entry *logrus.Entry
 	entry.Message = strings.TrimSuffix(entry.Message, "\n")
 
 	caller := ""
-	/* 
 	if entry.HasCaller() {
 		funcVal := fmt.Sprintf("%s()", entry.Caller.Function)
 		fileVal := fmt.Sprintf("%s:%d", entry.Caller.File, entry.Caller.Line)
@@ -332,15 +346,14 @@ func (f *ColoredTextFormatter) printColored(b *bytes.Buffer, entry *logrus.Entry
 			caller = fileVal + " " + funcVal
 		}
 	}
-	*/
 
-	goid, ok := entry.Data["Goid"]
+	goid, ok := entry.Data["_gid"]
 	if !ok {
 		goid = 0  
 	}
 
 	messageColor := f.getMessageColor(goid.(int))
-	prefix , ok := entry.Data["Prefix"]
+	prefix , ok := entry.Data["_prefix"]
 	if !ok {
 		prefix = ""
 	}
@@ -359,12 +372,14 @@ func (f *ColoredTextFormatter) printColored(b *bytes.Buffer, entry *logrus.Entry
 		fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m[%d]%s \x1b[%dm%-44s\x1b[0m ", levelColor, levelText, /*entry.Time.Format(timestampFormat)*/ goid, /* caller */ prefix, messageColor, entry.Message)
 	}
 
-	// todo
-	//for _, k := range keys {
-	//	v := data[k]
-	//	fmt.Fprintf(b, " \x1b[%dm%s\x1b[0m=", /* levelColor */ messageColor, k)
-	//	f.appendValue(b, v)
-	//}
+	//uncomment following lines if you don't want Fields output.  
+	for _, k := range keys {
+		if strings.HasPrefix(k, "_" ) != true {
+			v := data[k]
+			fmt.Fprintf(b, " \x1b[%dm%s\x1b[0m=", /* levelColor */ messageColor, k)
+			f.appendValue(b, v)
+		}
+	}
 }
 
 func (f *ColoredTextFormatter) needsQuoting(text string) bool {
